@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>STCloudFileManagerClass</class>
+ <widget class="QWidget" name="STCloudFileManagerClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>889</width>
+    <height>691</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>STCloudFileManager</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget{background-color: rgb(255, 255, 255);}
+QWidget#STCloudFileManagerClass{border-bottom: 1px solid #e3e3e3;border-top: 1px solid #e3e3e3;border-right: 1px solid #e3e3e3;border-left: 1px solid #e3e3e3;}
+</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>10</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>1</number>
+   </property>
+   <property name="bottomMargin">
+    <number>1</number>
+   </property>
+   <item>
+    <widget class="QWidget" name="widget" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>15</number>
+      </property>
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <property name="topMargin">
+       <number>20</number>
+      </property>
+      <property name="rightMargin">
+       <number>10</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="pbUpload">
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">
+
+QPushButton {
+	border-radius: 3px;
+	color: rgb(255, 255, 255);
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:pressed {
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:!pressed {
+	
+	background-color: rgb(109, 206, 160);
+}</string>
+        </property>
+        <property name="text">
+         <string>上传</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/softterminal.qrc">
+          <normaloff>:/SoftTerminal/images/fileupload.png</normaloff>:/SoftTerminal/images/fileupload.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbNew">
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">
+
+QPushButton {
+	border-radius: 3px;
+	color: rgb(255, 255, 255);
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:pressed {
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:!pressed {
+	
+	background-color: rgb(109, 206, 160);
+}</string>
+        </property>
+        <property name="text">
+         <string>新建</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/softterminal.qrc">
+          <normaloff>:/SoftTerminal/images/filenew.png</normaloff>:/SoftTerminal/images/filenew.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbCopy">
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">
+
+QPushButton {
+	border-radius: 3px;
+	color: rgb(255, 255, 255);
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:pressed {
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:!pressed {
+	
+	background-color: rgb(109, 206, 160);
+}</string>
+        </property>
+        <property name="text">
+         <string>复制</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/softterminal.qrc">
+          <normaloff>:/SoftTerminal/images/filecopy.png</normaloff>:/SoftTerminal/images/filecopy.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbMove">
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">
+
+QPushButton {
+	border-radius: 3px;
+	color: rgb(255, 255, 255);
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:pressed {
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:!pressed {
+	
+	background-color: rgb(109, 206, 160);
+}</string>
+        </property>
+        <property name="text">
+         <string>移动</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/softterminal.qrc">
+          <normaloff>:/SoftTerminal/images/filemove.png</normaloff>:/SoftTerminal/images/filemove.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbDel">
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">
+
+QPushButton {
+	border-radius: 3px;
+	color: rgb(255, 255, 255);
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:pressed {
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:!pressed {
+	
+	background-color: rgb(109, 206, 160);
+}</string>
+        </property>
+        <property name="text">
+         <string>删除</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/softterminal.qrc">
+          <normaloff>:/SoftTerminal/images/filedel.png</normaloff>:/SoftTerminal/images/filedel.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbSupport">
+        <property name="styleSheet">
+         <string notr="true">
+
+QPushButton {
+	color: #30ba78;
+	font:9pt &quot;微软雅黑&quot;;
+    background-repeat:no-repeat;
+    border:none;
+}
+QPushButton:hover:!pressed {
+	color: #6dcea0;
+}</string>
+        </property>
+        <property name="text">
+         <string>支持文件格式</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/softterminal.qrc">
+          <normaloff>:/SoftTerminal/images/file.png</normaloff>:/SoftTerminal/images/file.png</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="widget_4" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>30</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>30</height>
+      </size>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>10</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QWidget" name="widPathList" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="widget_3" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QTableWidget" name="twFileManager">
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QTableWidget
+{  
+    background-color: rgba(255, 255, 255, 0);   
+    font:10pt &quot;微软雅黑&quot;;  
+	color: rgb(67, 69, 85);
+    border:0px;  
+}  
+  
+QHeaderView::section {
+	color: rgb(67, 69, 85);
+    font:10pt &quot;微软雅黑&quot;;  
+    text-align:center;  
+    height:40px;  
+    border:0px solid #8faac9;  
+    background-color: rgb(241, 241, 241);
+    border-left:none;  
+padding-left: 20px;
+padding-right: 20px;
+}  
+  
+QHeaderView::section::hover {
+    background-color: rgb(216, 216, 216);
+	
+}  
+ 
+
+
+QScrollBar::vertical
+{
+    width:4px;
+    background:rgb(0,0,0,0%);
+    margin:0px,0px,0px,0px;
+    padding-top:0px;   /*上预留位置*/
+    padding-bottom:0px;    /*下预留位置*/
+}
+
+/*滚动条中滑块的样式*/
+QScrollBar::handle::vertical
+{
+    width:4px;
+    background:rgb(0,0,0,25%);
+    border-radius:2px;
+    min-height:20px;
+}
+
+/*鼠标触及滑块样式*/
+QScrollBar::handle::vertical::hover
+{
+    width:5px;
+    background:rgb(0,0,0,50%);
+    border-radius:2px;
+    min-height:20;
+}
+
+/*设置下箭头*/
+QScrollBar::add-line:vertical
+{
+    height:0px;
+    subcontrol-position:bottom;
+}
+
+/*设置上箭头*/
+QScrollBar::sub-line:vertical
+{
+    height:0px;
+    subcontrol-position:top;
+}
+  </string>
+        </property>
+        <property name="sizeAdjustPolicy">
+         <enum>QAbstractScrollArea::AdjustToContents</enum>
+        </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::NoSelection</enum>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectRows</enum>
+        </property>
+        <property name="showGrid">
+         <bool>false</bool>
+        </property>
+        <attribute name="horizontalHeaderVisible">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="horizontalHeaderMinimumSectionSize">
+         <number>40</number>
+        </attribute>
+        <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="horizontalHeaderStretchLastSection">
+         <bool>false</bool>
+        </attribute>
+        <attribute name="verticalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
+        <attribute name="verticalHeaderDefaultSectionSize">
+         <number>40</number>
+        </attribute>
+        <attribute name="verticalHeaderMinimumSectionSize">
+         <number>40</number>
+        </attribute>
+        <attribute name="verticalHeaderShowSortIndicator" stdset="0">
+         <bool>false</bool>
+        </attribute>
+        <attribute name="verticalHeaderStretchLastSection">
+         <bool>false</bool>
+        </attribute>
+        <column>
+         <property name="text">
+          <string>文件名称</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>文件大小</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>修改日期</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../res/softterminal.qrc"/>
+ </resources>
+ <connections/>
+</ui>

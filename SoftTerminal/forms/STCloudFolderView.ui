@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>STCloudFolderViewClass</class>
+ <widget class="QDialog" name="STCloudFolderViewClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>386</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>STCloudFolderView</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QDialog {background-color: #ffffff;border: 1px solid #e3e3e3;}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QWidget" name="widTitle" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>35</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>35</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #434555;</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_10">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>15</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="lblTitle">
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>448</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QWidget" name="widget_17" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_9">
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="pbClose">
+           <property name="minimumSize">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">
+QPushButton{border-image: url(:/SoftTerminal/images/close.png);}
+
+QPushButton:hover:!pressed {
+	
+	background-color: #ff6741;
+}</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="widget" native="true">
+     <property name="styleSheet">
+      <string notr="true">QWidget#widget{border-left: 1px solid #e3e3e3;
+border-right: 1px solid #e3e3e3;}</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <item>
+       <widget class="QTreeView" name="tvFolder">
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>11</pointsize>
+          <weight>50</weight>
+          <italic>false</italic>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QTreeView {
+color: rgb(67, 69, 85);
+border: 1px solid #e3e3e3;
+font: 11pt &quot;微软雅黑&quot;;
+    show-decoration-selected:0;
+outline: 0px;
+}
+
+QTreeView::item{
+ height:30px;
+}
+
+QTreeView::branch:has-siblings:!adjoins-item {
+	border-image: url(:/SoftTerminal/images/branch2.png);
+}
+QTreeView::branch:has-siblings:adjoins-item {
+	border-image: url(:/SoftTerminal/images/branch.png);
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+	border-image: url(:/SoftTerminal/images/branch3.png);
+}
+
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+        border-image: none;
+        image:  url(:/SoftTerminal/images/open.png);
+}
+
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings  {
+        border-image: none;
+        image:  url(:/SoftTerminal/images/fold.png);
+}
+
+QTreeView::item:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(241, 241, 241), stop: 1 rgb(241, 241, 241));
+    border: 1px solid rgb(241, 241, 241);
+}
+
+QTreeView::item:selected {
+    border: 1px solid rgb(241, 241, 241);
+color: rgb(67, 69, 85);
+font: 13pt &quot;微软雅黑&quot;;
+}
+
+QTreeView::item:selected:active{
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(241, 241, 241), stop: 1 rgb(241, 241, 241));
+}
+
+QTreeView::item:selected:!active {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(241, 241, 241), stop: 1 rgb(241, 241, 241));
+}
+
+
+QScrollBar::vertical
+{
+    width:4px;
+    background:rgb(0,0,0,0%);
+    margin:0px,0px,0px,0px;
+    padding-top:0px;   /*上预留位置*/
+    padding-bottom:0px;    /*下预留位置*/
+}
+
+/*滚动条中滑块的样式*/
+QScrollBar::handle::vertical
+{
+    width:4px;
+    background:rgb(0,0,0,25%);
+    border-radius:2px;
+    min-height:20px;
+}
+
+/*鼠标触及滑块样式*/
+QScrollBar::handle::vertical::hover
+{
+    width:5px;
+    background:rgb(0,0,0,50%);
+    border-radius:2px;
+    min-height:20;
+}
+
+/*设置下箭头*/
+QScrollBar::add-line:vertical
+{
+    height:0px;
+    subcontrol-position:bottom;
+}
+
+/*设置上箭头*/
+QScrollBar::sub-line:vertical
+{
+    height:0px;
+    subcontrol-position:top;
+}
+  </string>
+        </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="hblayout">
+     <property name="spacing">
+      <number>50</number>
+     </property>
+     <property name="leftMargin">
+      <number>10</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>10</number>
+     </property>
+     <property name="bottomMargin">
+      <number>20</number>
+     </property>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbOK">
+       <property name="minimumSize">
+        <size>
+         <width>65</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>65</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">
+
+QPushButton {
+	border-radius: 3px;
+	color: rgb(255, 255, 255);
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:pressed {
+	background-color: rgb(48, 186, 120);
+}
+QPushButton:hover:!pressed {
+	
+	background-color: rgb(109, 206, 160);
+}</string>
+       </property>
+       <property name="text">
+        <string>是</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbCancel">
+       <property name="minimumSize">
+        <size>
+         <width>65</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>65</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">
+
+QPushButton {
+	border-radius: 3px;
+	color: rgb(255, 255, 255);
+	background-color: rgb(255, 103, 65);
+}
+QPushButton:hover:pressed {
+	background-color: rgb(255, 103, 65);
+}
+QPushButton:hover:!pressed {
+	background-color: rgb(255, 133, 103);
+}</string>
+       </property>
+       <property name="text">
+        <string>否</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../res/softterminal.qrc"/>
+ </resources>
+ <connections/>
+</ui>

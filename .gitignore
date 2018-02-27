@@ -1,0 +1,16 @@
+/Win32
+/SoftTerminal/libs/sioclient_tls-release.lib
+/SoftTerminal/libs/sioclient-debug.lib
+/SoftTerminal/libs/sioclient-release.lib
+/SoftTerminal/libs/woogeen-debug.lib
+/SoftTerminal/libs/woogeen-release.lib
+/SoftTerminal/libs/gloox-1.0-debug.lib
+/SoftTerminal/libs/gloox-1.0-release.lib
+/SoftTerminal/libs/json-debug.lib
+/SoftTerminal/libs/json-release.lib
+/SoftTerminal/libs/log4cplus-debug.lib
+/SoftTerminal/libs/log4cplus-release.lib
+/SoftTerminal/libs/pthreadVC2.lib
+/SoftTerminal/libs/pthreadVCE2.lib
+/SoftTerminal/libs/pthreadVSE2.lib
+/SoftTerminal/libs/sioclient_tls-debug.lib
