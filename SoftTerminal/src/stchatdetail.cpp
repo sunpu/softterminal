@@ -111,16 +111,16 @@ void STChatDetail::on_pbSendMessage_clicked()
 	QString myMessage = ui.teChatWrite->toPlainText();
 	if (myMessage.size() == 0)
 	{
-		QPoint pos(mapToGlobal(ui.pbSendMessage->pos()).x(),
+		/*QPoint pos(mapToGlobal(ui.pbSendMessage->pos()).x(),
 			mapToGlobal(ui.pbSendMessage->pos()).y());
-		QToolTip::showText(pos, "aaa", ui.pbSendMessage);
+		QToolTip::showText(pos, "aaa", ui.pbSendMessage);*/
 		return;
 	}
 
 	RecordItem item;
 	item.time = QTime::currentTime().toString();
 	item.from = MessageFrom::Self;
-	item.type = MessageType::Text;
+	item.type = MessageType::MT_Text;
 	item.content = myMessage;
 	item.pic = m_selfPicPath;
 
@@ -172,7 +172,8 @@ void STChatDetail::on_pbScreenShotOption_clicked()
 
 void STChatDetail::on_pbLesson_clicked()
 {
-
+	m_whiteboard = new STWhiteBoard;
+	m_whiteboard->show();
 }
 
 void STChatDetail::openScreenshot()
@@ -244,7 +245,7 @@ void STChatDetail::updateOthersMessage(QString jid, QString msg)
 	RecordItem item;
 	item.time = QTime::currentTime().toString();
 	item.from = MessageFrom::Other;
-	item.type = MessageType::Text;
+	item.type = MessageType::MT_Text;
 	item.content = msg;
 	item.pic = m_otherPicPath;
 

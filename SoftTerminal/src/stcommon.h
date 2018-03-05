@@ -18,7 +18,7 @@ namespace tahiti
 #define RECORD_FILE_TYPE ".dat"
 
 #define SHADOW_WIDTH 10
-#define MAX_STREAM_NUM 16
+#define MAX_STREAM_NUM 6
 
 	enum ResizeRegion
 	{
@@ -41,8 +41,8 @@ namespace tahiti
 
 	enum MessageType
 	{
-		Text = 0,
-		Class
+		MT_Text = 0,
+		MT_Class
 	};
 
 	typedef struct user
@@ -63,5 +63,13 @@ namespace tahiti
 		MessageType type;
 		QString content;
 	} RecordItem;
+
+	enum ActionType
+	{
+		AT_NONE,
+		AT_Select,
+		AT_Pen,
+		AT_Text
+	};
 }
 #endif

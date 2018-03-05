@@ -14,6 +14,7 @@
 #include "stscreenshot.h"
 #include "stemotion.h"
 #include "ui_STScreenshotOption.h"
+#include "stwhiteboard.h"
 
 using namespace tahiti;
 
@@ -61,6 +62,7 @@ namespace tahiti
 		STScreenshotOption* m_option;
 		STEmotion* m_emotion;
 		QWidget* m_main;
+		STWhiteBoard* m_whiteboard;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

@@ -409,6 +409,7 @@ void STMain::updateSelfPic(QString picPath)
 		(*it)->updateSelfPic(picPath);
 	}
 }
+
 void STMain::confirmExit()
 {
 	m_confirmMode = "exit";

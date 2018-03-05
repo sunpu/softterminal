@@ -105,5 +105,18 @@
         <file>images/video.png</file>
         <file>images/vmediax.png</file>
         <file>images/yes.png</file>
+        <file>images/1.png</file>
+        <file>images/1_focus.png</file>
+        <file>images/2.png</file>
+        <file>images/2_focus.png</file>
+        <file>images/3.png</file>
+        <file>images/3_focus.png</file>
+        <file>images/4.png</file>
+        <file>images/4_focus.png</file>
+        <file>images/mouse.png</file>
+        <file>images/pen.png</file>
+        <file>images/text.png</file>
+        <file>images/trashcan.png</file>
+        <file>images/video_bg.png</file>
     </qresource>
 </RCC>

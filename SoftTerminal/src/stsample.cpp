@@ -10,14 +10,14 @@ STSample::STSample(QWidget *parent)
 	TAHITI_INFO("STSample start...");
 	ui.setupUi(this);
 	initClient();
-
+	on_pbLogin_clicked();
 	QObject::connect(this, SIGNAL(newStreamSignal(QString, int, int)), SLOT(newStreamSlot(QString, int, int)));
 
 	qRegisterMetaType<std::shared_ptr<RemoteStream>>("std::shared_ptr<RemoteStream>");
 	QObject::connect(this, SIGNAL(updateRenderSignal(QString, std::shared_ptr<RemoteStream>)), SLOT(updateRenderSlot(QString, std::shared_ptr<RemoteStream>)));
 
-	QHBoxLayout* hboxLayout = (QHBoxLayout*)ui.widRender->layout();
-	m_renders.resize(MAX_STREAM_NUM);
+	QHBoxLayout* hboxLayout = (QHBoxLayout*)ui.widVideo->layout();
+	/*m_renders.resize(MAX_STREAM_NUM);
 	for (size_t i = 0; i < MAX_STREAM_NUM; i++)
 	{
 		m_renders[i] = new Render(ui.widRender);
@@ -26,6 +26,14 @@ STSample::STSample(QWidget *parent)
 		m_renders[i]->setVisible(false);
 		hboxLayout->addWidget(m_renders[i]);
 		//renders.append(render);
+	}*/
+	m_videoItems.resize(MAX_STREAM_NUM);
+	for (size_t i = 0; i < MAX_STREAM_NUM; i++)
+	{
+		m_videoItems[i] = new STWBVideoItem(ui.widVideo);
+		m_videoItems[i]->setObjectName(QString::number(i));
+		m_videoItems[i]->setVisible(false);
+		hboxLayout->addWidget(m_videoItems[i]);
 	}
 
 	m_xmpp_client = new XmppClient();
@@ -81,6 +89,8 @@ void STSample::initClient()
 
 void STSample::newStreamSlot(QString id, int width, int height)
 {
+	subscribeStream(id);
+	return;
 	QVBoxLayout* vboxLayout = (QVBoxLayout*)ui.widOption->layout();
 	QString resolution = QString::number(width) + "*" + QString::number(height);
 	QCheckBox* cbx = new QCheckBox(id + "@" + resolution);
@@ -96,15 +106,15 @@ void STSample::updateRenderSlot(QString id, std::shared_ptr<RemoteStream> stream
 		int renderID = -1;
 		for (size_t i = 0; i < MAX_STREAM_NUM; i++)
 		{
-			if (!m_renders[i]->isusing())
+			if (!m_videoItems[i]->isusing())
 			{
 				renderID = i;
-				m_renders[i]->use();
-				m_renders[i]->setVisible(true);
+				m_videoItems[i]->use();
+				m_videoItems[i]->setVisible(true);
 				break;
 			}
 		}
-		stream->AttachVideoRenderer(m_renders[renderID]->getRenderWindow());
+		stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
 
 		m_all_stream_map[id].isShowing = true;
 		m_all_stream_map[id].renderID = renderID;
@@ -114,11 +124,11 @@ void STSample::updateRenderSlot(QString id, std::shared_ptr<RemoteStream> stream
 		string ss = id.toStdString();
 		m_all_stream_map[id].stream->DetachVideoRenderer();
 		m_all_stream_map[id].isShowing = false;
-		m_renders[m_all_stream_map[id].renderID]->unuse();
-		m_renders[m_all_stream_map[id].renderID]->setVisible(false);
+		m_videoItems[m_all_stream_map[id].renderID]->unuse();
+		m_videoItems[m_all_stream_map[id].renderID]->setVisible(false);
 		m_all_stream_map[id].renderID = -1;
 	}
-	ui.widRender->update();
+	ui.widVideo->update();
 }
 
 void STSample::checkChange()
@@ -202,6 +212,7 @@ void STSample::OnStreamAdded(shared_ptr<RemoteCameraStream> stream)
 
 void STSample::OnStreamAdded(shared_ptr<RemoteMixedStream> stream)
 {
+	return;
 	std::vector<VideoFormat> formats = stream->SupportedVideoFormats();
 	int width = formats[0].resolution.width;
 	int height = formats[0].resolution.height;
@@ -211,13 +222,14 @@ void STSample::OnStreamAdded(shared_ptr<RemoteMixedStream> stream)
 
 void STSample::OnStreamAdded(shared_ptr<RemoteScreenStream> stream)
 {
+	return;
 	addStream(stream);
 }
 
 void STSample::addStream(shared_ptr<RemoteStream> stream, int width, int height)
 {
 	string id = stream->Id();
-	StreamInfo info;
+	StreamInfo1 info;
 	info.stream = stream;
 	info.width = width;
 	info.height = height;

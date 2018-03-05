@@ -24,7 +24,7 @@ STCloudFileManager::STCloudFileManager(QWidget * parent) : QWidget(parent)
 
 	m_network = new STNetworkClient;
 	m_network->connectServer("10.1.0.10", "10001");
-	connect(m_network, SIGNAL(processMessage(QString)), this, SLOT(processMessage(QString)));
+	connect(m_network, SIGNAL(processCloudFileMessage(QString)), this, SLOT(processMessage(QString)));
 }
 
 STCloudFileManager::~STCloudFileManager()

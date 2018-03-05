@@ -13,6 +13,7 @@
 #include "woogeen/conference/remotemixedstream.h"
 #include "logger.h"
 #include "xmppclient.h"
+#include "stwbvideoitem.h"
 
 using namespace std;
 using namespace woogeen::conference;
@@ -21,7 +22,7 @@ using namespace tahiti;
 
 namespace tahiti
 {
-	typedef struct StreamInfoStruct
+	typedef struct StreamInfoStruct1
 	{
 		int width = 0;
 		int height = 0;
@@ -29,9 +30,9 @@ namespace tahiti
 		bool isShowing = false;
 		int renderID = -1;
 
-	} StreamInfo;
+	} StreamInfo1;
 
-	Q_DECLARE_METATYPE(std::shared_ptr<RemoteStream>);
+	//Q_DECLARE_METATYPE(std::shared_ptr<RemoteStream>);
 
 	class STSample : public QMainWindow, public ConferenceClientObserver
 	{
@@ -82,8 +83,9 @@ namespace tahiti
 		shared_ptr<ConferenceClient> m_client;
 		//std::vector<std::shared_ptr<RemoteMixedStream>> m_mixed_stream_list;
 		//QMap<QString, std::shared_ptr<RemoteStream>> m_all_stream_map;
-		QMap<QString, StreamInfo> m_all_stream_map;
-		QVector<Render *> m_renders;
+		QMap<QString, StreamInfo1> m_all_stream_map;
+		//QVector<Render *> m_renders;
+		QVector<STWBVideoItem *> m_videoItems;
 		QList<QCheckBox *> m_cbx_list;
 		//Render* render;
 		//HWND native_handle_;
