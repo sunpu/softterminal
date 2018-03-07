@@ -48,7 +48,14 @@ namespace tahiti
 
 	Q_SIGNALS:
 		void newStreamSignal(QString id, int width, int height);
-		void updateRenderSignal(QString id, std::shared_ptr<RemoteStream> stream);
+		void attachRenderSignal(QString id, std::shared_ptr<RemoteStream> stream);
+		void detachRenderSignal(QString id);
+		void setPenThicknessSignal(int thickness);
+		void setPenColorSignal(QString color);
+		void setTextSizeSignal(int size);
+		void setTextColorSignal(QString color);
+		void setActionModeSignal(int mode);
+		void deleteActionSignal();
 		private Q_SLOTS:
 		void setPenThickness(int thickness);
 		void setPenColor(QString color);
@@ -67,7 +74,10 @@ namespace tahiti
 		void deleteRemoteItems(QList<int> itemIDs);
 		void editableAuthority(QString editable);
 		void newStreamSlot(QString id, int width, int height);
-		void updateRenderSlot(QString id, std::shared_ptr<RemoteStream> stream);
+		void attachRenderSlot(QString id, std::shared_ptr<RemoteStream> stream);
+		void detachRenderSlot(QString id);
+		void openCloudFile();
+		void closeCloudFile(int index);
 		public Q_SLOTS:
 		void on_pbMinimum_clicked();
 		void on_pbMaximum_clicked();
@@ -117,6 +127,13 @@ namespace tahiti
 		QString m_curentID;
 		shared_ptr<LocalStream> m_local_camera_stream;
 		shared_ptr<LocalCameraStreamParameters> m_local_camera_stream_param;
+		QVector<STWBDocWindow*> m_docWindows;
+		int m_docWindowIndex;
+		int m_pen_thickness;
+		QString m_pen_color;
+		int m_text_size;
+		QString m_text_color;
+		int m_action_mode;
 	};
 }
 #endif

@@ -75,6 +75,7 @@ namespace tahiti
 		void on_pbSelect_clicked();
 		void on_pbPen_clicked();
 		void on_pbText_clicked();
+		void on_pbCloud_clicked();
 		void on_pbDelete_clicked();
 	Q_SIGNALS:
 		void setActionMode(int mode);
@@ -82,6 +83,7 @@ namespace tahiti
 		void hideStylePanels();
 		void showPenStylePanel();
 		void showTextStylePanel();
+		void openCloudFile();
 
 	private:
 		Ui::STWBVToolbarClass ui;

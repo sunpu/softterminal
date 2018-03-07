@@ -6,7 +6,7 @@
 
 using namespace tahiti;
 
-STWBView::STWBView(STNetworkClient* network)
+STWBView::STWBView(STNetworkClient* network, bool subWin)
 	: m_network(network)
 {
 	setInteractive(true);
@@ -17,7 +17,14 @@ STWBView::STWBView(STNetworkClient* network)
 	//setRenderHint(QPainter::HighQualityAntialiasing, true);
 	setRenderHint(QPainter::Antialiasing, true);
 	setObjectName("widWhiteboard");
-	setStyleSheet("QWidget#widWhiteboard{background-color:#2e3037;border:0px;}");
+	if (subWin)
+	{
+		setStyleSheet("QWidget#widWhiteboard{background-color:#000000;border:0px;}");
+	}
+	else
+	{
+		setStyleSheet("QWidget#widWhiteboard{background-color:#2e3037;border:0px;}");
+	}
 
 	//init scene
 	m_scene = new STWBScene(network);

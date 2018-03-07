@@ -511,6 +511,9 @@ QPushButton:hover:!pressed {
 QPushButton {
 	border-image: url(:/SoftTerminal/images/add.png);
 }
+QPushButton:hover:pressed {
+	border-image: url(:/SoftTerminal/images/add.png);
+}
 QPushButton:hover:!pressed {
 	border-image: url(:/SoftTerminal/images/add_focus.png);
 }</string>

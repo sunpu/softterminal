@@ -118,5 +118,6 @@
         <file>images/text.png</file>
         <file>images/trashcan.png</file>
         <file>images/video_bg.png</file>
+        <file>images/left.png</file>
     </qresource>
 </RCC>

@@ -14,10 +14,11 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	initConferenceClient();
 	login();
 
-	QObject::connect(this, SIGNAL(newStreamSignal(QString, int, int)), SLOT(newStreamSlot(QString, int, int)));
+	QObject::connect(this, SIGNAL(newStreamSignal(QString, int, int)), this, SLOT(newStreamSlot(QString, int, int)));
 
 	qRegisterMetaType<std::shared_ptr<RemoteStream>>("std::shared_ptr<RemoteStream>");
-	QObject::connect(this, SIGNAL(updateRenderSignal(QString, std::shared_ptr<RemoteStream>)), SLOT(updateRenderSlot(QString, std::shared_ptr<RemoteStream>)));
+	QObject::connect(this, SIGNAL(attachRenderSignal(QString, std::shared_ptr<RemoteStream>)), this, SLOT(attachRenderSlot(QString, std::shared_ptr<RemoteStream>)));
+	QObject::connect(this, SIGNAL(detachRenderSignal(QString)), this, SLOT(detachRenderSlot(QString)));
 
 	QHBoxLayout* hboxLayout = (QHBoxLayout*)ui.widVideo->layout();
 	m_videoItems.resize(MAX_STREAM_NUM);
@@ -76,6 +77,7 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	connect(m_vtoolbar, SIGNAL(hideStylePanels()), this, SLOT(hideStylePanels()));
 	connect(m_vtoolbar, SIGNAL(showPenStylePanel()), this, SLOT(showPenStylePanel()));
 	connect(m_vtoolbar, SIGNAL(showTextStylePanel()), this, SLOT(showTextStylePanel()));
+	connect(m_vtoolbar, SIGNAL(openCloudFile()), this, SLOT(openCloudFile()));
 
 	m_penStylePanel->init();
 	m_textStylePanel->init();
@@ -83,17 +85,11 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 
 	on_pbMaximum_clicked();
 
-	STWBDocWindow* docWindow = new STWBDocWindow(m_view);
-	int xx = 200;
-	int yy = geometry().height() / 2;
-	docWindow->show();
-	docWindow->move(QPoint(xx, yy));
+	m_docWindowIndex = 0;
 }
 
 STWhiteBoard::~STWhiteBoard()
 {
-	m_network->disconnectServer();
-	logout();
 }
 
 void STWhiteBoard::on_pbMinimum_clicked()
@@ -119,6 +115,9 @@ void STWhiteBoard::on_pbNormal_clicked()
 
 void STWhiteBoard::on_pbClose_clicked()
 {
+	m_network->disconnectServer();
+	logout();
+	m_docWindows.clear();
 	close();
 }
 
@@ -144,7 +143,7 @@ void STWhiteBoard::initConferenceClient()
 
 	// configuration
 	ConferenceClientConfiguration config = ConferenceClientConfiguration();
-	config.ice_servers = ice_servers;
+	//config.ice_servers = ice_servers;
 	MediaCodec mc;
 	mc.video_codec = MediaCodec::VP8;
 	//mc.video_codec = MediaCodec::H264;
@@ -160,34 +159,33 @@ void STWhiteBoard::newStreamSlot(QString id, int width, int height)
 	subscribeStream(id);
 }
 
-void STWhiteBoard::updateRenderSlot(QString id, std::shared_ptr<RemoteStream> stream)
+void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> stream)
 {
-	if (stream)
+	int renderID = -1;
+	for (size_t i = 0; i < MAX_STREAM_NUM; i++)
 	{
-		int renderID = -1;
-		for (size_t i = 0; i < MAX_STREAM_NUM; i++)
+		if (!m_videoItems[i]->isusing())
 		{
-			if (!m_videoItems[i]->isusing())
-			{
-				renderID = i;
-				m_videoItems[i]->use();
-				m_videoItems[i]->setVisible(true);
-				break;
-			}
+			renderID = i;
+			m_videoItems[i]->use();
+			m_videoItems[i]->setVisible(true);
+			break;
 		}
-		stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
+	}
+	stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
 
-		m_all_stream_map[id].isShowing = true;
-		m_all_stream_map[id].renderID = renderID;
-	}
-	else
-	{
-		m_all_stream_map[id].stream->DetachVideoRenderer();
-		m_all_stream_map[id].isShowing = false;
-		m_videoItems[m_all_stream_map[id].renderID]->unuse();
-		m_videoItems[m_all_stream_map[id].renderID]->setVisible(false);
-		m_all_stream_map[id].renderID = -1;
-	}
+	m_all_stream_map[id].isShowing = true;
+	m_all_stream_map[id].renderID = renderID;
+	ui.widVideo->update();
+}
+
+void STWhiteBoard::detachRenderSlot(QString id)
+{
+	m_all_stream_map[id].stream->DetachVideoRenderer();
+	m_all_stream_map[id].isShowing = false;
+	m_videoItems[m_all_stream_map[id].renderID]->unuse();
+	m_videoItems[m_all_stream_map[id].renderID]->setVisible(false);
+	m_all_stream_map[id].renderID = -1;
 	ui.widVideo->update();
 }
 
@@ -209,7 +207,7 @@ void STWhiteBoard::subscribeStream(QString id)
 		[&](std::shared_ptr<RemoteStream> stream)
 	{
 		string streamID = stream->Id();
-		Q_EMIT updateRenderSignal(QString::fromStdString(streamID), stream);
+		Q_EMIT attachRenderSignal(QString::fromStdString(streamID), stream);
 		TAHITI_INFO("订阅成功..." << streamID.c_str());
 	},
 		[=](std::unique_ptr<ConferenceException>)
@@ -225,12 +223,12 @@ void STWhiteBoard::unsubscribeStream(QString id)
 		return;
 	}
 	m_curentID = id; // TODO:logout时，批量删除，容易冲突,暂时sleep
+	Q_EMIT detachRenderSignal(m_curentID);
 	std::shared_ptr<RemoteStream> stream = m_all_stream_map[m_curentID].stream;
 	m_client->Unsubscribe(stream,
 		[=]()
 	{
-		Q_EMIT updateRenderSignal(m_curentID, NULL);
-		TAHITI_INFO("取消订阅成功..." << m_curentID.toStdString().c_str());
+		TAHITI_INFO("取消订阅成功...");
 	},
 		[=](std::unique_ptr<ConferenceException>)
 	{
@@ -355,7 +353,7 @@ void STWhiteBoard::sendLocalCamera()
 	if (!m_local_camera_stream.get())
 	{
 		m_local_camera_stream_param.reset(new LocalCameraStreamParameters(true, true));
-		m_local_camera_stream_param->Resolution(160, 90);
+		m_local_camera_stream_param->Resolution(432, 240);
 		m_local_camera_stream_param->CameraId(DeviceUtils::VideoCapturerIds()[0]);
 		m_local_camera_stream = LocalCameraStream::Create(*m_local_camera_stream_param, err_code);
 	}
@@ -413,6 +411,7 @@ void STWhiteBoard::showTextStylePanel()
 
 void STWhiteBoard::setActionMode(int mode)
 {
+	m_action_mode = mode;
 	m_view->clearSelection();
 	m_view->setMode((ActionType)mode);
 	if (mode == ActionType::AT_Select)
@@ -423,25 +422,66 @@ void STWhiteBoard::setActionMode(int mode)
 	{
 		m_view->setDragMode(QGraphicsView::NoDrag);
 	}
+	Q_EMIT setActionModeSignal(mode);
 }
 
 void STWhiteBoard::deleteAction()
 {
 	m_view->deleteSelectedItem();
+	Q_EMIT deleteActionSignal();
+}
+
+void STWhiteBoard::openCloudFile()
+{
+	STWBDocWindow* docWindow = new STWBDocWindow(m_network, m_docWindowIndex++, m_view);
+	connect(docWindow, SIGNAL(closeCloudFile(int)), this, SLOT(closeCloudFile(int)));
+	connect(this, SIGNAL(setPenThicknessSignal(int)), docWindow, SLOT(setPenThickness(int)));
+	connect(this, SIGNAL(setPenColorSignal(QString)), docWindow, SLOT(setPenColor(QString)));
+	connect(this, SIGNAL(setTextSizeSignal(int)), docWindow, SLOT(setTextSize(int)));
+	connect(this, SIGNAL(setTextColorSignal(QString)), docWindow, SLOT(setTextColor(QString)));
+	connect(this, SIGNAL(setActionModeSignal(int)), docWindow, SLOT(setActionMode(int)));
+	connect(this, SIGNAL(deleteActionSignal()), docWindow, SLOT(deleteAction()));
+	Q_EMIT setActionModeSignal(m_action_mode);
+	Q_EMIT setPenThicknessSignal(m_pen_thickness);
+	Q_EMIT setPenColorSignal(m_pen_color);
+	Q_EMIT setTextSizeSignal(m_text_size);
+	Q_EMIT setTextColorSignal(m_text_color);
+
+	m_docWindows.append(docWindow);
+	int x = 50 * (m_docWindowIndex);
+	int y = 35 * (m_docWindowIndex);
+	docWindow->show();
+	docWindow->move(QPoint(x, y));
+}
+
+void STWhiteBoard::closeCloudFile(int index)
+{
+	QVector<STWBDocWindow*> ::Iterator it;
+	for (it = m_docWindows.begin(); it != m_docWindows.end(); it++)
+	{
+		if ((*it)->getDocWindowIndex() == index)
+		{
+			m_docWindows.removeOne(*it);
+			return;
+		}
+	}
 }
 
 void STWhiteBoard::setPenThickness(int thickness)
 {
+	m_pen_thickness = thickness;
 	m_view->setPenThickness(thickness);
 	hideStylePanels();
 	if (m_vtoolbar->getCurrentSelect() != 2)
 	{
 		m_vtoolbar->on_pbPen_clicked();
 	}
+	Q_EMIT setPenThicknessSignal(thickness);
 }
 
 void STWhiteBoard::setPenColor(QString color)
 {
+	m_pen_color = color;
 	m_view->setPenColor(color);
 	m_vtoolbar->changePenShowColor(color);
 	hideStylePanels();
@@ -449,20 +489,24 @@ void STWhiteBoard::setPenColor(QString color)
 	{
 		m_vtoolbar->on_pbPen_clicked();
 	}
+	Q_EMIT setPenColorSignal(color);
 }
 
 void STWhiteBoard::setTextSize(int size)
 {
+	m_text_size = size;
 	m_view->setTextSize(size);
 	hideStylePanels();
 	if (m_vtoolbar->getCurrentSelect() != 3)
 	{
 		m_vtoolbar->on_pbText_clicked();
 	}
+	Q_EMIT setTextSizeSignal(size);
 }
 
 void STWhiteBoard::setTextColor(QString color)
 {
+	m_text_color = color;
 	m_view->setTextColor(color);
 	m_vtoolbar->changeTextShowColor(color);
 	hideStylePanels();
@@ -470,6 +514,7 @@ void STWhiteBoard::setTextColor(QString color)
 	{
 		m_vtoolbar->on_pbText_clicked();
 	}
+	Q_EMIT setTextColorSignal(color);
 }
 
 void STWhiteBoard::mousePressEvent(QMouseEvent* event)

@@ -340,6 +340,11 @@ void STWBVToolbar::on_pbText_clicked()
 	Q_EMIT setActionMode(m_currentSelect);
 }
 
+void STWBVToolbar::on_pbCloud_clicked()
+{
+	Q_EMIT openCloudFile();
+}
+
 void STWBVToolbar::on_pbDelete_clicked()
 {
 	Q_EMIT deleteAction();
@@ -391,6 +396,18 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 		else if (e->type() == QEvent::Leave && m_currentSelect != 3)
 		{
 			ui.widText->setStyleSheet("");
+		}
+	}
+	else if (watched == ui.pbCloud)
+	{
+		if (e->type() == QEvent::Enter)
+		{
+			ui.pbCloud->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+			Q_EMIT hideStylePanels();
+		}
+		else if (e->type() == QEvent::Leave)
+		{
+			ui.pbCloud->setStyleSheet("");
 		}
 	}
 	else if (watched == ui.pbDelete)

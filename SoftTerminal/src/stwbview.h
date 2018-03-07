@@ -14,7 +14,7 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STWBView(STNetworkClient* network);
+		STWBView(STNetworkClient* network, bool subWin = false);
 		~STWBView();
 
 		STWBScene* getScene() { return m_scene; }
@@ -33,9 +33,6 @@ namespace tahiti
 		void deleteRemoteItems(QList<int> itemIDs);
 	protected:
 		void resizeEvent(QResizeEvent* event);
-	Q_SIGNALS:
-		void slideChangedBefore(void);
-		void slideChangedAfter(void);
 	private:
 		STWBScene* m_scene;
 		STNetworkClient* m_network;
