@@ -1,5 +1,5 @@
-#ifndef STWBPATHITEM_H
-#define STWBPATHITEM_H
+#ifndef _STWBPATHITEM_H
+#define _STWBPATHITEM_H
 
 #include <QGraphicsPathItem>
 #include <vector>

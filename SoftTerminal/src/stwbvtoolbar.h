@@ -1,9 +1,10 @@
-﻿#ifndef STWBVTOOLBAR_H
-#define STWBVTOOLBAR_H
+﻿#ifndef _STWBVTOOLBAR_H
+#define _STWBVTOOLBAR_H
 
 #include <QWidget>
 #include <QDialog>
 #include <QEvent>
+#include "stwbcloudfileview.h"
 #include "ui_STWBVToolbar.h"
 #include "ui_STWBPenStylePanel.h"
 #include "ui_STWBTextStylePanel.h"
@@ -77,17 +78,20 @@ namespace tahiti
 		void on_pbText_clicked();
 		void on_pbCloud_clicked();
 		void on_pbDelete_clicked();
+		void openCloudFile(QString path);
+		void closeCloudFileView();
 	Q_SIGNALS:
 		void setActionMode(int mode);
 		void deleteAction();
 		void hideStylePanels();
 		void showPenStylePanel();
 		void showTextStylePanel();
-		void openCloudFile();
+		void openCloudFileSignal(QString path);
 
 	private:
 		Ui::STWBVToolbarClass ui;
 		int m_currentSelect;
+		STWBCloudFileView* m_cloud_file_view;
 	};
 }
 #endif

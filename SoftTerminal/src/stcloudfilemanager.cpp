@@ -5,25 +5,17 @@ using namespace tahiti;
 STCloudFileManager::STCloudFileManager(QWidget * parent) : QWidget(parent)
 {
 	ui.setupUi(this);
-	defaultBkColor = QColor(255, 255, 255);
 
 	m_support = new STCloudSupport(this);
 	m_support->hide();
 
-	previousColorRow = -1;
 	ui.twFileManager->setMouseTracking(true);
-	//connect(ui.twFileManager, SIGNAL(cellEntered(int, int)), this, SLOT(changeRowColor(int, int)));
 	ui.twFileManager->horizontalHeaderItem(0)->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
 	ui.twFileManager->horizontalHeaderItem(1)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 	ui.twFileManager->horizontalHeaderItem(2)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 
-	QHeaderView* header = ui.twFileManager->horizontalHeader();
-	header->setSortIndicator(0, Qt::AscendingOrder);
-	header->setSortIndicatorShown(true);
-	connect(header, SIGNAL(sectionClicked(int)), ui.twFileManager, SLOT(sortByColumn(int)));
-
 	m_network = new STNetworkClient;
-	m_network->connectServer("10.1.0.10", "10001");
+	m_network->connectServer("10.4.26.64", "10001");
 	connect(m_network, SIGNAL(processCloudFileMessage(QString)), this, SLOT(processMessage(QString)));
 }
 
@@ -43,34 +35,6 @@ void STCloudFileManager::processMessage(QString msg)
 	else if (type == "folder_list")
 	{
 		callCloudFolderView(msg);
-	}
-}
-
-void STCloudFileManager::changeRowColor(int row, int column)
-{
-	QTableWidgetItem* item = 0;
-
-	item = ui.twFileManager->item(previousColorRow, 0);
-	if (item != 0)
-	{
-		this->setRowColor(previousColorRow, defaultBkColor);
-	}
-
-	item = ui.twFileManager->item(row, column);
-	if (item != 0 && !item->isSelected() && !item->text().isEmpty())
-	{
-		this->setRowColor(row, QColor(228, 230, 238));
-	}
-
-	previousColorRow = row;
-}
-
-void STCloudFileManager::setRowColor(int row, QColor color)
-{
-	for (int col = 0; col < ui.twFileManager->columnCount(); col++)
-	{
-		QTableWidgetItem* item = ui.twFileManager->item(row, col);
-		item->setBackgroundColor(color);
 	}
 }
 
@@ -329,9 +293,20 @@ void STCloudFileManager::onFolderClicked()
 	refreshCurrentPageTable();
 }
 
+void STCloudFileManager::on_pbReload_clicked()
+{
+	refreshCurrentPageTable();
+}
+
 void STCloudFileManager::on_pbUpload_clicked()
 {
-	STCloudUploadFile* uploadFile = new STCloudUploadFile(this);
+	QString path;
+	for (int i = 0; i < m_folderList.size(); i++)
+	{
+		path = path + m_folderList.at(i);
+	}
+	STCloudUploadFile* uploadFile = new STCloudUploadFile(path, this);
+	connect(uploadFile, SIGNAL(uploadFinished()), this, SLOT(onUploadFinished()));
 	int parentX = mapToGlobal(pos()).x();
 	int parentY = mapToGlobal(pos()).y();
 	int parentWidth = width();
@@ -339,6 +314,11 @@ void STCloudFileManager::on_pbUpload_clicked()
 	uploadFile->move(QPoint(parentX + (parentWidth - uploadFile->width()) / 2,
 		parentY + (parentHeight - uploadFile->height()) / 2));
 	uploadFile->exec();
+}
+
+void STCloudFileManager::onUploadFinished()
+{
+	refreshCurrentPageTable();
 }
 
 void STCloudFileManager::on_pbNew_clicked()
@@ -531,7 +511,7 @@ void STCloudUploadClient::uploadFile(QString destPath, QString file)
 
 	m_loadSize = 512 * 1024;  //每次发送数据的大小  
 
-	connectServer("10.1.0.10", "10002");
+	connectServer("10.4.26.64", "10002");
 }
 
 void STCloudUploadClient::sendFileInfo()
@@ -601,7 +581,7 @@ bool STCloudSupport::event(QEvent* event)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-STCloudUploadFile::STCloudUploadFile(QWidget * parent) : QDialog(parent)
+STCloudUploadFile::STCloudUploadFile(QString path, QWidget * parent) : QDialog(parent), m_path(path)
 {
 	ui.setupUi(this);
 	//setWindowModality(Qt::ApplicationModal);
@@ -649,7 +629,7 @@ void STCloudUploadFile::on_pbUpload_clicked()
 	{
 		return;
 	}
-	m_uploadClient->uploadFile("/", path);
+	m_uploadClient->uploadFile(m_path, path);
 
 	ui.pbUploadStatus->setValue(0);
 	ui.swUpload->setCurrentIndex(1);
@@ -664,6 +644,7 @@ void STCloudUploadFile::onUploadFinished()
 	ui.pbOK->setVisible(true);
 	ui.pbGoon->setVisible(true);
 	ui.pbCancel->setVisible(false);
+	Q_EMIT uploadFinished();
 }
 
 void STCloudUploadFile::onUploadProcess(int percent)

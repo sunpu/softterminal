@@ -17,6 +17,7 @@
 #include <QEvent>
 #include <windows.h>
 #include <Winuser.h>
+#include "stcommon.h"
 #include "stnetworkclient.h"
 #include "ui_STCloudFileManager.h"
 #include "ui_STCloudSupport.h"
@@ -26,13 +27,6 @@
 
 namespace tahiti
 {
-	typedef struct fileInfo
-	{
-		QString type;
-		int id;
-		QString name;
-	} FileInfo;
-
 	class STCloudSupport;
 	class STCloudUploadFile;
 	class STCloudNewFile;
@@ -46,7 +40,6 @@ namespace tahiti
 		~STCloudFileManager();
 		void initCloudFileView();
 	protected:
-		void setRowColor(int row, QColor color);
 		virtual void resizeEvent(QResizeEvent *);
 		public Q_SLOTS :
 		void on_pbUpload_clicked();
@@ -55,13 +48,14 @@ namespace tahiti
 		void on_pbMove_clicked();
 		void on_pbDel_clicked();
 		void on_pbSupport_clicked();
-		void changeRowColor(int row, int column);
+		void on_pbReload_clicked();
 		private Q_SLOTS :
 		void onFileItemClicked();
 		void onFolderClicked();
 		void processMessage(QString);
 		void handleNewFile(QString);
 		void handleFolderView(QString, QString);
+		void onUploadFinished();
 	private:
 		void resizeHeaders();
 		void refreshCurrentPageTable();
@@ -71,8 +65,6 @@ namespace tahiti
 		//QJsonArray getCurrentQJsonArray(QJsonArray itemArray);
 	private:
 		Ui::STCloudFileManagerClass ui;
-		QColor defaultBkColor;
-		int previousColorRow;
 		QMap<QPushButton*, FileInfo> m_tableBtnInfo;
 		QList<QString> m_folderList;
 		QList<QPushButton*> m_folderBtnList;
@@ -137,7 +129,7 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STCloudUploadFile(QWidget * parent = 0);
+		STCloudUploadFile(QString path, QWidget * parent = 0);
 		~STCloudUploadFile();
 		public Q_SLOTS:
 		void on_pbOK_clicked();
@@ -154,11 +146,13 @@ namespace tahiti
 		virtual void mouseReleaseEvent(QMouseEvent* event);
 	Q_SIGNALS:
 		void confirmOK(QString);
+		void uploadFinished();
 	private:
 		Ui::STCloudUploadFileClass ui;
 		bool m_isPressed;
 		QPoint m_startMovePos;
 		STCloudUploadClient* m_uploadClient;
+		QString m_path;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

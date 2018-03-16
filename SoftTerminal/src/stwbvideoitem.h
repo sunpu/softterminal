@@ -23,6 +23,8 @@ namespace tahiti
 	public:
 		STWBVideoItem(QWidget * parent = 0);
 		~STWBVideoItem();
+		void setRenderSize(int width, int height);
+		void setBgImage(QString url);
 		bool isusing() { return m_isusing; }
 		void use() { m_isusing = true; }
 		void unuse() { m_isusing = false; }

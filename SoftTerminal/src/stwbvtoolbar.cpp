@@ -269,10 +269,15 @@ STWBVToolbar::STWBVToolbar(QWidget * parent) : QDialog(parent)
 	ui.pbSelect->installEventFilter(this);
 	ui.pbPen->installEventFilter(this);
 	ui.pbText->installEventFilter(this);
+	ui.pbCloud->installEventFilter(this);
 	ui.pbDelete->installEventFilter(this);
 
 	m_currentSelect = 0;
 
+	m_cloud_file_view = new STWBCloudFileView;
+	QObject::connect(m_cloud_file_view, SIGNAL(closeCloudFileView()), this, SLOT(closeCloudFileView()));
+	QObject::connect(m_cloud_file_view, SIGNAL(openCloudFileSignal(QString)), this, SLOT(openCloudFile(QString)));
+	m_cloud_file_view->hide();
 }
 
 STWBVToolbar::~STWBVToolbar()
@@ -342,12 +347,31 @@ void STWBVToolbar::on_pbText_clicked()
 
 void STWBVToolbar::on_pbCloud_clicked()
 {
-	Q_EMIT openCloudFile();
+	ui.widCloud->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+	int x = (parentWidget()->geometry().width() - m_cloud_file_view->geometry().width()) / 2
+		+ parentWidget()->geometry().x();
+	int y = (parentWidget()->geometry().height() - m_cloud_file_view->geometry().height()) / 2
+		+ parentWidget()->geometry().y();
+	m_cloud_file_view->move(QPoint(x, y));
+	m_cloud_file_view->setWindowModality(Qt::ApplicationModal);
+	m_cloud_file_view->show();
+	m_cloud_file_view->initCloudFileView();
 }
 
 void STWBVToolbar::on_pbDelete_clicked()
 {
 	Q_EMIT deleteAction();
+}
+
+void STWBVToolbar::openCloudFile(QString path)
+{
+	Q_EMIT openCloudFileSignal(path);
+}
+
+void STWBVToolbar::closeCloudFileView()
+{
+	ui.widCloud->setStyleSheet("");
+	m_cloud_file_view->hide();
 }
 
 void STWBVToolbar::init()
@@ -402,12 +426,12 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.pbCloud->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+			ui.widCloud->setStyleSheet("background-color:rgba(46,48,55,0.7);");
 			Q_EMIT hideStylePanels();
 		}
-		else if (e->type() == QEvent::Leave)
+		else if (e->type() == QEvent::Leave && m_cloud_file_view->isHidden())
 		{
-			ui.pbCloud->setStyleSheet("");
+			ui.widCloud->setStyleSheet("");
 		}
 	}
 	else if (watched == ui.pbDelete)

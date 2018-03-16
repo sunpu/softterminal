@@ -29,6 +29,7 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 
 	// 初始化左侧工具栏
 	ui.pbChat->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/chat_on.png);}");
+	ui.pbGroup->setVisible(false);
 
 	m_menu = new STMenu(this);
 	connect(m_menu, SIGNAL(confirmExit()), this, SLOT(confirmExit()));

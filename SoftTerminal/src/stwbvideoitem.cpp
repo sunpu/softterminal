@@ -15,6 +15,23 @@ STWBVideoItem::~STWBVideoItem()
 
 }
 
+void STWBVideoItem::setRenderSize(int width, int height)
+{
+	setMaximumSize(width, height + 25);
+	setMinimumSize(width, height + 25);
+	ui.widShow->setMaximumSize(width, height);
+	ui.widShow->setMinimumSize(width, height);
+	ui.widToolbar->setMaximumSize(width, 25);
+	ui.widToolbar->setMinimumSize(width, 25);
+}
+
+void STWBVideoItem::setBgImage(QString url)
+{
+	ui.widShow->setStyleSheet(QString("border-image: url(%1);"
+		"border-top-left-radius: 3px;"
+		"border-top-right-radius: 3px;").arg(url));
+}
+
 void STWBVideoItem::paintEvent(QPaintEvent* e)
 {
 	if (m_image.get())

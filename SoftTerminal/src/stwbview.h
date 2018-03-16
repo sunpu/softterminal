@@ -1,5 +1,5 @@
-#ifndef STWBVIEW_H
-#define STWBVIEW_H
+#ifndef _STWBVIEW_H
+#define _STWBVIEW_H
 
 #include <QWidget>
 #include <QGraphicsView>
@@ -31,6 +31,7 @@ namespace tahiti
 		void drawRemoteTextItem(QString color, int size, QString content, QPoint pos, int itemID);
 		void moveRemoteItems(QPoint pos, int itemID);
 		void deleteRemoteItems(QList<int> itemIDs);
+		void setBackground(QPixmap image, QSize size);
 	protected:
 		void resizeEvent(QResizeEvent* event);
 	private:

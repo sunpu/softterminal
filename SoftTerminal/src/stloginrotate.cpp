@@ -158,11 +158,13 @@ void STLogin::setLoadStatus(bool status)
 	if (status)
 	{
 		m_load->show();
+		ui.pbLogin->setText(QStringLiteral("登　录　中"));
 		ui.pbLogin->setStyleSheet("QPushButton{border-radius:3px;color:rgb(255, 255, 255);background-color:rgb(145, 146, 155);}");
 	}
 	else
 	{
 		m_load->hide();
+		ui.pbLogin->setText(QStringLiteral("登　录"));
 		ui.pbLogin->setStyleSheet("QPushButton{border-radius:3px;color:rgb(255, 255, 255);"
 			"background-color:rgb(48, 186, 120);}QPushButton:hover:pressed{background-color:rgb(48, 186, 120);}"
 			"QPushButton:hover:!pressed{background-color:rgb(109, 206, 160);}");
@@ -173,6 +175,7 @@ void STLogin::setLoadStatus(bool status)
 	ui.lePasswd->setEnabled(!status);
 	ui.pbLogin->setEnabled(!status);
 	ui.pb2Regist->setEnabled(!status);
+	ui.pb2Config->setEnabled(!status);
 }
 
 void* STLogin::loadProc(void* args)

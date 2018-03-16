@@ -1,5 +1,5 @@
-#ifndef STWBTEXTITEM_H
-#define STWBTEXTITEM_H
+#ifndef _STWBTEXTITEM_H
+#define _STWBTEXTITEM_H
 
 #include <QGraphicsTextItem>
 #include <vector>

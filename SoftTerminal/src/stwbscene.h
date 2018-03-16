@@ -1,5 +1,5 @@
-#ifndef STWBSCENE_H
-#define STWBSCENE_H
+#ifndef _STWBSCENE_H
+#define _STWBSCENE_H
 
 #include <QPoint>
 #include <QGraphicsScene>

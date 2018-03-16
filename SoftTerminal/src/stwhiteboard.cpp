@@ -8,7 +8,6 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	ui.setupUi(this);
 
 	setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
-	ui.pbNormal->setVisible(false);
 
 	// 视频相关
 	initConferenceClient();
@@ -21,13 +20,24 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	QObject::connect(this, SIGNAL(detachRenderSignal(QString)), this, SLOT(detachRenderSlot(QString)));
 
 	QHBoxLayout* hboxLayout = (QHBoxLayout*)ui.widVideo->layout();
+	QGridLayout* gridLayout = (QGridLayout*)ui.widVideoBig->layout();
 	m_videoItems.resize(MAX_STREAM_NUM);
+	m_big_videoItems.resize(MAX_STREAM_NUM);
 	for (size_t i = 0; i < MAX_STREAM_NUM; i++)
 	{
 		m_videoItems[i] = new STWBVideoItem(ui.widVideo);
+		m_videoItems[i]->setRenderSize(192, 108);
+		m_videoItems[i]->setBgImage(":/SoftTerminal/images/video_bg.png");
 		m_videoItems[i]->setObjectName(QString::number(i));
 		m_videoItems[i]->setVisible(false);
 		hboxLayout->addWidget(m_videoItems[i]);
+
+		m_big_videoItems[i] = new STWBVideoItem(ui.widVideoBig);
+		m_big_videoItems[i]->setRenderSize(400, 225);
+		m_big_videoItems[i]->setBgImage(":/SoftTerminal/images/video_bg_big.png");
+		m_big_videoItems[i]->setObjectName(QString::number(i));
+		m_big_videoItems[i]->setVisible(false);
+		gridLayout->addWidget(m_big_videoItems[i], i / 3, i % 3);
 	}
 
 	// 白板相关
@@ -47,7 +57,7 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	connect(m_network, SIGNAL(deleteRemoteItems(QList<int>)), this, SLOT(deleteRemoteItems(QList<int>)));
 	connect(m_network, SIGNAL(editableAuthority()), this, SLOT(editableAuthority()));	
 
-	m_network->connectServer("10.1.0.10", "10001");
+	m_network->connectServer("10.4.26.64", "10001");
 
 	QVBoxLayout* layout = (QVBoxLayout*)ui.widPaint->layout();
 	m_view = new STWBView(m_network);
@@ -77,19 +87,71 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	connect(m_vtoolbar, SIGNAL(hideStylePanels()), this, SLOT(hideStylePanels()));
 	connect(m_vtoolbar, SIGNAL(showPenStylePanel()), this, SLOT(showPenStylePanel()));
 	connect(m_vtoolbar, SIGNAL(showTextStylePanel()), this, SLOT(showTextStylePanel()));
-	connect(m_vtoolbar, SIGNAL(openCloudFile()), this, SLOT(openCloudFile()));
+	connect(m_vtoolbar, SIGNAL(openCloudFileSignal(QString)), this, SLOT(openCloudFile(QString)));
 
 	m_penStylePanel->init();
 	m_textStylePanel->init();
 	m_vtoolbar->init();
 
-	on_pbMaximum_clicked();
-
 	m_docWindowIndex = 0;
+
+	// 页面初始化
+	ui.pbNormal->setVisible(false);
+	m_vtoolbar->hide();
+	m_currentIndex = 1;
+	ui.swMain->setCurrentIndex(m_currentIndex);
+
+	on_pbMaximum_clicked();
 }
 
 STWhiteBoard::~STWhiteBoard()
 {
+}
+
+void STWhiteBoard::switchShowMode(bool mode)
+{
+	QList<QString> ids = m_all_stream_map.keys();
+	QList<QString>::Iterator it;
+	int renderID = -1;
+
+	if (!mode)
+	{
+		m_currentIndex = 1;
+		ui.swMain->setCurrentIndex(m_currentIndex);
+		m_vtoolbar->hide();
+
+		for (it = ids.begin(); it != ids.end(); it++)
+		{
+			renderID = m_all_stream_map[*it].renderID;
+			m_all_stream_map[*it].stream->DetachVideoRenderer();
+			m_videoItems[renderID]->unuse();
+			m_videoItems[renderID]->setVisible(false);
+
+			m_big_videoItems[renderID]->use();
+			m_big_videoItems[renderID]->setVisible(true);
+			m_all_stream_map[*it].stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
+		}
+	}
+	else
+	{
+		m_currentIndex = 0;
+		ui.swMain->setCurrentIndex(m_currentIndex);
+		m_vtoolbar->show();
+
+		for (it = ids.begin(); it != ids.end(); it++)
+		{
+			renderID = m_all_stream_map[*it].renderID;
+			m_all_stream_map[*it].stream->DetachVideoRenderer();
+			m_big_videoItems[renderID]->unuse();
+			m_big_videoItems[renderID]->setVisible(false);
+
+			m_videoItems[renderID]->use();
+			m_videoItems[renderID]->setVisible(true);
+			m_all_stream_map[*it].stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
+		}
+	}
+	ui.widVideo->update();
+	ui.widVideoBig->update();
 }
 
 void STWhiteBoard::on_pbMinimum_clicked()
@@ -162,31 +224,60 @@ void STWhiteBoard::newStreamSlot(QString id, int width, int height)
 void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> stream)
 {
 	int renderID = -1;
-	for (size_t i = 0; i < MAX_STREAM_NUM; i++)
+	if (m_currentIndex == 0)
 	{
-		if (!m_videoItems[i]->isusing())
+		for (size_t i = 0; i < MAX_STREAM_NUM; i++)
 		{
-			renderID = i;
-			m_videoItems[i]->use();
-			m_videoItems[i]->setVisible(true);
-			break;
+			if (!m_videoItems[i]->isusing())
+			{
+				renderID = i;
+				m_videoItems[i]->use();
+				m_videoItems[i]->setVisible(true);
+				break;
+			}
 		}
+		stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
+		ui.widVideo->update();
 	}
-	stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
+	else
+	{
+		for (size_t i = 0; i < MAX_STREAM_NUM; i++)
+		{
+			if (!m_big_videoItems[i]->isusing())
+			{
+				renderID = i;
+				m_big_videoItems[i]->use();
+				m_big_videoItems[i]->setVisible(true);
+				break;
+			}
+		}
+		stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
 
+		m_all_stream_map[id].isShowing = true;
+		m_all_stream_map[id].renderID = renderID;
+		ui.widVideoBig->update();
+	}
 	m_all_stream_map[id].isShowing = true;
 	m_all_stream_map[id].renderID = renderID;
-	ui.widVideo->update();
 }
 
 void STWhiteBoard::detachRenderSlot(QString id)
 {
 	m_all_stream_map[id].stream->DetachVideoRenderer();
 	m_all_stream_map[id].isShowing = false;
-	m_videoItems[m_all_stream_map[id].renderID]->unuse();
-	m_videoItems[m_all_stream_map[id].renderID]->setVisible(false);
+	if (m_currentIndex == 0)
+	{
+		m_videoItems[m_all_stream_map[id].renderID]->unuse();
+		m_videoItems[m_all_stream_map[id].renderID]->setVisible(false);
+		ui.widVideo->update();
+	}
+	else
+	{
+		m_big_videoItems[m_all_stream_map[id].renderID]->unuse();
+		m_big_videoItems[m_all_stream_map[id].renderID]->setVisible(false);
+		ui.widVideoBig->update();
+	}
 	m_all_stream_map[id].renderID = -1;
-	ui.widVideo->update();
 }
 
 void STWhiteBoard::subscribeStream(QString id)
@@ -431,9 +522,9 @@ void STWhiteBoard::deleteAction()
 	Q_EMIT deleteActionSignal();
 }
 
-void STWhiteBoard::openCloudFile()
+void STWhiteBoard::openCloudFile(QString path)
 {
-	STWBDocWindow* docWindow = new STWBDocWindow(m_network, m_docWindowIndex++, m_view);
+	STWBDocWindow* docWindow = new STWBDocWindow(m_network, path, m_docWindowIndex++, m_view);
 	connect(docWindow, SIGNAL(closeCloudFile(int)), this, SLOT(closeCloudFile(int)));
 	connect(this, SIGNAL(setPenThicknessSignal(int)), docWindow, SLOT(setPenThickness(int)));
 	connect(this, SIGNAL(setPenColorSignal(QString)), docWindow, SLOT(setPenColor(QString)));
@@ -555,7 +646,7 @@ void STWhiteBoard::resizeEvent(QResizeEvent* size)
 {
 	int toolbarX = 10;
 	int toolbarY = geometry().height() / 2 - m_vtoolbar->height() / 2;
-	m_vtoolbar->show();
+	//m_vtoolbar->show();
 	m_vtoolbar->move(QPoint(toolbarX, toolbarY));
 	m_penStylePanel->move(QPoint(toolbarX + m_vtoolbar->width(), toolbarY));
 	m_textStylePanel->move(QPoint(toolbarX + m_vtoolbar->width(), toolbarY + 52));

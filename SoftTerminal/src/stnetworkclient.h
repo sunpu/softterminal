@@ -1,5 +1,5 @@
-#ifndef STNETWORKCLIENT_H
-#define STNETWORKCLIENT_H
+#ifndef _STNETWORKCLIENT_H
+#define _STNETWORKCLIENT_H
 
 #include <QObject>
 #include <QTcpSocket>

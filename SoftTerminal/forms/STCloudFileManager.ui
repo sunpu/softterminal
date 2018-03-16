@@ -348,7 +348,7 @@ QPushButton:hover:!pressed {
        <widget class="QWidget" name="widPathList" native="true">
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <property name="spacing">
-          <number>10</number>
+          <number>15</number>
          </property>
          <property name="leftMargin">
           <number>0</number>
@@ -377,6 +377,51 @@ QPushButton:hover:!pressed {
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbReload">
+        <property name="minimumSize">
+         <size>
+          <width>60</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>60</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>10</pointsize>
+          <weight>50</weight>
+          <italic>false</italic>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">
+
+QPushButton {
+	color: rgb(67, 69, 85);;
+	font:10pt &quot;微软雅黑&quot;;
+    background-repeat:no-repeat;
+    border:none;
+}
+QPushButton:hover:!pressed {
+	color: rgb(140, 140, 140);
+}</string>
+        </property>
+        <property name="text">
+         <string>刷新</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/softterminal.qrc">
+          <normaloff>:/SoftTerminal/images/reload.png</normaloff>:/SoftTerminal/images/reload.png</iconset>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -420,16 +465,10 @@ QHeaderView::section {
     height:40px;  
     border:0px solid #8faac9;  
     background-color: rgb(241, 241, 241);
-    border-left:none;  
+    border-left:1px solid rgb(255, 255, 255); 
 padding-left: 20px;
 padding-right: 20px;
 }  
-  
-QHeaderView::section::hover {
-    background-color: rgb(216, 216, 216);
-	
-}  
- 
 
 
 QScrollBar::vertical
@@ -474,6 +513,12 @@ QScrollBar::sub-line:vertical
 }
   </string>
         </property>
+        <property name="verticalScrollBarPolicy">
+         <enum>Qt::ScrollBarAsNeeded</enum>
+        </property>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
         <property name="sizeAdjustPolicy">
          <enum>QAbstractScrollArea::AdjustToContents</enum>
         </property>
@@ -492,11 +537,14 @@ QScrollBar::sub-line:vertical
         <attribute name="horizontalHeaderVisible">
          <bool>true</bool>
         </attribute>
+        <attribute name="horizontalHeaderHighlightSections">
+         <bool>false</bool>
+        </attribute>
         <attribute name="horizontalHeaderMinimumSectionSize">
          <number>40</number>
         </attribute>
         <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-         <bool>true</bool>
+         <bool>false</bool>
         </attribute>
         <attribute name="horizontalHeaderStretchLastSection">
          <bool>false</bool>
@@ -506,6 +554,9 @@ QScrollBar::sub-line:vertical
         </attribute>
         <attribute name="verticalHeaderDefaultSectionSize">
          <number>40</number>
+        </attribute>
+        <attribute name="verticalHeaderHighlightSections">
+         <bool>false</bool>
         </attribute>
         <attribute name="verticalHeaderMinimumSectionSize">
          <number>40</number>

@@ -119,5 +119,7 @@
         <file>images/trashcan.png</file>
         <file>images/video_bg.png</file>
         <file>images/left.png</file>
+        <file>images/reload.png</file>
+        <file>images/video_bg_big.png</file>
     </qresource>
 </RCC>

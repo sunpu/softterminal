@@ -71,5 +71,12 @@ namespace tahiti
 		AT_Pen,
 		AT_Text
 	};
+
+	typedef struct fileInfo
+	{
+		QString type;
+		int id;
+		QString name;
+	} FileInfo;
 }
 #endif

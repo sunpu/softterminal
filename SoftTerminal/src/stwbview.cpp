@@ -14,8 +14,8 @@ STWBView::STWBView(STNetworkClient* network, bool subWin)
 	setCacheMode(QGraphicsView::CacheBackground);
 
 	//antialiasing
-	//setRenderHint(QPainter::HighQualityAntialiasing, true);
-	setRenderHint(QPainter::Antialiasing, true);
+	setRenderHint(QPainter::HighQualityAntialiasing, true);
+	//setRenderHint(QPainter::Antialiasing, true);
 	setObjectName("widWhiteboard");
 	if (subWin)
 	{
@@ -29,13 +29,18 @@ STWBView::STWBView(STNetworkClient* network, bool subWin)
 	//init scene
 	m_scene = new STWBScene(network);
 	setScene(m_scene);
-	setSceneRect(0, 0, 600, 600);
-	resize(600, 600);
+	setSceneRect(-50, -50, 100, 100);
+	//resize(600, 600);
 }
 
 STWBView::~STWBView()
 {
 
+}
+
+void STWBView::setBackground(QPixmap image, QSize size)
+{
+	m_scene->addPixmap(image);
 }
 
 void STWBView::setPenColor(QString color)

@@ -1,5 +1,5 @@
-#ifndef STWHITEBOARD_H
-#define STWHITEBOARD_H
+#ifndef _STWHITEBOARD_H
+#define _STWHITEBOARD_H
 
 #include <QtWidgets/QMainWindow>
 #include <QMouseEvent>
@@ -76,8 +76,9 @@ namespace tahiti
 		void newStreamSlot(QString id, int width, int height);
 		void attachRenderSlot(QString id, std::shared_ptr<RemoteStream> stream);
 		void detachRenderSlot(QString id);
-		void openCloudFile();
+		void openCloudFile(QString path);
 		void closeCloudFile(int index);
+		void switchShowMode(bool mode);
 		public Q_SLOTS:
 		void on_pbMinimum_clicked();
 		void on_pbMaximum_clicked();
@@ -115,14 +116,13 @@ namespace tahiti
 		STWBPenStylePanel* m_penStylePanel;
 		STWBTextStylePanel* m_textStylePanel;
 		STNetworkClient* m_network;
-		QPoint mousePosition;
-		bool isMousePressed;
 		bool m_isPressed;
 		QPoint m_startMovePos;
 		int m_screen_width, m_screen_height;
 		bool m_hardware_accelerated;
 		shared_ptr<ConferenceClient> m_client;
 		QVector<STWBVideoItem*> m_videoItems;
+		QVector<STWBVideoItem*> m_big_videoItems;
 		QMap<QString, StreamInfo> m_all_stream_map;
 		QString m_curentID;
 		shared_ptr<LocalStream> m_local_camera_stream;
@@ -134,6 +134,7 @@ namespace tahiti
 		int m_text_size;
 		QString m_text_color;
 		int m_action_mode;
+		int m_currentIndex;
 	};
 }
 #endif

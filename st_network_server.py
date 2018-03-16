@@ -4,8 +4,11 @@
 import SocketServer
 from time import ctime
 import json
+import os
+import datetime
 
 courseDict = {}
+currentPath = ''
 
 class Course:
     def __init__(self, courseID):
@@ -13,20 +16,48 @@ class Course:
         self.clientDict = {}
         self.finishList = []
 
+def compare(x, y):
+    stat_x = os.stat(currentPath + "/" + x)
+    stat_y = os.stat(currentPath + "/" + y)
+    if stat_x.st_mtime > stat_y.st_mtime:
+        return -1
+    elif stat_x.st_mtime < stat_y.st_mtime:
+        return 1
+    else:
+        return 0
+
 HOST = ''
 PORT = 10001
 ADDR = (HOST, PORT)
 
-ROOT_PATH = './file/'
+ROOT_PATH = './file'
 
 class Client(SocketServer.BaseRequestHandler):
     role = ''
     courseID = 0
     bigData = ''
 
-    def readDirectory(self, path):
-        result = []
+    def getFolders(self, path, result):
+        print path
         paths = os.listdir(path)
+        for i, item in enumerate(paths):
+            sub_path = os.path.join(path, item)
+            data = {}
+            data['name'] = item
+
+            if os.path.isdir(sub_path):
+                data['child'] = []
+                self.getFolders(sub_path, data['child'])
+                result.append(data)
+
+    def readDirectory(self, path):
+        global currentPath
+        currentPath = path
+        result = []
+        dirResult = []
+        fileResult = []
+        paths = os.listdir(path)
+        paths.sort(compare)
         for i, item in enumerate(paths):
             sub_path = os.path.join(path, item)
             data = {}
@@ -38,12 +69,22 @@ class Client(SocketServer.BaseRequestHandler):
             if os.path.isdir(sub_path):
                 data['type'] = 'folder'
                 data['size'] = '-'
+                dirResult.append(data)
             else:
                 data['type'] = 'file'
                 fsize = os.path.getsize(sub_path)
-                fsize = fsize / float(1024)
-                data['size'] = str(round(fsize,2)) + 'KB'
-            result.append(data)
+                data['size'] = str(fsize) + 'B'
+                if fsize > 1024:
+                    fsize = fsize / float(1024)
+                    data['size'] = str(round(fsize,2)) + 'KB'
+                if fsize > 1024:
+                    fsize = fsize / float(1024)
+                    data['size'] = str(round(fsize,2)) + 'MB'
+                if fsize > 1024:
+                    fsize = fsize / float(1024)
+                    data['size'] = str(round(fsize,2)) + 'GB'
+                fileResult.append(data)
+        result = dirResult + fileResult
         json_res = json.dumps(result)
         return json_res
 
@@ -68,7 +109,7 @@ class Client(SocketServer.BaseRequestHandler):
             clientDict[k].sendall('#*#' + data + '@%@')
 
     def processData(self, data):
-        #print '--------------', data
+        print '--------------', data
         datas = json.loads(data)
         if datas['type'] == 'createClient':
             self.role = datas['data']['role']
@@ -99,6 +140,7 @@ class Client(SocketServer.BaseRequestHandler):
             self.boardcastMessage(data)
         elif datas['type'] == 'file':
             path = ROOT_PATH
+            destPath = ROOT_PATH
             if datas['action'] == 'list':
                 path += datas['data']['path']
             elif datas['action'] == 'new':
@@ -110,21 +152,29 @@ class Client(SocketServer.BaseRequestHandler):
                 path += datas['data']['path']
                 name = datas['data']['name']
                 destPath += datas['data']['destPath']
-                cmd = 'cd %s;cp -rf %s %s;' % (path, name, destPath)
+                cmd = 'cp -rf %s/%s %s;' % (path, name, destPath)
                 os.system(cmd)
             elif datas['action'] == 'move':
                 path += datas['data']['path']
                 name = datas['data']['name']
                 destPath += datas['data']['destPath']
-                cmd = 'cd %s;mv -rf %s %s;' % (path, name, destPath)
+                cmd = 'mv -f %s/%s %s;' % (path, name, destPath)
                 os.system(cmd)
             elif datas['action'] == 'del':
                 path += datas['data']['path']
                 name = datas['data']['name']
-                cmd = 'cd %s;rm -rf %s;' % (path, name)
+                cmd = 'rm -rf %s/%s;' % (path, name)
                 os.system(cmd)
             list = self.readDirectory(path)
-            self.sendMessage(list)
+            self.sendMessage('file_list:' + list)
+        elif datas['type'] == 'folder' and datas['action'] == 'list':
+            path = ROOT_PATH
+            result = []
+            self.getFolders(path, result)
+            json_res = json.dumps(result)
+            self.sendMessage('folder_list:' + json_res)
+#{"type":"folder","action":"list"}
+#{"type":"file","action":"upload","data":{"path":"/1/2","name":"xxx"}}
 #{"type":"file","action":"list","data":{"path":"/1/2"}}
 #{"type":"file","action":"new","data":{"path":"/1/2","name":"xxx"}}
 #{"type":"file","action":"copy","data":{"path":"/2","name":"xxx","destPath":"/3"}}
@@ -152,6 +202,10 @@ class Client(SocketServer.BaseRequestHandler):
                         self.processData(dataList[index])
             else:
                 self.bigData = self.bigData + data
+
+if not os.path.exists(ROOT_PATH):
+    cmd = 'mkdir -p %s' % (ROOT_PATH)
+    os.system(cmd)
 
 tcpServ = SocketServer.ThreadingTCPServer(ADDR, Client)
 print 'waiting for connection...'

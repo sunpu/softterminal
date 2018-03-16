@@ -231,7 +231,7 @@ background-color: rgb(85, 170, 255);}
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="widget" native="true">
+    <widget class="QWidget" name="widCloud" native="true">
      <property name="minimumSize">
       <size>
        <width>36</width>
