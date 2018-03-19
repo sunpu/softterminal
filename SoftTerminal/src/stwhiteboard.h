@@ -6,6 +6,7 @@
 #include <QGraphicsView>
 #include <QListView>
 #include <QMetaType>
+#include <QStackedLayout>
 #include "ui_STWhiteBoard.h"
 #include "stwbview.h"
 #include "stwbvtoolbar.h"
@@ -109,6 +110,7 @@ namespace tahiti
 		void logout();
 		void sendLocalCamera();
 		void stopSendLocalCamera();
+		void resizeMaximumDocWindow();
 	private:
 		Ui::STWhiteBoardClass ui;
 		STWBView* m_view;

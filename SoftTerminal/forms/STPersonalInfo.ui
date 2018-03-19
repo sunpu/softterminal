@@ -204,7 +204,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <family>微软雅黑 Light</family>
+                   <family>微软雅黑</family>
                    <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
@@ -316,7 +316,7 @@
            </property>
            <property name="font">
             <font>
-             <family>微软雅黑 Light</family>
+             <family>微软雅黑</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -347,7 +347,7 @@
            </property>
            <property name="font">
             <font>
-             <family>微软雅黑 Light</family>
+             <family>微软雅黑</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -422,7 +422,7 @@
            </property>
            <property name="font">
             <font>
-             <family>微软雅黑 Light</family>
+             <family>微软雅黑</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -453,7 +453,7 @@
            </property>
            <property name="font">
             <font>
-             <family>微软雅黑 Light</family>
+             <family>微软雅黑</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -557,7 +557,7 @@
            </property>
            <property name="font">
             <font>
-             <family>微软雅黑 Light</family>
+             <family>微软雅黑</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -588,7 +588,7 @@
            </property>
            <property name="font">
             <font>
-             <family>微软雅黑 Light</family>
+             <family>微软雅黑</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -692,7 +692,7 @@
            </property>
            <property name="font">
             <font>
-             <family>微软雅黑 Light</family>
+             <family>微软雅黑</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -723,7 +723,7 @@
            </property>
            <property name="font">
             <font>
-             <family>微软雅黑 Light</family>
+             <family>微软雅黑</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -1137,7 +1137,7 @@ QPushButton:hover:!pressed {
                 <widget class="QLabel" name="label_6">
                  <property name="font">
                   <font>
-                   <family>微软雅黑 Light</family>
+                   <family>微软雅黑</family>
                    <pointsize>11</pointsize>
                   </font>
                  </property>
@@ -1265,7 +1265,7 @@ QPushButton:hover:!pressed {
                 <widget class="QLabel" name="label_2">
                  <property name="font">
                   <font>
-                   <family>微软雅黑 Light</family>
+                   <family>微软雅黑</family>
                    <pointsize>11</pointsize>
                   </font>
                  </property>
@@ -1393,7 +1393,7 @@ QPushButton:hover:!pressed {
                 <widget class="QLabel" name="label_4">
                  <property name="font">
                   <font>
-                   <family>微软雅黑 Light</family>
+                   <family>微软雅黑</family>
                    <pointsize>11</pointsize>
                   </font>
                  </property>

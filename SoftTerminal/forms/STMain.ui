@@ -475,11 +475,13 @@ QPushButton:hover:!pressed {
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>11</pointsize>
+                   <family>微软雅黑</family>
+                   <pointsize>12</pointsize>
                   </font>
                  </property>
                  <property name="styleSheet">
-                  <string notr="true">color: rgb(67, 69, 85);</string>
+                  <string notr="true">color: rgb(67, 69, 85);border: 0px;border-bottom: 1px solid #e3e3e3;
+</string>
                  </property>
                  <property name="text">
                   <string/>

@@ -9,6 +9,11 @@ STWBDocWindow::STWBDocWindow(STNetworkClient* network, QString path, int index, 
 	ui.setupUi(this);
 	//setWindowFlags(Qt::FramelessWindowHint);
 	setWindowFlags(Qt::SubWindow);
+	ui.widTitle->installEventFilter(this);
+	ui.teText->installEventFilter(this);
+	ui.widBottom->installEventFilter(this);
+	ui.scrollArea->installEventFilter(this);
+	m_isMaximum = false;
 
 	QString lowerPath = m_path.toLower();
 	if (lowerPath.endsWith(".pptx") || lowerPath.endsWith(".ppt") || lowerPath.endsWith(".pptm")
@@ -60,6 +65,11 @@ STWBDocWindow::STWBDocWindow(STNetworkClient* network, QString path, int index, 
 	}
 	m_downloadFile = new QFile(downloadPath);
 	m_downloadFile->open(QIODevice::WriteOnly | QIODevice::Append);
+
+	int x = 50 * (m_index + 1);
+	int y = 35 * (m_index + 1);
+	move(QPoint(x, y));
+	m_normalRect = this->geometry();
 
 	connectServer("10.4.26.64", "10002");
 }
@@ -192,6 +202,7 @@ void STWBDocWindow::loadFile()
 
 void STWBDocWindow::showBefittingPic(QString picName)
 {
+	m_pngName = picName;
 	QString sourcePicPath = m_docWindowPath + QString("/") + picName;
 	QPixmap sourceImage = QPixmap(sourcePicPath);
 	Qt::AspectRatioMode mode = Qt::KeepAspectRatio;
@@ -205,23 +216,13 @@ void STWBDocWindow::showBefittingPic(QString picName)
 	ui.scrollArea->verticalScrollBar()->setValue(0);
 
 	QString tmpPicPath = m_docWindowPath + QString("/tmp_") + picName;
+	QPixmap tmpImage = QPixmap(sourcePicPath).scaled(
+		ui.scrollArea->size(),
+		mode,
+		Qt::SmoothTransformation);
+	tmpImage.save(tmpPicPath);
 
-	QFile file(tmpPicPath);
-	QSize size;
-	QPixmap tmpImage;
-	if (!file.exists())
-	{
-		tmpImage = QPixmap(sourcePicPath).scaled(
-			ui.widShow->size(),
-			mode,
-			Qt::SmoothTransformation);
-		tmpImage.save(tmpPicPath);
-	}
-	else
-	{
-		tmpImage = QPixmap(tmpPicPath);
-	}
-	size = tmpImage.size();
+	QSize size = tmpImage.size();
 	//m_view->setFixedSize(size);
 	//ui.widDoc->setFixedSize(size);
 	ui.widShow->setFixedSize(size);
@@ -290,7 +291,25 @@ void STWBDocWindow::on_pbMaximum_clicked()
 	ui.pbNormal->setVisible(true);
 	ui.pbNormal->setAttribute(Qt::WA_UnderMouse, false);
 	ui.pbMaximum->setVisible(false);
-	showFullScreen();
+
+	setFixedSize(parentWidget()->size());
+	move(QPoint(0, 0));
+	m_isMaximum = true;
+
+	QPixmap image = QPixmap(":/SoftTerminal/images/camera.png");
+	m_view->setBackground(image, ui.scrollArea->size());
+
+	if (ui.teText->isVisible())
+	{
+		QFont font;
+		font.setFamily(QStringLiteral("微软雅黑"));
+		font.setPointSize(18);
+		ui.teText->setFont(font);
+	}
+	else
+	{
+		showBefittingPic(m_pngName);
+	}
 }
 
 void STWBDocWindow::on_pbNormal_clicked()
@@ -298,7 +317,22 @@ void STWBDocWindow::on_pbNormal_clicked()
 	ui.pbNormal->setVisible(false);
 	ui.pbMaximum->setVisible(true);
 	ui.pbMaximum->setAttribute(Qt::WA_UnderMouse, false);
-	showNormal();
+
+	setFixedSize(QSize(m_normalRect.width(), m_normalRect.height()));
+	move(QPoint(m_normalRect.x(), m_normalRect.y()));
+	m_isMaximum = false;
+
+	if (ui.teText->isVisible())
+	{
+		QFont font;
+		font.setFamily(QStringLiteral("微软雅黑"));
+		font.setPointSize(12);
+		ui.teText->setFont(font);
+	}
+	else
+	{
+		showBefittingPic(m_pngName);
+	}
 }
 
 void STWBDocWindow::on_pbClose_clicked()
@@ -378,4 +412,37 @@ void STWBDocWindow::setTextSize(int size)
 void STWBDocWindow::setTextColor(QString color)
 {
 	m_view->setTextColor(color);
+}
+
+bool STWBDocWindow::eventFilter(QObject *obj, QEvent *e)
+{
+	if (e->type() == QEvent::MouseButtonPress || e->type() == QEvent::FocusIn)
+	{
+		this->raise();
+		m_view->setFocus();
+	}
+	else if (e->type() == QEvent::MouseButtonDblClick && ui.widTitle == obj)
+	{
+		if (ui.pbNormal->isVisible())
+		{
+			on_pbNormal_clicked();
+		}
+		else
+		{
+			on_pbMaximum_clicked();
+		}
+	}
+	else if (e->type() == QEvent::KeyPress && ui.widBottom->isVisible())
+	{
+		QKeyEvent *event = static_cast<QKeyEvent*>(e);
+		if (event->key() == Qt::Key_PageUp || event->key() == Qt::Key_Left)
+		{
+			on_pbPre_clicked();
+		}
+		else if (event->key() == Qt::Key_PageDown || event->key() == Qt::Key_Right)
+		{
+			on_pbNext_clicked();
+		}
+	}
+	return false;
 }

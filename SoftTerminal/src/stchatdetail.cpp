@@ -173,7 +173,36 @@ void STChatDetail::on_pbScreenShotOption_clicked()
 void STChatDetail::on_pbLesson_clicked()
 {
 	m_whiteboard = new STWhiteBoard;
+
+	connect(m_main, SIGNAL(closeMain()), m_whiteboard, SLOT(on_pbClose_clicked()));
 	m_whiteboard->show();
+
+	/*RecordItem item;
+	item.time = QTime::currentTime().toString();
+	item.from = MessageFrom::Self;
+	item.type = MessageType::MT_Class;
+	item.content = myMessage;
+	item.pic = m_selfPicPath;
+
+	// 写文件
+	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
+	recordManager->writeRecordItem(item);
+
+	// 更新聊天记录界面
+	STChatRecordItem* chatDetailItem = new STChatRecordItem(item);
+	m_recordItemList.append(chatDetailItem);
+	QSize itemSize = chatDetailItem->getItemSize();
+	QListWidgetItem* pItem = new QListWidgetItem();
+	pItem->setSizeHint(QSize(ui.lwChatRecordList->width() - 5, itemSize.height() + 56));
+	ui.lwChatRecordList->addItem(pItem);
+
+	ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
+	ui.lwChatRecordList->scrollToBottom();
+
+	Q_EMIT changeChatListOrder(m_userInfo.jid);
+
+	// 发送消息给远端
+	m_xmppClient->sendMsg(m_userInfo.jid, myMessage);*/
 }
 
 void STChatDetail::openScreenshot()

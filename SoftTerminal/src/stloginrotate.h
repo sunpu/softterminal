@@ -6,6 +6,7 @@
 #include <QPainter>
 #include <QPropertyAnimation>
 #include <QMouseEvent>
+#include <QLineEdit>
 #include "ui_STLogin.h"
 #include "ui_STRegist.h"
 #include "ui_STServerConfig.h"

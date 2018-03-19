@@ -65,6 +65,15 @@ void STLogin::initLoginData()
 	}
 	QImage* image = new QImage(picFilePath);
 	ui.lblUserPic->setPixmap(QPixmap::fromImage(*image).scaled(100, 100));
+
+	if (ui.leUserName->text().size() == 0)
+	{
+		ui.leUserName->setFocus();
+	}
+	else
+	{
+		ui.lePasswd->setFocus();
+	}
 }
 
 void STLogin::onUserNameChanged()
@@ -158,7 +167,7 @@ void STLogin::setLoadStatus(bool status)
 	if (status)
 	{
 		m_load->show();
-		ui.pbLogin->setText(QStringLiteral("登　录　中"));
+		ui.pbLogin->setText(QStringLiteral("登　录　中..."));
 		ui.pbLogin->setStyleSheet("QPushButton{border-radius:3px;color:rgb(255, 255, 255);background-color:rgb(145, 146, 155);}");
 	}
 	else
@@ -243,7 +252,7 @@ bool STLogin::eventFilter(QObject *obj, QEvent *e)
 		&& (ui.leUserName == obj || ui.lePasswd == obj))
 	{
 		QKeyEvent *event = static_cast<QKeyEvent*>(e);
-		if (event->key() == Qt::Key_Return)
+		if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter)
 		{
 			on_pbLogin_clicked();
 			return true;
@@ -361,7 +370,7 @@ bool STRegist::eventFilter(QObject *obj, QEvent *e)
 		&& (ui.leUserName == obj || ui.lePasswd == obj || ui.lePasswdVerify == obj))
 	{
 		QKeyEvent *event = static_cast<QKeyEvent*>(e);
-		if (event->key() == Qt::Key_Return)
+		if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter)
 		{
 			on_pbRegist_clicked();
 			return true;
@@ -451,7 +460,7 @@ bool STServerConfig::eventFilter(QObject *obj, QEvent *e)
 	if (e->type() == QEvent::KeyPress && ui.leServerIP == obj)
 	{
 		QKeyEvent *event = static_cast<QKeyEvent*>(e);
-		if (event->key() == Qt::Key_Return)
+		if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter)
 		{
 			on_pbConfirm_clicked();
 			return true;
@@ -499,6 +508,8 @@ void STLoginRotate::initRotateWindow()
 
 	// 这里宽和高都增加，是因为在旋转过程中窗口宽和高都会变化;
 	this->setFixedSize(QSize(m_loginWindow->width() + 20, m_loginWindow->height() + 100));
+
+	onRotateFinished();
 }
 
 // 开始旋转窗口;

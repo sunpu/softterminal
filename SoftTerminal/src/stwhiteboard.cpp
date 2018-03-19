@@ -63,6 +63,9 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	m_view = new STWBView(m_network);
 	layout->addWidget(m_view);
 	m_view->installEventFilter(this);
+	QStackedLayout* stackLayout = new QStackedLayout;
+	stackLayout->setStackingMode(QStackedLayout::StackAll);
+	m_view->setLayout(stackLayout);
 
 	m_vtoolbar = new STWBVToolbar(this);
 	int toolbarX = 10;
@@ -100,6 +103,7 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	m_vtoolbar->hide();
 	m_currentIndex = 1;
 	ui.swMain->setCurrentIndex(m_currentIndex);
+	ui.widTitle->installEventFilter(this);
 
 	on_pbMaximum_clicked();
 }
@@ -173,6 +177,19 @@ void STWhiteBoard::on_pbNormal_clicked()
 	ui.pbMaximum->setVisible(true);
 	ui.pbMaximum->setAttribute(Qt::WA_UnderMouse, false);
 	this->window()->showNormal();
+}
+
+void STWhiteBoard::resizeMaximumDocWindow()
+{
+	QVector<STWBDocWindow*> ::Iterator it;
+	QSize size = m_view->size();
+	for (it = m_docWindows.begin(); it != m_docWindows.end(); it++)
+	{
+		if ((*it)->isMaximum())
+		{
+			(*it)->on_pbMaximum_clicked();
+		}
+	}
 }
 
 void STWhiteBoard::on_pbClose_clicked()
@@ -441,11 +458,17 @@ void STWhiteBoard::logout()
 void STWhiteBoard::sendLocalCamera()
 {
 	int err_code;
+	std::vector<std::string> capturerIds = DeviceUtils::VideoCapturerIds();
+	if (capturerIds.size() == 0)
+	{
+		return;
+	}
+	std::string capturerId = DeviceUtils::VideoCapturerIds()[0];
 	if (!m_local_camera_stream.get())
 	{
 		m_local_camera_stream_param.reset(new LocalCameraStreamParameters(true, true));
 		m_local_camera_stream_param->Resolution(432, 240);
-		m_local_camera_stream_param->CameraId(DeviceUtils::VideoCapturerIds()[0]);
+		m_local_camera_stream_param->CameraId(capturerId);
 		m_local_camera_stream = LocalCameraStream::Create(*m_local_camera_stream_param, err_code);
 	}
 	m_client->Publish(m_local_camera_stream,
@@ -539,10 +562,7 @@ void STWhiteBoard::openCloudFile(QString path)
 	Q_EMIT setTextColorSignal(m_text_color);
 
 	m_docWindows.append(docWindow);
-	int x = 50 * (m_docWindowIndex);
-	int y = 35 * (m_docWindowIndex);
 	docWindow->show();
-	docWindow->move(QPoint(x, y));
 }
 
 void STWhiteBoard::closeCloudFile(int index)
@@ -639,6 +659,17 @@ bool STWhiteBoard::eventFilter(QObject* watched, QEvent* e)
 	{
 		hideStylePanels();
 	}
+	else if (e->type() == QEvent::MouseButtonDblClick && ui.widTitle == watched)
+	{
+		if (ui.pbNormal->isVisible())
+		{
+			on_pbNormal_clicked();
+		}
+		else
+		{
+			on_pbMaximum_clicked();
+		}
+	}
 	return QWidget::eventFilter(watched, e);
 }
 
@@ -650,6 +681,8 @@ void STWhiteBoard::resizeEvent(QResizeEvent* size)
 	m_vtoolbar->move(QPoint(toolbarX, toolbarY));
 	m_penStylePanel->move(QPoint(toolbarX + m_vtoolbar->width(), toolbarY));
 	m_textStylePanel->move(QPoint(toolbarX + m_vtoolbar->width(), toolbarY + 52));
+
+	resizeMaximumDocWindow();
 }
 
 void STWhiteBoard::drawRemoteRealtimePen(QString color, int thickness, QVector<QPoint> points)

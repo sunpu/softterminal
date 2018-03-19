@@ -303,7 +303,7 @@ QTabWidget::tab-bar{alignment:center;}
                </property>
                <property name="font">
                 <font>
-                 <family>微软雅黑 Light</family>
+                 <family>微软雅黑</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -409,7 +409,7 @@ QTabWidget::tab-bar{alignment:center;}
                </property>
                <property name="font">
                 <font>
-                 <family>微软雅黑 Light</family>
+                 <family>微软雅黑</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -515,7 +515,7 @@ QTabWidget::tab-bar{alignment:center;}
                </property>
                <property name="font">
                 <font>
-                 <family>微软雅黑 Light</family>
+                 <family>微软雅黑</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -621,7 +621,7 @@ QTabWidget::tab-bar{alignment:center;}
                </property>
                <property name="font">
                 <font>
-                 <family>微软雅黑 Light</family>
+                 <family>微软雅黑</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>

@@ -25,7 +25,6 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	ui.leContactSearch->setTextMargins(13 + 8 + 2, 0, 0, 0);
 	ui.leContactSearch->setContentsMargins(0, 0, 0, 0);
 	ui.leContactSearch->setLayout(mainLayout);
-	ui.leContactSearch->setStyleSheet("border:1px solid #eaeaea;");
 
 	// 初始化左侧工具栏
 	ui.pbChat->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/chat_on.png);}");
@@ -453,6 +452,7 @@ void STMain::handleConfirmOK()
 {
 	if (m_confirmMode == "exit")
 	{
+		Q_EMIT closeMain();
 		close();
 	}
 	else if (m_confirmMode == "relogin")

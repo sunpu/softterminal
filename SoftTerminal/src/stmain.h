@@ -56,6 +56,7 @@ namespace tahiti
 		void on_lwContactList_itemDoubleClicked();
 	Q_SIGNALS:
 		void changeLoginWindow();
+		void closeMain();
 	protected:
 		virtual void mouseMoveEvent(QMouseEvent* event);
 		virtual void mousePressEvent(QMouseEvent* event);

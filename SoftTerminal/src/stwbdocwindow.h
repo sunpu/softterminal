@@ -25,6 +25,7 @@ namespace tahiti
 		STWBDocWindow(STNetworkClient* network, QString path, int index, QWidget * parent = 0);
 		~STWBDocWindow();
 		int getDocWindowIndex() { return m_index; }
+		bool isMaximum() { return m_isMaximum; }
 		public Q_SLOTS:
 		void on_pbMaximum_clicked();
 		void on_pbNormal_clicked();
@@ -44,6 +45,7 @@ namespace tahiti
 		virtual void mouseMoveEvent(QMouseEvent* event);
 		virtual void mousePressEvent(QMouseEvent* event);
 		virtual void mouseReleaseEvent(QMouseEvent* event);
+		bool eventFilter(QObject *obj, QEvent *e);
 	private:
 		void connectServer(QString ip, QString port);
 		void disconnectServer();
@@ -74,6 +76,9 @@ namespace tahiti
 		int m_currentPage;
 		int m_totalPage;
 		QString m_shortName;
+		QString m_pngName;
+		QRect m_normalRect;
+		bool m_isMaximum;
 	};
 }
 #endif
