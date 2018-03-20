@@ -16,6 +16,12 @@ STLogin::STLogin(XmppClient* client) : m_xmppClient(client)
 	m_load = new STLoad(this);
 	m_load->move(QPoint((width() - 120) / 2, (height() - 120) / 2));
 	m_load->hide();
+
+	bool autoLogin = (STConfig::getConfig("/config/autoLogin") == "true") ? true : false;
+	if (autoLogin)
+	{
+		on_pbLogin_clicked();
+	}
 }
 
 STLogin::~STLogin()
@@ -167,7 +173,7 @@ void STLogin::setLoadStatus(bool status)
 	if (status)
 	{
 		m_load->show();
-		ui.pbLogin->setText(QStringLiteral("登　录　中..."));
+		ui.pbLogin->setText(QStringLiteral("登　录　中"));
 		ui.pbLogin->setStyleSheet("QPushButton{border-radius:3px;color:rgb(255, 255, 255);background-color:rgb(145, 146, 155);}");
 	}
 	else

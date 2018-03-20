@@ -121,5 +121,6 @@
         <file>images/left.png</file>
         <file>images/reload.png</file>
         <file>images/video_bg_big.png</file>
+        <file>images/clear.png</file>
     </qresource>
 </RCC>

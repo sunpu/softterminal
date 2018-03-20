@@ -16,15 +16,27 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	QHBoxLayout* mainLayout = new QHBoxLayout;
 	QPushButton* searchBtn = new QPushButton;
 	searchBtn->setFixedSize(13, 13);
-	searchBtn->setCursor(Qt::PointingHandCursor);
 	searchBtn->setStyleSheet("QPushButton{border-image:url(:/SoftTerminal/images/search.png);"
 		"background:transparent;}");
 	mainLayout->addWidget(searchBtn);
-	mainLayout->addStretch();
-	mainLayout->setContentsMargins(8, 0, 0, 0);
-	ui.leContactSearch->setTextMargins(13 + 8 + 2, 0, 0, 0);
+
+	mainLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Expanding, QSizePolicy::Minimum));
+
+	m_clearBtn = new QPushButton;
+	m_clearBtn->setFixedSize(13, 13);
+	m_clearBtn->setCursor(Qt::PointingHandCursor);
+	m_clearBtn->setStyleSheet("QPushButton{border-image:url(:/SoftTerminal/images/clear.png);"
+		"background:transparent;}");
+	mainLayout->addWidget(m_clearBtn);
+
+	mainLayout->setContentsMargins(8, 0, 8, 0);
+
+	ui.leContactSearch->setTextMargins(13 + 12, 0, 13 + 12, 0);
 	ui.leContactSearch->setContentsMargins(0, 0, 0, 0);
 	ui.leContactSearch->setLayout(mainLayout);
+	connect(ui.leContactSearch, SIGNAL(textChanged(const QString)), this, SLOT(onTextChanged()));
+	connect(m_clearBtn, SIGNAL(clicked()), this, SLOT(clearSearchInput()));
+	m_clearBtn->setVisible(false);
 
 	// 初始化左侧工具栏
 	ui.pbChat->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/chat_on.png);}");
@@ -52,6 +64,7 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	ui.lblFriendNum->installEventFilter(this);
 	ui.widTitle->installEventFilter(this);
 	ui.lblUserPic->installEventFilter(this);
+	ui.leContactSearch->installEventFilter(this);
 
 	m_personalInfo = new STPersonalInfo(m_xmppClient);
 	connect(m_personalInfo, SIGNAL(updateSelfPic(QString)), this, SLOT(updateSelfPic(QString)));
@@ -59,6 +72,8 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 
 	m_cloudFileManager = new STCloudFileManager();
 	ui.pgCloudFileWindow->layout()->addWidget(m_cloudFileManager);
+
+	setPageIndex(0);
 }
 
 STMain::~STMain()
@@ -461,6 +476,12 @@ void STMain::handleConfirmOK()
 	}
 }
 
+void STMain::setPageIndex(int index)
+{
+	m_currentPageIndex = index;
+	ui.swMain->setCurrentIndex(m_currentPageIndex);
+}
+
 void STMain::on_lwContactList_itemDoubleClicked()
 {
 	QListWidgetItem* item;
@@ -475,7 +496,7 @@ void STMain::on_lwContactList_itemDoubleClicked()
 
 void STMain::on_pbChat_clicked()
 {
-	ui.swMain->setCurrentIndex(0);
+	setPageIndex(0);
 	ui.widSearch->setVisible(true);
 	ui.pbChat->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/chat_on.png);}");
 	ui.pbContact->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/contact.png);}"
@@ -499,7 +520,7 @@ void STMain::on_pbChat_clicked()
 
 void STMain::on_pbContact_clicked()
 {
-	ui.swMain->setCurrentIndex(1);
+	setPageIndex(1);
 	ui.widSearch->setVisible(true);
 	ui.pbChat->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/chat.png);}"
 		"QPushButton:hover:!pressed{border-image:url(:/SoftTerminal/images/chat_focus.png);}");
@@ -517,7 +538,7 @@ void STMain::on_pbContact_clicked()
 
 void STMain::on_pbGroup_clicked()
 {
-	ui.swMain->setCurrentIndex(3);
+	setPageIndex(3);
 	ui.widSearch->setVisible(true);
 	ui.pbChat->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/chat.png);}"
 		"QPushButton:hover:!pressed{border-image:url(:/SoftTerminal/images/chat_focus.png);}");
@@ -531,7 +552,7 @@ void STMain::on_pbGroup_clicked()
 
 void STMain::on_pbCloud_clicked()
 {
-	ui.swMain->setCurrentIndex(4);
+	setPageIndex(4);
 	ui.widSearch->setVisible(false);
 	ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
 		"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
@@ -647,7 +668,7 @@ bool STMain::eventFilter(QObject* obj, QEvent* e)
 		{
 			m_personalInfo->initPersonalInfo();
 			ui.widSearch->setVisible(false);
-			ui.swMain->setCurrentIndex(2);
+			setPageIndex(2);
 			ui.lblChatTitle->clear();
 			ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
 				"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
@@ -664,5 +685,94 @@ bool STMain::eventFilter(QObject* obj, QEvent* e)
 			on_pbMaximum_clicked();
 		}
 	}
+	else if (ui.leContactSearch == obj)
+	{
+		if (e->type() == QEvent::FocusIn)
+		{
+			m_clearBtn->setVisible(true);
+			refreshSearchList();
+			ui.swMain->setCurrentIndex(5);
+			ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
+				"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
+		}
+		else if (e->type() == QEvent::FocusOut)
+		{
+			clearSearchInput();
+		}
+	}
 	return false;
+}
+
+void STMain::refreshSearchData()
+{
+	m_searchItemList.clear();
+
+	STContactItem* contactItem;
+
+	QList<UserInfo> friendList = m_xmppClient->getRoster();
+	QList<UserInfo>::const_iterator it;
+	for (it = friendList.constBegin(); it != friendList.constEnd(); it++)
+	{
+		contactItem = new STContactItem();
+		contactItem->setUserInfo(*it);
+		m_searchItemList.push_back(contactItem);
+	}
+}
+
+void STMain::refreshSearchList()
+{
+	ui.lwSearchList->clear();
+	QString text = ui.leContactSearch->text();
+	if (text.isEmpty())
+	{
+		ui.lblSearch->setText(QStringLiteral("请输入搜索条件"));
+		ui.lblSearchNum->clear();
+		return;
+	}
+	refreshSearchData();
+	int count = 0;
+	QListWidgetItem* item;
+	QList<STContactItem*>::Iterator it;
+	for (it = m_searchItemList.begin(); it != m_searchItemList.end(); it++)
+	{
+		if (!(*it)->getUserInfo().userName.contains(text))
+		{
+			continue;
+		}
+		item = new QListWidgetItem();
+		ui.lwSearchList->addItem(item);
+		ui.lwSearchList->setItemWidget(item, *it);
+		count++;
+	}
+	ui.lblSearch->setText(QStringLiteral("符合搜索条件的好友"));
+	ui.lblSearchNum->setText(QString::number(count));
+}
+
+void STMain::onTextChanged()
+{
+	refreshSearchList();
+}
+
+void STMain::clearSearchInput()
+{
+	ui.swMain->setCurrentIndex(m_currentPageIndex);
+	ui.leContactSearch->clear();
+	m_clearBtn->setVisible(false);
+	if (m_currentPageIndex == 1
+		&& ui.lwContactList->selectedItems().size() > 0 && !ui.widContactAddNew->isVisible())
+	{
+		ui.widTitle->setStyleSheet("QWidget{border:0px;background-color:#434555;}");
+	}
+}
+
+void STMain::on_lwSearchList_itemDoubleClicked()
+{
+	QListWidgetItem* item;
+	item = ui.lwSearchList->currentItem();
+	QWidget* widget = ui.lwSearchList->itemWidget(item);
+	STContactItem* contactItem = (STContactItem*)widget;
+
+	UserInfo userInfo = contactItem->getUserInfo();
+
+	switchChatWindow(userInfo.jid);
 }

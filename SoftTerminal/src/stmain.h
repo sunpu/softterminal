@@ -54,6 +54,7 @@ namespace tahiti
 		void on_lwChatList_itemClicked();
 		void on_lwContactList_itemClicked();
 		void on_lwContactList_itemDoubleClicked();
+		void on_lwSearchList_itemDoubleClicked();
 	Q_SIGNALS:
 		void changeLoginWindow();
 		void closeMain();
@@ -75,11 +76,16 @@ namespace tahiti
 
 		void initContactAddNew();
 
+		void refreshSearchData();
+		void refreshSearchList();
+
 		void switchChatItem(QString jid);
 		void switchChatDetail(QString jid);
 
 		void newChat(QString jid);
 		void deleteChat(QString jid);
+
+		void setPageIndex(int index);
 
 		private Q_SLOTS:
 		void reorderChatList(QString jid);
@@ -89,6 +95,8 @@ namespace tahiti
 		void confirmRelogin();
 		void showSettingWindow();
 		void handleConfirmOK();
+		void clearSearchInput();
+		void onTextChanged();
 	private:
 		Ui::STMainClass ui;
 		QPoint mousePosition;
@@ -107,12 +115,15 @@ namespace tahiti
 		QList<STChatItem*> m_chatItemList;
 		QList<STChatDetail*> m_chatDetailList;
 		QList<STContactItem*> m_contactItemList;
+		QList<STContactItem*> m_searchItemList;
 		STContactDetail* m_contactDetail;
 		STPersonalInfo* m_personalInfo;
 		STCloudFileManager* m_cloudFileManager;
 		STMenu* m_menu;
 		STConfirm* m_confirm;
 		QString m_confirmMode;
+		int m_currentPageIndex;
+		QPushButton* m_clearBtn;
 	};
 }
 #endif
