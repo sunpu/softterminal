@@ -127,7 +127,7 @@ color: rgb(255, 255, 255);
          <string>刷新</string>
         </property>
         <property name="icon">
-         <iconset resource="res/softterminal.qrc">
+         <iconset resource="../res/softterminal.qrc">
           <normaloff>:/SoftTerminal/images/reload.png</normaloff>:/SoftTerminal/images/reload.png</iconset>
         </property>
        </widget>
@@ -398,7 +398,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
   </layout>
  </widget>
  <resources>
-  <include location="res/softterminal.qrc"/>
+  <include location="../res/softterminal.qrc"/>
  </resources>
  <connections/>
 </ui>
