@@ -51,12 +51,22 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	m_confirm = new STConfirm(this);
 	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
 
+	m_messageCenterWindow = new STMessageCenter(m_xmppClient, this);
+
+	connect(m_xmppClient, SIGNAL(subscriptionRequest(QString)), this, SLOT(showMessageWarn()));
+	connect(m_xmppClient, SIGNAL(refreshContactSignal()), this, SLOT(refreshContact()));
+	if (m_xmppClient->getSubscriptionRequests().size() > 0)
+	{
+		showMessageWarn();
+	}
+
 	// 初始化右侧窗口
 	initContactAddNew();
 
 	m_contactDetail = new STContactDetail();
 	ui.widContactDetail->layout()->addWidget(m_contactDetail);
 	connect(m_contactDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
+	connect(m_contactDetail, SIGNAL(deleteFriend(QString)), this, SLOT(deleteFriend(QString)));
 
 	ui.lblDirect->installEventFilter(this);
 	ui.lblFriend->installEventFilter(this);
@@ -188,6 +198,7 @@ void STMain::initContactAddNew()
 
 void STMain::initContactData()
 {
+	m_contactItemList.clear();
 	STContactItem* contactItem;
 
 	QList<UserInfo> friendList = m_xmppClient->getRoster();
@@ -220,6 +231,8 @@ void STMain::initContactMainWindow()
 	ui.widContactDetail->setVisible(false);
 	ui.widContactBlank->setVisible(true);
 	ui.widContactAddNew->setVisible(false);
+	ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
+		"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
 }
 
 void STMain::initContactWindow()
@@ -227,6 +240,11 @@ void STMain::initContactWindow()
 	initContactData();
 	initContactList();
 	initContactMainWindow();
+}
+
+void STMain::refreshContact()
+{
+	initContactWindow();
 }
 
 void STMain::init()
@@ -259,6 +277,15 @@ void STMain::destroy()
 
 	qDeleteAll(m_contactItemList);
 	m_contactItemList.clear();
+}
+
+void STMain::showMessageWarn()
+{
+	if (!m_messageCenterWindow->isVisible())
+	{
+		ui.pbMessage->setStyleSheet("QPushButton {border-image: url(:/SoftTerminal/images/message_warn.png);}"
+			"QPushButton:hover:!pressed {border-image: url(:/SoftTerminal/images/message_warn_focus.png);}");
+	}
 }
 
 void STMain::on_lwChatList_itemClicked()
@@ -339,6 +366,12 @@ void STMain::switchChatWindow(QString jid)
 	ui.widChatBlank->setVisible(false);
 
 	on_pbChat_clicked();
+}
+
+void STMain::deleteFriend(QString jid)
+{
+	m_xmppClient->unsubscribeOther(jid);
+	initContactMainWindow();
 }
 
 void STMain::newChat(QString jid)
@@ -582,6 +615,15 @@ void STMain::on_pbAddContact_clicked()
 
 void STMain::on_pbMessage_clicked()
 {
+	ui.pbMessage->setStyleSheet("QPushButton {border-image: url(:/SoftTerminal/images/message.png);}"
+		"QPushButton:hover:!pressed {border-image: url(:/SoftTerminal/images/message_focus.png);}");
+	int parentX = geometry().x();
+	int parentY = geometry().y();
+	int parentWidth = geometry().width();
+	int parentHeight = geometry().height();
+	m_messageCenterWindow->move(QPoint(parentX + (parentWidth - m_messageCenterWindow->width()) / 2,
+		parentY + (parentHeight - m_messageCenterWindow->height()) / 2));
+	m_messageCenterWindow->exec();
 }
 
 void STMain::on_pbSetting_clicked()

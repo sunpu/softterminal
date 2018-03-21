@@ -111,9 +111,6 @@ void STChatDetail::on_pbSendMessage_clicked()
 	QString myMessage = ui.teChatWrite->toPlainText();
 	if (myMessage.size() == 0)
 	{
-		/*QPoint pos(mapToGlobal(ui.pbSendMessage->pos()).x(),
-			mapToGlobal(ui.pbSendMessage->pos()).y());
-		QToolTip::showText(pos, "aaa", ui.pbSendMessage);*/
 		return;
 	}
 

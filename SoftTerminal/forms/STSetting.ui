@@ -51,13 +51,13 @@ background-color: rgb(255, 255, 255);
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>35</height>
+       <height>25</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>35</height>
+       <height>25</height>
       </size>
      </property>
      <property name="styleSheet">
@@ -162,16 +162,16 @@ border-right: 1px solid #e3e3e3;}</string>
        <number>0</number>
       </property>
       <property name="leftMargin">
-       <number>1</number>
+       <number>5</number>
       </property>
       <property name="topMargin">
        <number>0</number>
       </property>
       <property name="rightMargin">
-       <number>1</number>
+       <number>5</number>
       </property>
       <property name="bottomMargin">
-       <number>1</number>
+       <number>5</number>
       </property>
       <item>
        <widget class="QTabWidget" name="tabWidget">
@@ -194,19 +194,19 @@ QTabWidget::pane{border:0px;}
 {
     min-width: 75px;
     min-height: 28px;
-	font: 12pt &quot;微软雅黑&quot;;
+	font: 10pt &quot;微软雅黑&quot;;
 }
 
 
 #tabWidget QTabBar::tab:selected
 {
-    border-top: 3px solid #00c36e;
+    border-bottom: 2px solid #00c36e;
 	color:#00c36e;
 }
 
 #tabWidget QTabBar::tab:!selected
 {
-    border-top: 0px;
+    border-bottom: 0px;
 	color: rgb(67, 69, 85);
 }
 </string>

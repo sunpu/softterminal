@@ -71,6 +71,10 @@ void STContactAddNew::on_pbSearch_clicked()
 	{
 		return;
 	}
+	if (!jid.endsWith("@localhost"))
+	{
+		jid.append("@localhost");
+	}
 	QList<UserInfo> friendList = m_xmppClient->getRoster();
 	QList<UserInfo>::iterator it;
 	for (it = friendList.begin(); it != friendList.end(); it++)

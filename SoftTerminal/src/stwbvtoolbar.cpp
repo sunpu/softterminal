@@ -303,7 +303,7 @@ void STWBVToolbar::on_pbSelect_clicked()
 	}
 	else
 	{
-		ui.widSelect->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+		ui.widSelect->setStyleSheet("background-color:rgba(46,48,55,0.9);");
 		m_currentSelect = 1;
 	}
 	ui.widPen->setStyleSheet("");
@@ -320,7 +320,7 @@ void STWBVToolbar::on_pbPen_clicked()
 	}
 	else
 	{
-		ui.widPen->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+		ui.widPen->setStyleSheet("background-color:rgba(46,48,55,0.9);");
 		m_currentSelect = 2;
 	}
 	ui.widSelect->setStyleSheet("");
@@ -337,7 +337,7 @@ void STWBVToolbar::on_pbText_clicked()
 	}
 	else
 	{
-		ui.widText->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+		ui.widText->setStyleSheet("background-color:rgba(46,48,55,0.9);");
 		m_currentSelect = 3;
 	}
 	ui.widSelect->setStyleSheet("");
@@ -347,7 +347,7 @@ void STWBVToolbar::on_pbText_clicked()
 
 void STWBVToolbar::on_pbCloud_clicked()
 {
-	ui.widCloud->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+	ui.widCloud->setStyleSheet("background-color:rgba(46,48,55,0.9);");
 	int x = (parentWidget()->geometry().width() - m_cloud_file_view->geometry().width()) / 2
 		+ parentWidget()->geometry().x();
 	int y = (parentWidget()->geometry().height() - m_cloud_file_view->geometry().height()) / 2
@@ -390,7 +390,7 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widSelect->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+			ui.widSelect->setStyleSheet("background-color:rgba(46,48,55,0.9);");
 			Q_EMIT hideStylePanels();
 		}
 		else if (e->type() == QEvent::Leave && m_currentSelect != 1)
@@ -402,7 +402,7 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widPen->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+			ui.widPen->setStyleSheet("background-color:rgba(46,48,55,0.9);");
 			Q_EMIT showPenStylePanel();
 		}
 		else if (e->type() == QEvent::Leave && m_currentSelect != 2)
@@ -414,7 +414,7 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widText->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+			ui.widText->setStyleSheet("background-color:rgba(46,48,55,0.9);");
 			Q_EMIT showTextStylePanel();
 		}
 		else if (e->type() == QEvent::Leave && m_currentSelect != 3)
@@ -426,7 +426,7 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widCloud->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+			ui.widCloud->setStyleSheet("background-color:rgba(46,48,55,0.9);");
 			Q_EMIT hideStylePanels();
 		}
 		else if (e->type() == QEvent::Leave && m_cloud_file_view->isHidden())
@@ -438,7 +438,7 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widDelete->setStyleSheet("background-color:rgba(46,48,55,0.7);");
+			ui.widDelete->setStyleSheet("background-color:rgba(46,48,55,0.9);");
 			Q_EMIT hideStylePanels();
 		}
 		else if (e->type() == QEvent::Leave)

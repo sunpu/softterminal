@@ -50,3 +50,8 @@ void STContactDetail::on_pbOpenClass_clicked()
 {
 
 }
+
+void STContactDetail::on_pbDeleteFriend_clicked()
+{
+	//Q_EMIT deleteFriend(m_userInfo.jid);
+}

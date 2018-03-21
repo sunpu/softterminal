@@ -81,16 +81,7 @@
         </property>
         <property name="styleSheet">
          <string notr="true">
-
-QPushButton {
-	border-image: url(:/SoftTerminal/images/mouse.png);
-border:2px;
-	border-color: rgb(255, 255, 255);
-}
-QPushButton:hover:!pressed {
-QWidget#widSelect{
-background-color: rgb(85, 170, 255);}
-}</string>
+	border-image: url(:/SoftTerminal/images/mouse.png);</string>
         </property>
         <property name="text">
          <string/>

@@ -18,6 +18,7 @@
 #include "xmppclient.h"
 #include "stmenu.h"
 #include "stsetting.h"
+#include "stmessagecenter.h"
 
 using namespace tahiti;
 
@@ -90,6 +91,7 @@ namespace tahiti
 		private Q_SLOTS:
 		void reorderChatList(QString jid);
 		void switchChatWindow(QString jid);
+		void deleteFriend(QString jid);
 		void updateSelfPic(QString picPath);
 		void confirmExit();
 		void confirmRelogin();
@@ -97,6 +99,8 @@ namespace tahiti
 		void handleConfirmOK();
 		void clearSearchInput();
 		void onTextChanged();
+		void showMessageWarn();
+		void refreshContact();
 	private:
 		Ui::STMainClass ui;
 		QPoint mousePosition;
@@ -121,6 +125,7 @@ namespace tahiti
 		STCloudFileManager* m_cloudFileManager;
 		STMenu* m_menu;
 		STConfirm* m_confirm;
+		STMessageCenter* m_messageCenterWindow;
 		QString m_confirmMode;
 		int m_currentPageIndex;
 		QPushButton* m_clearBtn;

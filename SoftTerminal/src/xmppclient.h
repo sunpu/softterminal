@@ -82,6 +82,7 @@ namespace tahiti
 		virtual ~XmppClient();
 		static void* longConnectProc(void* args);
 		static void* keepaliveProc(void* args);
+		static void* refreshSignalProc(void* args);
 		void setXmppAccount(QString user, QString passwd, QString server, QString port);
 		void run();
 		void login();
@@ -108,13 +109,20 @@ namespace tahiti
 		bool isNeedLogin() { return m_needLogin; }
 		string getXmppID() { return m_xmppID; }
 		void sendMsg(QString dest, QString msg);
+		QList<QString> getSubscriptionRequests() { return m_subscriptionRequestList; };
+		void refreshSignal();
+		private Q_SLOTS:
+		void ackSubscriptionRequest(QString jid, bool ack);
 	Q_SIGNALS:
 		void loginResult(bool result);
 		void contactFoundResult(int result, QVariant dataVar);
 		void showMessage(QString jid, QString msg);
+		void subscriptionRequest(QString jid);
+		void refreshContactSignal();
 	private:
 		void notifyMyInfo();
 		void createNewClient();
+		void callRefreshSignalProc();
 		virtual void onConnect();
 		virtual void onDisconnect(ConnectionError e);
 		virtual bool onTLSConnect(const CertInfo& info);
@@ -164,6 +172,7 @@ namespace tahiti
 		VCardManager* m_vManager;
 		pthread_t m_tidConnect;
 		pthread_t m_tidKeepalive;
+		pthread_t m_tidRefreshSignal;
 		//MessageSession* m_msgSession;
 		MessageEventFilter* m_msgEventFilter;
 		Presence::PresenceType m_xmppStatus;
@@ -188,6 +197,8 @@ namespace tahiti
 		QList<UserInfo> m_friendList;
 		QMap<QString, MessageSession*> m_sessionMap;
 		UserInfo m_selfInfo;
+		QList<QString> m_subscriptionRequestList;
+		MessageSession* m_sess;
 	};
 }
 #endif

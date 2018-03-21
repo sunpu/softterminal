@@ -122,5 +122,7 @@
         <file>images/reload.png</file>
         <file>images/video_bg_big.png</file>
         <file>images/clear.png</file>
+        <file>images/message_warn.png</file>
+        <file>images/message_warn_focus.png</file>
     </qresource>
 </RCC>
