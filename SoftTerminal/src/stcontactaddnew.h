@@ -5,6 +5,7 @@
 #include <QKeyEvent>
 #include "ui_STContactAddNew.h"
 #include "xmppclient.h"
+#include "xmppregister.h"
 
 using namespace tahiti;
 
@@ -23,13 +24,15 @@ namespace tahiti
 		void on_pbAddNew_clicked();
 		private Q_SLOTS:
 		void onContactFoundResult(int result, QVariant dataVar);
+		void handleCheckResult(bool result);
 	protected:
 		bool eventFilter(QObject *obj, QEvent *e);
 
 	private:
 		Ui::STContactAddNewClass ui;
 		XmppClient* m_xmppClient;
-
+		XmppRegister* m_xmppRegister;
+		QString m_jidName;
 	};
 }
 #endif

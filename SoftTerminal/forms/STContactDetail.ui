@@ -277,7 +277,7 @@ QTabWidget::tab-bar{alignment:center;}
          <enum>QTabWidget::Rounded</enum>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <property name="elideMode">
          <enum>Qt::ElideMiddle</enum>
@@ -872,10 +872,10 @@ QPushButton:hover:!pressed {
          </attribute>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <property name="topMargin">
-           <number>30</number>
+           <number>80</number>
           </property>
           <item>
-           <widget class="QWidget" name="widget_10" native="true">
+           <widget class="QWidget" name="widText" native="true">
             <layout class="QHBoxLayout" name="horizontalLayout_8">
              <property name="leftMargin">
               <number>0</number>
@@ -903,16 +903,32 @@ QPushButton:hover:!pressed {
               </spacer>
              </item>
              <item>
-              <widget class="QLabel" name="label_13">
+              <widget class="QLabel" name="label">
                <property name="minimumSize">
                 <size>
-                 <width>100</width>
+                 <width>35</width>
+                 <height>35</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">border-image: url(:/SoftTerminal/images/info.png);</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lblDeleteFinish">
+               <property name="minimumSize">
+                <size>
+                 <width>110</width>
                  <height>30</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>100</width>
+                 <width>110</width>
                  <height>30</height>
                 </size>
                </property>
@@ -926,57 +942,10 @@ QPushButton:hover:!pressed {
                 <string notr="true">color: rgb(67, 69, 85);</string>
                </property>
                <property name="text">
-                <string>消息免打扰：</string>
+                <string>已删除该好友。</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="checkBox">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>30</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>100</width>
-                 <height>30</height>
-                </size>
-               </property>
-               <property name="layoutDirection">
-                <enum>Qt::RightToLeft</enum>
-               </property>
-               <property name="styleSheet">
-                <string notr="true">QCheckBox {
-    spacing: 5px;
-}
-
-QCheckBox::indicator {
-    width: 20px;
-    height: 20px;
-}
-
-QCheckBox::indicator:unchecked {
-	image: url(:/SoftTerminal/images/checkbox_unchecked.png);
-}
-
-QCheckBox::indicator:checked {
-    image: url(:/SoftTerminal/images/checkbox_checked.png);
-}
-</string>
-               </property>
-               <property name="text">
-                <string/>
                </property>
               </widget>
              </item>
@@ -997,7 +966,7 @@ QCheckBox::indicator:checked {
            </widget>
           </item>
           <item>
-           <widget class="QWidget" name="widget_11" native="true">
+           <widget class="QWidget" name="widButton" native="true">
             <property name="font">
              <font>
               <family>微软雅黑</family>
@@ -1006,10 +975,19 @@ QCheckBox::indicator:checked {
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_9">
              <property name="spacing">
-              <number>50</number>
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
              </property>
              <property name="topMargin">
-              <number>160</number>
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
              </property>
              <item>
               <spacer name="horizontalSpacer_17">

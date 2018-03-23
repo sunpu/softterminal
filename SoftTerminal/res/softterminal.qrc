@@ -124,5 +124,7 @@
         <file>images/clear.png</file>
         <file>images/message_warn.png</file>
         <file>images/message_warn_focus.png</file>
+        <file>images/info.png</file>
+        <file>images/logo.png</file>
     </qresource>
 </RCC>

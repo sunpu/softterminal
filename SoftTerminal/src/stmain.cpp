@@ -371,15 +371,14 @@ void STMain::switchChatWindow(QString jid)
 void STMain::deleteFriend(QString jid)
 {
 	m_xmppClient->unsubscribeOther(jid);
-	initContactMainWindow();
 }
 
 void STMain::newChat(QString jid)
 {
 	// 文件不存在，创建文件
-	/*STRecordManager* recordManager = new STRecordManager(jid);
+	STRecordManager* recordManager = new STRecordManager(jid);
 	RecordItem recordItem;
-	recordManager->writeRecordItem(recordItem);*/
+	recordManager->writeRecordItem(recordItem);
 
 	QList<UserInfo> friendList = m_xmppClient->getRoster();
 	QList<UserInfo>::const_iterator friendIt;

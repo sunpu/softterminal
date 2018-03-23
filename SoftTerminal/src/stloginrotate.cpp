@@ -272,7 +272,14 @@ bool STLogin::eventFilter(QObject *obj, QEvent *e)
 STRegist::STRegist(QWidget* parent) : QWidget(parent)
 {
 	ui.setupUi(this);
-	m_xmppRegister = new XmppRegister();
+	QString server = STConfig::getConfig("/xmpp/server");
+	QString port = STConfig::getConfig("/xmpp/port");
+	if (server.size() == 0 || port.size() == 0)
+	{
+		// TODO:消息提示 没有配置server
+		return;
+	}
+	m_xmppRegister = new XmppRegister(server, port);
 	connect((const QObject *)m_xmppRegister, SIGNAL(registResult(bool)), this, SLOT(handleRegistResult(bool)));
 	ui.leUserName->installEventFilter(this);
 	ui.lePasswd->installEventFilter(this);
@@ -318,17 +325,9 @@ void STRegist::on_pb2Login_clicked()
 
 void STRegist::on_pbRegist_clicked()
 {
-	QString server = STConfig::getConfig("/xmpp/server");
-	QString port = STConfig::getConfig("/xmpp/port");
-	if (server.size() == 0 || port.size() == 0)
-	{
-		// TODO:消息提示 没有配置server
-		return;
-	}
-
 	QString user = ui.leUserName->text();
 	QString passwd = ui.lePasswd->text();
-	m_xmppRegister->registAccount(user, passwd, server, port);
+	m_xmppRegister->registAccount(user, passwd);
 }
 
 void STRegist::on_pbMinimum_clicked()
@@ -484,6 +483,10 @@ STLoginRotate::STLoginRotate(XmppClient* client)
 {
 	this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::WindowMinimizeButtonHint);
 	this->setAttribute(Qt::WA_TranslucentBackground);
+	this->setWindowTitle(QStringLiteral("SoftTerminal VMediaX"));
+	QIcon icon;
+	icon.addFile(QStringLiteral(":/SoftTerminal/images/logo.png"), QSize(), QIcon::Normal, QIcon::Off);
+	this->setWindowIcon(icon);
 
 	// 给窗口设置rotateValue属性;
 	this->setProperty("rotateValue", 0);
@@ -609,5 +612,6 @@ void STLoginRotate::onChangeLoginWindow()
 	m_mainWindow = NULL;
 	m_loginWindow->setLoadStatus(false);
 	m_xmppClient->logout();
+	onRotateFinished();
 	this->show();
 }

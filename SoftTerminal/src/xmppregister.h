@@ -13,6 +13,7 @@ using namespace std;
 using namespace gloox;
 
 #define MSG_LEN 2048
+#define JID_LEN 32
 
 namespace tahiti
 {
@@ -20,11 +21,14 @@ namespace tahiti
 	{
 		Q_OBJECT
 	public:
-		XmppRegister();
+		XmppRegister(QString server, QString port);
 		virtual ~XmppRegister();
-		void registAccount(QString user, QString passwd, QString server, QString port);
+		void registAccount(QString user, QString passwd);
+		void checkAccount(QString user, QString passwd);
+		void removeAccount(QString user, QString passwd);
 	Q_SIGNALS:
 		void registResult(bool result);
+		void checkResult(bool result);
 	private:
 		virtual void onConnect();
 		virtual void onDisconnect(ConnectionError e);
@@ -42,6 +46,8 @@ namespace tahiti
 		QString m_xmppPasswd;
 		QString m_xmppServerIP;
 		int m_xmppServerPort;
+		bool m_checkMode;
+		bool m_waitRemove;
 	};
 }
 #endif

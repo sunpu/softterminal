@@ -158,16 +158,45 @@ QPushButton:hover:!pressed {
        <widget class="QWidget" name="widget" native="true">
         <layout class="QHBoxLayout" name="horizontalLayout_14">
          <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="minimumSize">
+            <size>
+             <width>35</width>
+             <height>35</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">border-image: url(:/SoftTerminal/images/info.png);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="label_2">
            <property name="minimumSize">
             <size>
-             <width>200</width>
+             <width>220</width>
              <height>30</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>200</width>
+             <width>220</width>
              <height>30</height>
             </size>
            </property>
@@ -181,12 +210,25 @@ QPushButton:hover:!pressed {
             <string notr="true">color: rgb(67, 69, 85);</string>
            </property>
            <property name="text">
-            <string>没有找到符合搜索条件的用户</string>
+            <string>没有找到符合搜索条件的用户。</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
            </property>
           </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </widget>
@@ -648,7 +690,35 @@ QPushButton:hover:!pressed {
           </widget>
          </item>
          <item>
+          <widget class="QLabel" name="lblInfoPic">
+           <property name="minimumSize">
+            <size>
+             <width>35</width>
+             <height>35</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">border-image: url(:/SoftTerminal/images/info.png);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="lblHasSendRequest">
+           <property name="minimumSize">
+            <size>
+             <width>170</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>170</width>
+             <height>30</height>
+            </size>
+           </property>
            <property name="font">
             <font>
              <family>微软雅黑</family>
@@ -659,7 +729,7 @@ QPushButton:hover:!pressed {
             <string notr="true">color: rgb(67, 69, 85);</string>
            </property>
            <property name="text">
-            <string>已发送添加好友请求</string>
+            <string>已发送添加好友请求。</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
@@ -668,6 +738,18 @@ QPushButton:hover:!pressed {
          </item>
          <item>
           <widget class="QLabel" name="lblAlreadyFriend">
+           <property name="minimumSize">
+            <size>
+             <width>170</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>170</width>
+             <height>30</height>
+            </size>
+           </property>
            <property name="font">
             <font>
              <family>微软雅黑</family>
@@ -678,7 +760,7 @@ QPushButton:hover:!pressed {
             <string notr="true">color: rgb(67, 69, 85);</string>
            </property>
            <property name="text">
-            <string>该用户已是您的好友</string>
+            <string>该用户已是您的好友。</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>

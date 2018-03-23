@@ -39,6 +39,10 @@ void STContactDetail::setContactDetail(UserInfo userInfo)
 	}
 	QImage* image = new QImage(path);
 	ui.lblPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
+
+	ui.widButton->setVisible(true);
+	ui.widText->setVisible(false);
+	ui.tabWidget->setCurrentIndex(0);
 }
 
 void STContactDetail::on_pbSendMessage_clicked()
@@ -53,5 +57,7 @@ void STContactDetail::on_pbOpenClass_clicked()
 
 void STContactDetail::on_pbDeleteFriend_clicked()
 {
-	//Q_EMIT deleteFriend(m_userInfo.jid);
+	ui.widButton->setVisible(false);
+	ui.widText->setVisible(true);
+	Q_EMIT deleteFriend(m_userInfo.jid);
 }

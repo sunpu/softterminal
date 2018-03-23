@@ -118,9 +118,8 @@ XmppClient::~XmppClient()
 		{
 			m_client->disposeMessageSession(it.value());
 		}
-		delete(m_client);
-		m_client = NULL;
 	}
+	m_client = NULL;
 }
 
 void XmppClient::setXmppAccount(QString user, QString passwd, QString server, QString port)
@@ -139,11 +138,6 @@ void XmppClient::createNewClient()
 	TAHITI_INFO("jid:" << jidTmp);
 
 	JID jid(jidTmp);
-	if (m_client)
-	{
-		delete(m_client);
-		m_client = NULL;
-	}
 	m_client = new Client(jid, m_xmppPasswd.toUtf8().constData(), m_xmppServerPort);
 
 	m_client->registerConnectionListener(this);
@@ -232,6 +226,8 @@ void XmppClient::login()
 
 	notifyMyInfo();
 
+	m_selfInfo = {"", "", "", "", "", ""};
+
 	pthread_create(&m_tidConnect, NULL, longConnectProc, m_client);
 }
 
@@ -251,10 +247,6 @@ void XmppClient::logout()
 	{
 		return;
 	}
-	if (m_client)
-	{
-		m_client->disconnect();
-	}
 	m_friendList.clear();
 	m_requestId = 0;
 	m_xmppStatus = Presence::Unavailable;
@@ -266,11 +258,11 @@ void XmppClient::logout()
 		{
 			m_client->disposeMessageSession(it.value());
 		}
-		delete(m_client);
-		m_client = NULL;
+		m_client->disconnect();
 	}
 	m_responseMap.clear();
 	setXmppStatus(Presence::Unavailable);
+	m_client = NULL;
 }
 
 /* 连接上 */
@@ -664,7 +656,7 @@ void XmppClient::handleLog(gloox::LogLevel level, LogArea area, const string& me
 void XmppClient::handleItemSubscribed(const JID& jid)
 {
 	printf("subscribed %s\n", jid.bare().c_str());
-	callRefreshSignalProc();
+	//callRefreshSignalProc();
 }
 
 void XmppClient::callRefreshSignalProc()
@@ -690,17 +682,19 @@ void* XmppClient::refreshSignalProc(void* args)
 void XmppClient::handleItemAdded(const JID& jid)
 {
 	printf("added %s\n", jid.bare().c_str());
+	callRefreshSignalProc();
 }
 
 void XmppClient::handleItemUnsubscribed(const JID& jid)
 {
 	printf("unsubscribed %s\n", jid.bare().c_str());
-	callRefreshSignalProc();
+	//callRefreshSignalProc();
 }
 
 void XmppClient::handleItemRemoved(const JID& jid)
 {
 	printf("removed %s\n", jid.bare().c_str());
+	callRefreshSignalProc();
 }
 
 void XmppClient::handleItemUpdated(const JID& jid)
@@ -753,6 +747,16 @@ bool XmppClient::unsubscribeOther(QString jid)
 bool XmppClient::handleSubscriptionRequest(const JID& jid, const string& /*msg*/)
 {
 	printf("subscription: %s\n", jid.bare().c_str());
+	Roster* roster = m_client->rosterManager()->roster();
+	Roster::const_iterator it;
+	for (it = roster->begin(); it != roster->end(); it++)
+	{
+		if ((*it).second->jidJID().full().compare(jid.full()) == 0)
+		{
+			m_client->rosterManager()->ackSubscriptionRequest(jid, true);
+			return true;
+		}
+	}
 	m_subscriptionRequestList.append(jid.bare().c_str());
 	Q_EMIT subscriptionRequest(jid.bare().c_str());
 	return true;
@@ -764,6 +768,7 @@ void XmppClient::ackSubscriptionRequest(QString jid, bool ack)
 	m_client->rosterManager()->ackSubscriptionRequest(id, ack);
 	StringList groups;
 	m_client->rosterManager()->subscribe(id, STR_EMPTY, groups, STR_EMPTY);
+	m_subscriptionRequestList.removeOne(jid);
 }
 
 /* 处理对方的取关请求 */
