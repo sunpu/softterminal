@@ -83,7 +83,7 @@ namespace tahiti
 		void switchChatItem(QString jid);
 		void switchChatDetail(QString jid);
 
-		void newChat(QString jid);
+		void createChat(QString jid);
 		void deleteChat(QString jid);
 
 		void setPageIndex(int index);
@@ -101,6 +101,7 @@ namespace tahiti
 		void onTextChanged();
 		void showMessageWarn();
 		void refreshContact();
+		void updateOthersMessage(QString jid);
 	private:
 		Ui::STMainClass ui;
 		QPoint mousePosition;
@@ -129,6 +130,7 @@ namespace tahiti
 		QString m_confirmMode;
 		int m_currentPageIndex;
 		QPushButton* m_clearBtn;
+		QString m_currentChatJid;
 	};
 }
 #endif

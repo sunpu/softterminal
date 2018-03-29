@@ -12,8 +12,9 @@ STWBCloudFileView::STWBCloudFileView(QWidget * parent) : QWidget(parent)
 	ui.twFileManager->horizontalHeaderItem(1)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 	ui.twFileManager->horizontalHeaderItem(2)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 
+	QString server = STConfig::getConfig("/xmpp/server");
 	m_network = new STNetworkClient;
-	m_network->connectServer("10.4.26.64", "10001");
+	m_network->connectServer(server, "10001");
 	connect(m_network, SIGNAL(processCloudFileMessage(QString)), this, SLOT(processMessage(QString)));
 }
 

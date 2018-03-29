@@ -64,9 +64,49 @@ namespace conference {
 
 using namespace woogeen::base;
 
+/** @cond */
+/**
+  @brief Publish session identity
+  @details This structure is used to associate one publish session ID with
+  certain local stream label. Multiple publish session ID can map to the same
+  local stream label(ID).
+  */
+class ConferenceLocalPublishSession {
+public:
+  ConferenceLocalPublishSession(std::string session_id, std::string label)
+    :session_id_(session_id),local_stream_id_(label) {}
+
+  std::string SessionId() { return session_id_; }
+
+  std::string LocalStreamId() { return local_stream_id_; }
+private:
+  std::string session_id_;
+  std::string local_stream_id_;
+};
+
+/**
+  @brief Subcribe session identity
+  @details This structure is used to associate one subcribe session ID with
+  certain remote stream's label. Multiple subcribe session ID can map to the
+  same remote stream label(ID).
+  */
+struct ConferenceRemoteSubcribeSession {
+public:
+  ConferenceRemoteSubcribeSession(std::string session_id, std::string label)
+    :session_id_(session_id),remote_stream_id_(label) {}
+
+  std::string SessionId() { return session_id_; }
+
+  std::string RemoteStreamId() { return remote_stream_id_; }
+private:
+  std::string session_id_;
+  std::string remote_stream_id_;
+};
+/** @endcond */
+
 /**
   @brief Configuration for creating a ConferenceClient
-  @detail This configuration is used while creating ConferenceClient.
+  @details This configuration is used while creating ConferenceClient.
   Changing this configuration does NOT impact ConferenceClient already
   created.
 */
@@ -91,6 +131,8 @@ class ConferenceSocketSignalingChannelObserver {
   virtual void OnStreamError(std::shared_ptr<sio::message> stream) = 0;
   // Notify the ID for a published stream.
   virtual void OnStreamId(const std::string& id, const std::string& label) = 0;
+  // Notify the ID for a subscribed stream.
+  virtual void OnRemoteStreamId(const std::string& id, const std::string& label) = 0;
 };
 
 // ConferencePeerConnectionChannel callback interface.
@@ -148,7 +190,7 @@ class ConferenceClientObserver {
       std::shared_ptr<RemoteMixedStream> stream){};
   /**
     @brief Triggers when an error happened on a stream.
-    @detail This event only triggered for a stream that is being published or
+    @details This event only triggered for a stream that is being published or
     subscribed. SDK will not try to recovery the certain stream when this event
     is triggered. If you still need this stream, please re-publish or
     re-subscribe.
@@ -187,7 +229,7 @@ class ConferenceClientObserver {
 struct PublishOptions {
   /**
    @brief Max outgoing audio bandwidth, unit: kbps.
-   @detail Please be noticed different codecs may support different bitrate
+   @details Please be noticed different codecs may support different bitrate
    ranges. If you set a bandwidth limitation which is not supported by selected
    codec, connection will fail. If it is set to 0, associated ConferenceClient's
    max audio bandwidth will be used.
@@ -195,7 +237,7 @@ struct PublishOptions {
   int max_audio_bandwidth;
   /**
    @brief Max outgoing video bandwidth, unit: kbps.
-   @detail Please be noticed different codecs may support different bitrate
+   @details Please be noticed different codecs may support different bitrate
    ranges. If you set a bandwidth limitation which is not supported by selected
    codec, connection will fail. If it is set to 0, associated ConferenceClient's
    max video bandwidth will be used.
@@ -203,20 +245,23 @@ struct PublishOptions {
   int max_video_bandwidth;
   /**
    @brief Construct PublishOptions with default values.
-   @detail Default values for max_audio_bandwidth and max_video_bandwidth are 0.
+   @details Default values for max_audio_bandwidth and max_video_bandwidth are 0.
    */
   explicit PublishOptions() : max_audio_bandwidth(0), max_video_bandwidth(0) {}
 };
 
 /// An asynchronous class for app to communicate with a conference in MCU.
-class ConferenceClient final : ConferenceSocketSignalingChannelObserver,
-                               ConferencePeerConnectionChannelObserver {
+class ConferenceClient final
+    : ConferenceSocketSignalingChannelObserver,
+      ConferencePeerConnectionChannelObserver,
+      public std::enable_shared_from_this<ConferenceClient> {
  public:
   /**
-    @brief Initialize a ConferenceClient instance with specific configuration
-    @param config Configuration for creating the ConferenceClient.
+    @brief Create a ConferenceClient instance with specific configuration
+    @param configuration Configuration for creating the ConferenceClient.
   */
-  ConferenceClient(const ConferenceClientConfiguration& configuration);
+  static std::shared_ptr<ConferenceClient> Create(
+      const ConferenceClientConfiguration& configuration);
   ~ConferenceClient();
   /// Add an observer for conferenc client.
   void AddObserver(ConferenceClientObserver& observer);
@@ -334,7 +379,7 @@ class ConferenceClient final : ConferenceSocketSignalingChannelObserver,
       std::function<void(std::unique_ptr<ConferenceException>)> on_failure);
   /**
     @brief Continue to receive specified stream's audio data.
-    @detail MCU will continue to send audio data to client even stream's audio
+    @details MCU will continue to send audio data to client even stream's audio
     track is disabled.
   */
   void PlayAudio(
@@ -343,7 +388,7 @@ class ConferenceClient final : ConferenceSocketSignalingChannelObserver,
       std::function<void(std::unique_ptr<ConferenceException>)> on_failure);
   /**
     @brief Stop receiving specified stream's audio data.
-    @detail MCU will stop sending audio data to client. It saves network traffic
+    @details MCU will stop sending audio data to client. It saves network traffic
     if audio track is disabled.
   */
   void PauseAudio(
@@ -352,7 +397,7 @@ class ConferenceClient final : ConferenceSocketSignalingChannelObserver,
       std::function<void(std::unique_ptr<ConferenceException>)> on_failure);
   /**
     @brief Continue to receive specified stream's video data.
-    @detail MCU will continue to send video data to client even stream's video
+    @details MCU will continue to send video data to client even stream's video
     track is disabled or there is no video sink associated with specific stream.
   */
   void PlayVideo(
@@ -361,7 +406,7 @@ class ConferenceClient final : ConferenceSocketSignalingChannelObserver,
       std::function<void(std::unique_ptr<ConferenceException>)> on_failure);
   /**
     @brief Stop receiving specified stream's video data.
-    @detail MCU will stop sending video data to client. If saves network traffic
+    @details MCU will stop sending video data to client. If saves network traffic
     if video track is disabled.
     to MCU.
   */
@@ -456,6 +501,7 @@ class ConferenceClient final : ConferenceSocketSignalingChannelObserver,
       std::function<void(std::unique_ptr<ConferenceException>)> on_failure);
 
  protected:
+  ConferenceClient(const ConferenceClientConfiguration& configuration);
   // Implementing ConferenceSocketSignalingChannelObserver.
   virtual void OnStreamAdded(std::shared_ptr<sio::message> stream) override;
   virtual void OnCustomMessage(std::string& from,
@@ -470,7 +516,8 @@ class ConferenceClient final : ConferenceSocketSignalingChannelObserver,
   virtual void OnServerDisconnected() override;
   virtual void OnStreamId(const std::string& id,
                           const std::string& publish_stream_label) override;
-
+  virtual void OnRemoteStreamId(const std::string& id,
+                                const std::string& subscribe_stream_label) override;
   // Implementing ConferencePeerConnectionChannelObserver.
   virtual void OnStreamError(
       std::shared_ptr<Stream> stream,
@@ -521,35 +568,40 @@ class ConferenceClient final : ConferenceSocketSignalingChannelObserver,
   bool ParseUser(std::shared_ptr<sio::message> user_info, User** user) const;
   std::unordered_map<std::string, std::string> AttributesFromStreamInfo(
       std::shared_ptr<sio::message> stream_info);
+  std::function<void()> RunInEventQueue(std::function<void()> func);
 
   enum StreamType: int;
 
   ConferenceClientConfiguration configuration_;
+  // Queue for callbacks and events. Shared among ConferenceClient and all of
+  // it's ConferencePeerConnectionChannel.
+  std::shared_ptr<rtc::TaskQueue> event_queue_;
   std::shared_ptr<ConferenceSocketSignalingChannel> signaling_channel_;
-  webrtc::CriticalSectionWrapper& crit_sect_;
+  std::mutex observer_mutex_;
   bool signaling_channel_connected_;
-  // Key woogeen::Stream's ID, value is MediaStream's label
+  // Key publish(session) ID from server, value is MediaStream's label
   std::unordered_map<std::string, std::string> publish_id_label_map_;
-  // Key is woogeen::Stream's ID.
+  // Key is publish(session) ID from server.
   std::unordered_map<std::string,
                      std::shared_ptr<ConferencePeerConnectionChannel>>
       publish_pcs_;
   mutable std::mutex publish_pcs_mutex_;
-  // Key is woogeen::Stream's ID
+  // Key is subcription ID from server.
   std::unordered_map<std::string,
                      std::shared_ptr<ConferencePeerConnectionChannel>>
       subscribe_pcs_;
+  // Key is subscription ID, value is streamID.
+  std::unordered_map<std::string, std::string> subscribe_id_label_map_;
   mutable std::mutex subscribe_pcs_mutex_;
-  // Key is woogeen::Stream's ID
+  // Key is the stream ID(publication ID or mixed stream ID).
   std::unordered_map<std::string, std::shared_ptr<RemoteStream>>
       added_streams_;
   std::unordered_map<std::string, StreamType> added_stream_type_;
   // Key is user's ID
   std::unordered_map<std::string, std::shared_ptr<User>> participants;
+  // Capturing observer in |event_queue_| is not 100% safe although above queue
+  // is excepted to be ended after ConferenceClient is destroyed.
   std::vector<std::reference_wrapper<ConferenceClientObserver>> observers_;
-  // Queue for callbacks and events. Shared between ConferenceClient and all of
-  // it's ConferencePeerConnectionChannel.
-  std::shared_ptr<rtc::TaskQueue> task_queue_;
 };
 }
 }

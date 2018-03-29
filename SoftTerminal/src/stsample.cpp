@@ -83,7 +83,7 @@ void STSample::initClient()
 	config.media_codec = mc;
 	//config.max_video_bandwidth = 1000;
 
-	m_client = std::make_shared<ConferenceClient>(config);
+	m_client = ConferenceClient::Create(config);
 	m_client->AddObserver(*this);
 }
 
@@ -190,7 +190,7 @@ void STSample::unsubscribeStream(QString id)
 		ui.lblStatus->setText(QString::fromLocal8Bit("无法取消订阅..."));
 		return;
 	}
-	curentID = id; // TODO:logout时，批量删除，容易冲突,暂时sleep
+	curentID = id; // logout时，批量删除，容易冲突,暂时sleep
 	std::shared_ptr<RemoteStream> stream = m_all_stream_map[curentID].stream;
 	m_client->Unsubscribe(stream,
 		[=]()

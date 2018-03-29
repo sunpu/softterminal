@@ -51,10 +51,11 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	m_confirm = new STConfirm(this);
 	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
 
-	m_messageCenterWindow = new STMessageCenter(m_xmppClient, this);
 
 	connect(m_xmppClient, SIGNAL(subscriptionRequest(QString)), this, SLOT(showMessageWarn()));
 	connect(m_xmppClient, SIGNAL(refreshContactSignal()), this, SLOT(refreshContact()));
+
+	m_messageCenterWindow = new STMessageCenter(m_xmppClient, this);
 	if (m_xmppClient->getSubscriptionRequests().size() > 0)
 	{
 		showMessageWarn();
@@ -247,6 +248,24 @@ void STMain::refreshContact()
 	initContactWindow();
 }
 
+void STMain::updateOthersMessage(QString jid)
+{
+	STChatItem* chatItem;
+	QList<STChatItem*>::Iterator it;
+	for (it = m_chatItemList.begin(); it != m_chatItemList.end(); it++)
+	{
+		if ((*it)->getUserInfo().jid == jid)
+		{
+			if (m_currentChatJid != jid)
+			{
+				(*it)->updateUnreadNum();
+			}
+			(*it)->updateMessage();
+			break;
+		}
+	}
+}
+
 void STMain::init()
 {
 	// 初始化本人信息
@@ -294,6 +313,7 @@ void STMain::on_lwChatList_itemClicked()
 	item = ui.lwChatList->currentItem();
 	QWidget* widget = ui.lwChatList->itemWidget(item);
 	STChatItem* chatItem = (STChatItem*)widget;
+	chatItem->clearUnreadNum();
 
 	UserInfo userInfo = chatItem->getUserInfo();
 	switchChatDetail(userInfo.jid);
@@ -330,6 +350,7 @@ void STMain::switchChatItem(QString jid)
 	{
 		if ((*it)->getUserInfo().jid == jid)
 		{
+			(*it)->clearUnreadNum();
 			break;
 		}
 	}
@@ -346,19 +367,15 @@ void STMain::switchChatDetail(QString jid)
 		{
 			ui.swChatDetail->setCurrentIndex(index);
 			ui.lblChatTitle->setText((*it)->getUserInfo().userName);
+			m_currentChatJid = jid;
+			break;
 		}
 	}
 }
 
 void STMain::switchChatWindow(QString jid)
 {
-	// 文件不存在，创建新对话
-	STRecordManager* recordManager = new STRecordManager(jid);
-	if (!recordManager->isRecordExist())
-	{
-		newChat(jid);
-	}
-
+	createChat(jid);
 	switchChatItem(jid);
 	switchChatDetail(jid);
 
@@ -373,12 +390,24 @@ void STMain::deleteFriend(QString jid)
 	m_xmppClient->unsubscribeOther(jid);
 }
 
-void STMain::newChat(QString jid)
+void STMain::createChat(QString jid)
 {
 	// 文件不存在，创建文件
 	STRecordManager* recordManager = new STRecordManager(jid);
-	RecordItem recordItem;
-	recordManager->writeRecordItem(recordItem);
+	if (!recordManager->isRecordExist())
+	{
+		RecordItem recordItem;
+		recordManager->writeRecordItem(recordItem);
+	}
+
+	QList<STChatItem*>::Iterator it;
+	for (it = m_chatItemList.begin(); it != m_chatItemList.end(); it++)
+	{
+		if ((*it)->getUserInfo().jid == jid)
+		{
+			return;
+		}
+	}
 
 	QList<UserInfo> friendList = m_xmppClient->getRoster();
 	QList<UserInfo>::const_iterator friendIt;
@@ -386,7 +415,6 @@ void STMain::newChat(QString jid)
 	STChatItem* chatItem;
 	STChatDetail* chatDetail;
 	QListWidgetItem* item;
-	QList<STChatItem*>::Iterator it;
 
 	for (friendIt = friendList.constBegin(); friendIt != friendList.constEnd(); friendIt++)
 	{

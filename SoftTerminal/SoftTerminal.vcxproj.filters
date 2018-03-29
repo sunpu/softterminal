@@ -532,6 +532,9 @@
     <CustomBuild Include="forms\STWBCloudFileView.ui">
       <Filter>Form Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="STTooltip.ui">
+      <Filter>Form Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeneratedFiles\ui_STChatDetail.h">
@@ -666,5 +669,17 @@
     <ClInclude Include="GeneratedFiles\ui_STWBCloudFileView.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_STTooltip.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SoftTerminal.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\images\st.ico" />
   </ItemGroup>
 </Project>

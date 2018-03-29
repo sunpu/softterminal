@@ -4,8 +4,9 @@ using namespace tahiti;
 
 STChatItem::STChatItem(QWidget* parent) : QWidget(parent)
 {
-
 	ui.setupUi(this);
+	m_unreadNum = 0;
+	ui.lblUnreadNum->setVisible(false);
 }
 
 STChatItem::~STChatItem()
@@ -36,7 +37,41 @@ void STChatItem::setUserInfo(UserInfo userInfo)
 	ui.lblChatPreview->setText(content);
 }
 
+void STChatItem::updateMessage()
+{
+	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
+	RecordItem recordItem = recordManager->getLastestRecordItem();
+
+	QString time = recordItem.time;
+	QString content = recordItem.content;
+	ui.lblTime->setText(time);
+	ui.lblChatPreview->setText(content);
+}
+
 UserInfo STChatItem::getUserInfo()
 {
 	return m_userInfo;
+}
+
+void STChatItem::updateUnreadNum()
+{
+	m_unreadNum++;
+	QString showText;
+	if (m_unreadNum >= 100)
+	{
+		showText = "99+";
+	}
+	else
+	{
+		showText = QString::number(m_unreadNum);
+	}
+	ui.lblUnreadNum->setText(showText);
+	ui.lblUnreadNum->setVisible(true);
+}
+
+void STChatItem::clearUnreadNum()
+{
+	m_unreadNum = 0;
+	ui.lblUnreadNum->clear();
+	ui.lblUnreadNum->setVisible(false);
 }

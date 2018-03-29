@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QMouseEvent>
 #include "stcommon.h"
+#include "stconfig.h"
 #include "stnetworkclient.h"
 #include "ui_STWBCloudFileView.h"
 

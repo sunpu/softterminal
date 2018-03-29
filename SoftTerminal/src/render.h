@@ -27,7 +27,7 @@ namespace tahiti
 		woogeen::base::VideoRenderWindow getRenderWindow() { return render_window_; }
 	private:
 		QTime timer, timer2;
-		//void paintEvent(QPaintEvent* e);
+		void paintEvent(QPaintEvent* e);
 		unique_ptr<uint8_t[]> image_;
 		int image_width_, image_height_, image_size_;
 		void RenderFrame(std::unique_ptr<ARGBBuffer> video_frame);

@@ -13,7 +13,6 @@ STContactAddNew::STContactAddNew(XmppClient* client) : m_xmppClient(client)
 	QString port = STConfig::getConfig("/xmpp/port");
 	if (server.size() == 0 || port.size() == 0)
 	{
-		// TODO:消息提示 没有配置server
 		return;
 	}
 	m_xmppRegister = new XmppRegister(server, port);

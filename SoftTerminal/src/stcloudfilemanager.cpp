@@ -14,8 +14,9 @@ STCloudFileManager::STCloudFileManager(QWidget * parent) : QWidget(parent)
 	ui.twFileManager->horizontalHeaderItem(1)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 	ui.twFileManager->horizontalHeaderItem(2)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 
+	QString server = STConfig::getConfig("/xmpp/server");
 	m_network = new STNetworkClient;
-	m_network->connectServer("10.4.26.64", "10001");
+	m_network->connectServer(server, "10001");
 	connect(m_network, SIGNAL(processCloudFileMessage(QString)), this, SLOT(processMessage(QString)));
 }
 
@@ -511,7 +512,8 @@ void STCloudUploadClient::uploadFile(QString destPath, QString file)
 
 	m_loadSize = 512 * 1024;  //每次发送数据的大小  
 
-	connectServer("10.4.26.64", "10002");
+	QString server = STConfig::getConfig("/xmpp/server");
+	connectServer(server, "10002");
 }
 
 void STCloudUploadClient::sendFileInfo()

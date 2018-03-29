@@ -19,11 +19,13 @@ namespace tahiti
 		~STChatItem();
 		void setUserInfo(UserInfo userInfo);
 		UserInfo getUserInfo();
-
+		void updateMessage();
+		void updateUnreadNum();
+		void clearUnreadNum();
 	private:
 		Ui::STChatItemClass ui;
 		UserInfo m_userInfo;
-
+		int m_unreadNum;
 	};
 }
 #endif

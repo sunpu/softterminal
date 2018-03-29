@@ -18,7 +18,7 @@ Render::Render(QWidget* parent, Qt::WindowFlags f)
 
 Render::~Render() {}
 
-/*void Render::paintEvent(QPaintEvent* e)
+void Render::paintEvent(QPaintEvent* e)
 {
 	if (image_.get())
 	{
@@ -42,11 +42,10 @@ Render::~Render() {}
 			timer2.restart();
 		}
 	}
-}*/
+}
 
 void Render::RenderFrame(std::unique_ptr<ARGBBuffer> video_frame)
 {
-	return;
 	static int frames = 0;
 	frames++;
 	if (!timer.isValid())

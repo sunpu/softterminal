@@ -123,14 +123,32 @@ void STLogin::on_pbLogin_clicked()
 {
 	QString server = STConfig::getConfig("/xmpp/server");
 	QString port = STConfig::getConfig("/xmpp/port");
-	if (server.size() == 0 || port.size() == 0)
+	if (server.size() == 0 ||+ port.size() == 0)
 	{
-		// TODO:消息提示 没有配置server
+		QPoint pos(ui.pbLogin->mapToGlobal(ui.pbLogin->pos()).x() + ui.pbLogin->width() / 2,
+			ui.pbLogin->mapToGlobal(ui.pbLogin->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未配置服务器地址"), ui.pbLogin);
 		return;
 	}
 
 	QString user = ui.leUserName->text();
 	QString passwd = ui.lePasswd->text();
+	if (user.size() == 0)
+	{
+		ui.leUserName->setFocus();
+		QPoint pos(ui.leUserName->mapToGlobal(ui.leUserName->pos()).x() - ui.leUserName->width() / 2,
+			ui.leUserName->mapToGlobal(ui.leUserName->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未输入账号"), ui.leUserName);
+		return;
+	}
+	if (passwd.size() == 0)
+	{
+		ui.lePasswd->setFocus();
+		QPoint pos(ui.lePasswd->mapToGlobal(ui.lePasswd->pos()).x() - ui.lePasswd->width() / 2,
+			ui.lePasswd->mapToGlobal(ui.lePasswd->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未输入密码"), ui.lePasswd);
+		return;
+	}
 	m_xmppClient->setXmppAccount(user, passwd, server, port);
 	m_xmppClient->run();
 	setLoadStatus(true);
@@ -163,8 +181,11 @@ void STLogin::handleLoginResult(bool result)
 	}
 	else
 	{
-		// TODO:登录失败，报错
 		setLoadStatus(false);
+		ui.leUserName->setFocus();
+		QPoint pos(ui.leUserName->mapToGlobal(ui.leUserName->pos()).x() - ui.leUserName->width() / 2,
+			ui.leUserName->mapToGlobal(ui.leUserName->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("账号或密码错误"), ui.leUserName);
 	}
 }
 
@@ -272,15 +293,6 @@ bool STLogin::eventFilter(QObject *obj, QEvent *e)
 STRegist::STRegist(QWidget* parent) : QWidget(parent)
 {
 	ui.setupUi(this);
-	QString server = STConfig::getConfig("/xmpp/server");
-	QString port = STConfig::getConfig("/xmpp/port");
-	if (server.size() == 0 || port.size() == 0)
-	{
-		// TODO:消息提示 没有配置server
-		return;
-	}
-	m_xmppRegister = new XmppRegister(server, port);
-	connect((const QObject *)m_xmppRegister, SIGNAL(registResult(bool)), this, SLOT(handleRegistResult(bool)));
 	ui.leUserName->installEventFilter(this);
 	ui.lePasswd->installEventFilter(this);
 	ui.lePasswdVerify->installEventFilter(this);
@@ -296,6 +308,7 @@ void STRegist::initRegistData()
 	ui.leUserName->setText("");
 	ui.lePasswd->setText("");
 	ui.lePasswdVerify->setText("");
+	ui.leUserName->setFocus();
 }
 
 void STRegist::handleRegistResult(bool result)
@@ -314,7 +327,10 @@ void STRegist::handleRegistResult(bool result)
 	}
 	else
 	{
-		// TODO:注册失败，报错
+		ui.leUserName->setFocus();
+		QPoint pos(ui.leUserName->mapToGlobal(ui.leUserName->pos()).x() - ui.leUserName->width() / 2,
+			ui.leUserName->mapToGlobal(ui.leUserName->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("注册失败"), ui.leUserName);
 	}
 }
 
@@ -327,6 +343,55 @@ void STRegist::on_pbRegist_clicked()
 {
 	QString user = ui.leUserName->text();
 	QString passwd = ui.lePasswd->text();
+	QString passwdVerify = ui.lePasswdVerify->text();
+	QString server = STConfig::getConfig("/xmpp/server");
+	QString port = STConfig::getConfig("/xmpp/port");
+	if (server.size() == 0 || +port.size() == 0)
+	{
+		QPoint pos(ui.pbRegist->mapToGlobal(ui.pbRegist->pos()).x() + ui.pbRegist->width() / 2,
+			ui.pbRegist->mapToGlobal(ui.pbRegist->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未配置服务器地址"), ui.pbRegist);
+		return;
+	}
+	m_xmppRegister = new XmppRegister(server, port);
+	connect((const QObject *)m_xmppRegister, SIGNAL(registResult(bool)), this, SLOT(handleRegistResult(bool)));
+
+	if (user.size() == 0)
+	{
+		ui.leUserName->setFocus();
+		QPoint pos(ui.leUserName->mapToGlobal(ui.leUserName->pos()).x() - ui.leUserName->width() / 2,
+			ui.leUserName->mapToGlobal(ui.leUserName->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未输入账号"), ui.leUserName);
+		return;
+	}
+
+	if (passwd.size() == 0)
+	{
+		ui.lePasswd->setFocus();
+		QPoint pos(ui.lePasswd->mapToGlobal(ui.lePasswd->pos()).x() - ui.lePasswd->width() / 2,
+			ui.lePasswd->mapToGlobal(ui.lePasswd->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未输入密码"), ui.lePasswd);
+		return;
+	}
+
+	if (passwdVerify.size() == 0)
+	{
+		ui.lePasswdVerify->setFocus();
+		QPoint pos(ui.lePasswdVerify->mapToGlobal(ui.lePasswdVerify->pos()).x() - ui.lePasswdVerify->width() / 2,
+			ui.lePasswdVerify->mapToGlobal(ui.lePasswdVerify->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未输入确认密码"), ui.lePasswdVerify);
+		return;
+	}
+
+	if (passwd != passwdVerify)
+	{
+		ui.lePasswdVerify->setFocus();
+		QPoint pos(ui.lePasswdVerify->mapToGlobal(ui.lePasswdVerify->pos()).x() - ui.lePasswdVerify->width() / 2,
+			ui.lePasswdVerify->mapToGlobal(ui.lePasswdVerify->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("输入密码不一致"), ui.lePasswdVerify);
+		return;
+	}
+
 	m_xmppRegister->registAccount(user, passwd);
 }
 
@@ -408,6 +473,7 @@ void STServerConfig::initServerConfigData()
 		STConfig::setConfig("/xmpp/port", port);
 	}
 	ui.leServerPort->setText(port);
+	ui.leServerIP->setFocus();
 }
 
 void STServerConfig::on_pb2Login_clicked()
@@ -419,6 +485,27 @@ void STServerConfig::on_pbConfirm_clicked()
 {
 	STConfig::setConfig("/xmpp/server", ui.leServerIP->text());
 	STConfig::setConfig("/xmpp/port", ui.leServerPort->text());
+
+	if (ui.leServerIP->text().size() == 0)
+	{
+		ui.leServerIP->setFocus();
+		QPoint pos(ui.leServerIP->mapToGlobal(ui.leServerIP->pos()).x() - ui.leServerIP->width() / 2,
+			ui.leServerIP->mapToGlobal(ui.leServerIP->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未输入服务器地址"), ui.leServerIP);
+		return;
+	}
+
+	if (ui.leServerPort->text().size() == 0)
+	{
+		ui.leServerPort->setFocus();
+		QPoint pos(ui.leServerPort->mapToGlobal(ui.leServerPort->pos()).x() - ui.leServerPort->width() / 2,
+			ui.leServerPort->mapToGlobal(ui.leServerPort->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未输入服务器端口"), ui.leServerPort);
+		return;
+	}
+
+	// 切换到登录窗口
+	Q_EMIT rotateWindow(0);
 }
 
 void STServerConfig::on_pbMinimum_clicked()
@@ -552,9 +639,18 @@ void STLoginRotate::onRotateFinished()
 	m_isRoratingWindow = false;
 	setCurrentWidget(widget(m_nextPageIndex));
 	repaint();
-	m_loginWindow->initLoginData();
-	m_registWindow->initRegistData();
-	m_serverConfigWindow->initServerConfigData();
+	if (m_nextPageIndex == 0)
+	{
+		m_loginWindow->initLoginData();
+	}
+	else if (m_nextPageIndex == 1)
+	{
+		m_registWindow->initRegistData();
+	}
+	else
+	{
+		m_serverConfigWindow->initServerConfigData();
+	}
 }
 
 // 绘制旋转效果;

@@ -57,7 +57,8 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	connect(m_network, SIGNAL(deleteRemoteItems(QList<int>)), this, SLOT(deleteRemoteItems(QList<int>)));
 	connect(m_network, SIGNAL(editableAuthority()), this, SLOT(editableAuthority()));	
 
-	m_network->connectServer("10.4.26.64", "10001");
+	QString server = STConfig::getConfig("/xmpp/server");
+	m_network->connectServer(server, "10001");
 
 	QVBoxLayout* layout = (QVBoxLayout*)ui.widPaint->layout();
 	m_view = new STWBView(m_network);
@@ -212,7 +213,7 @@ void STWhiteBoard::initConferenceClient()
 
 	// ice server
 	woogeen::conference::IceServer ice;
-	ice.urls.push_back("stun:61.152.239.56");
+	ice.urls.push_back("stun:221.226.156.109:3478");
 	ice.username = ice.password = "";
 	vector<woogeen::conference::IceServer> ice_servers;
 	ice_servers.push_back(ice);
@@ -222,14 +223,14 @@ void STWhiteBoard::initConferenceClient()
 
 	// configuration
 	ConferenceClientConfiguration config = ConferenceClientConfiguration();
-	//config.ice_servers = ice_servers;
+	config.ice_servers = ice_servers;
 	MediaCodec mc;
 	mc.video_codec = MediaCodec::VP8;
 	//mc.video_codec = MediaCodec::H264;
 	config.media_codec = mc;
 	//config.max_video_bandwidth = 1000;
 
-	m_client = std::make_shared<ConferenceClient>(config);
+	m_client = ConferenceClient::Create(config);
 	m_client->AddObserver(*this);
 }
 
@@ -269,7 +270,9 @@ void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> st
 			}
 		}
 		stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
-
+		StreamInfo info;
+		info.stream = stream;
+		m_all_stream_map.insert(id, info);
 		m_all_stream_map[id].isShowing = true;
 		m_all_stream_map[id].renderID = renderID;
 		ui.widVideoBig->update();
@@ -280,7 +283,10 @@ void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> st
 
 void STWhiteBoard::detachRenderSlot(QString id)
 {
-	m_all_stream_map[id].stream->DetachVideoRenderer();
+	if (m_all_stream_map[id].stream)
+	{
+		m_all_stream_map[id].stream->DetachVideoRenderer();
+	}
 	m_all_stream_map[id].isShowing = false;
 	if (m_currentIndex == 0)
 	{
@@ -305,7 +311,7 @@ void STWhiteBoard::subscribeStream(QString id)
 	}
 
 	shared_ptr<RemoteStream> mainStream = m_all_stream_map[id].stream;
-
+	m_all_stream_map.remove(id);
 	/*SubscribeOptions options;
 	options.resolution.width = m_all_stream_map[id].width;
 	options.resolution.height = m_all_stream_map[id].height;
@@ -330,7 +336,7 @@ void STWhiteBoard::unsubscribeStream(QString id)
 	{
 		return;
 	}
-	m_curentID = id; // TODO:logout时，批量删除，容易冲突,暂时sleep
+	m_curentID = id; // logout时，批量删除，容易冲突,暂时sleep
 	Q_EMIT detachRenderSignal(m_curentID);
 	std::shared_ptr<RemoteStream> stream = m_all_stream_map[m_curentID].stream;
 	m_client->Unsubscribe(stream,
@@ -389,6 +395,7 @@ void STWhiteBoard::removeStream(std::shared_ptr<RemoteStream> stream)
 {
 	string id = stream->Id();
 	unsubscribeStream(QString::fromStdString(id));
+	m_all_stream_map.remove(QString::fromStdString(id));
 }
 
 void STWhiteBoard::OnUserJoined(std::shared_ptr<const User> user)
@@ -443,16 +450,6 @@ void STWhiteBoard::logout()
 	m_all_stream_map.clear();
 
 	stopSendLocalCamera();
-
-	m_client->Leave(
-		[=]
-	{
-		TAHITI_INFO("登出成功...");
-	},
-		[=](std::unique_ptr<woogeen::conference::ConferenceException> err)
-	{
-		TAHITI_ERROR("登出失败...");
-	});
 }
 
 void STWhiteBoard::sendLocalCamera()
@@ -467,7 +464,7 @@ void STWhiteBoard::sendLocalCamera()
 	if (!m_local_camera_stream.get())
 	{
 		m_local_camera_stream_param.reset(new LocalCameraStreamParameters(true, true));
-		m_local_camera_stream_param->Resolution(432, 240);
+		m_local_camera_stream_param->Resolution(352, 288);
 		m_local_camera_stream_param->CameraId(capturerId);
 		m_local_camera_stream = LocalCameraStream::Create(*m_local_camera_stream_param, err_code);
 	}
@@ -490,6 +487,16 @@ void STWhiteBoard::stopSendLocalCamera()
 		TAHITI_INFO("停止发送本地视频成功...");
 		m_local_camera_stream_param = nullptr;
 		m_local_camera_stream = nullptr;
+
+		m_client->Leave(
+			[=]
+		{
+			TAHITI_INFO("登出成功...");
+		},
+			[=](std::unique_ptr<woogeen::conference::ConferenceException> err)
+		{
+			TAHITI_ERROR("登出失败...");
+		});
 	},
 		[=](std::unique_ptr<ConferenceException> err)
 	{

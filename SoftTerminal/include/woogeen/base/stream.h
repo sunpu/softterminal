@@ -56,6 +56,10 @@ class BasicDesktopCapturer;
 
 class VideoFrameGeneratorInterface;
 
+#if defined(WEBRTC_MAC)
+class ObjcVideoCapturerInterface;
+#endif
+
 using webrtc::MediaStreamInterface;
 
 /// Observer for Stream
@@ -94,12 +98,14 @@ class Stream {
   WOOGEEN_DEPRECATED virtual void Attach(VideoRendererARGBInterface& renderer){
     AttachVideoRenderer(renderer);
   }
-  /// Attach the stream to a renderer to receive ARGB frames from decoder.
+  /// Attach the stream to a renderer to receive ARGB frames for local or remote stream.
+  /// Be noted if you turned hardware acceleration on, calling this API on remote stream
+  /// will have no effect.
   virtual void AttachVideoRenderer(VideoRendererARGBInterface& renderer);
 
   /**
     @brief Returns a user-defined attribute map.
-    @detail These attributes are defined by publisher. P2P mode always return
+    @details These attributes are defined by publisher. P2P mode always return
     empty map because it is not supported yet.
   */
   virtual const std::unordered_map<std::string, std::string> Attributes()
@@ -135,7 +141,7 @@ class Stream {
 
 /**
   @brief This class represents a local stream.
-  @detail A local stream can be published to remote side.
+  @details A local stream can be published to remote side.
 */
 class LocalStream : public Stream {
  public:
@@ -157,7 +163,7 @@ class LocalStream : public Stream {
   using Stream::Attributes;
   /**
     @brief Set a user-defined attribute map.
-    @detail Remote user can get attribute map by calling Attributes(). P2P mode
+    @details Remote user can get attribute map by calling Attributes(). P2P mode
     does not support setting attributes.
   */
   virtual void Attributes(
@@ -171,7 +177,7 @@ class LocalStream : public Stream {
 
 /**
   @brief This class represents a remote stream.
-  @detail A remote is published from a remote client or MCU. Do not construct
+  @details A remote is published from a remote client or MCU. Do not construct
   remote stream outside SDK.
 */
 class RemoteStream : public Stream {
@@ -181,13 +187,14 @@ class RemoteStream : public Stream {
  public:
   /// Return the remote user ID, indicates who published this stream.
   std::string From();
+  using Stream::Attributes;
 
  protected:
   /** @cond */
   explicit RemoteStream(const std::string& id, const std::string& from);
   explicit RemoteStream(MediaStreamInterface* media_stream,
                         const std::string& from);
-  using Stream::Attributes;
+
   virtual void Attributes(
       const std::unordered_map<std::string, std::string>& attributes) {
     attributes_ = attributes;
@@ -265,15 +272,16 @@ class LocalCameraStream : public LocalStream {
   WOOGEEN_DEPRECATED explicit LocalCameraStream(
       const LocalCameraStreamParameters& parameters);
   ~LocalCameraStream();
+  /** @endcond */
   /**
     @brief Close the stream. Its underlying media source is no longer providing
     data, and will never provide more data for this stream.
-    @detail Once a stream is closed, it is no longer usable. If you want to
+    @details Once a stream is closed, it is no longer usable. If you want to
     temporary disable audio or video, please use DisableAudio/DisableVideo
     instead.
   */
   void Close();
-
+  /** @cond */
   StreamDeviceType GetStreamDeviceType() final {
     return StreamDeviceType::kStreamDeviceTypeCamera;
   }
@@ -285,6 +293,11 @@ class LocalCameraStream : public LocalStream {
                              webrtc::VideoTrackSourceInterface* video_source,
                              int& error_code);
   /** @endcond */
+
+ private:
+#if defined(WEBRTC_MAC)
+  std::unique_ptr<ObjcVideoCapturerInterface> capturer_;
+#endif
 };
 
 /// This class represents a local stream which uses frame generator to generate
@@ -336,7 +349,6 @@ class LocalCustomizedStream : public LocalStream {
    /// Detach the stream from its renderer.
    void DetachVideoRenderer();
   private:
-   CustomizedFramesCapturer* capturer_;
    bool encoded_ = false;
 };
 
@@ -376,8 +388,6 @@ class LocalScreenStream : public LocalStream {
     return StreamDeviceType::kStreamDeviceTypeScreen;
   }
   /** @endcond */
- private:
-  BasicDesktopCapturer* capturer_;
 };
 
 } // namespace base

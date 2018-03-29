@@ -71,7 +71,8 @@ STWBDocWindow::STWBDocWindow(STNetworkClient* network, QString path, int index, 
 	move(QPoint(x, y));
 	m_normalRect = this->geometry();
 
-	connectServer("10.4.26.64", "10002");
+	QString server = STConfig::getConfig("/xmpp/server");
+	connectServer(server, "10002");
 }
 
 STWBDocWindow::~STWBDocWindow()

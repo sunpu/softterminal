@@ -31,12 +31,17 @@
 #include <unordered_map>
 #include <iostream>
 #include <vector>
+#include <mutex>
 #include "woogeen/base/connectionstats.h"
 #include "woogeen/base/stream.h"
 #include "woogeen/p2p/p2psignalingchannelinterface.h"
 #include "woogeen/p2p/p2psignalingsenderinterface.h"
 #include "woogeen/base/clientconfiguration.h"
 #include "woogeen/base/globalconfiguration.h"
+
+namespace rtc {
+  class TaskQueue;
+}
 
 namespace woogeen {
 namespace base {
@@ -136,7 +141,7 @@ class PeerClient : protected P2PSignalingSenderInterface,
   /**
    @brief Init an PeerClient instance with speficied signaling channel.
    @param configuration Configuration for creating the PTCPeerClient.
-   @param signalingChannel Signaling channel used for exchange signaling messages.
+   @param signaling_channel Signaling channel used for exchange signaling messages.
    */
   PeerClient(PeerClientConfiguration& configuration,
              std::shared_ptr<P2PSignalingChannelInterface> signaling_channel);
@@ -352,6 +357,9 @@ class PeerClient : protected P2PSignalingSenderInterface,
   woogeen::base::PeerConnectionChannelConfiguration
   GetPeerConnectionChannelConfiguration();
 
+  // Queue for callbacks and events. Shared among PeerClient and all of it's
+  // P2PPeerConnectionChannel.
+  std::shared_ptr<rtc::TaskQueue> event_queue_;
   std::shared_ptr<P2PSignalingChannelInterface> signaling_channel_;
   std::unordered_map<std::string, std::shared_ptr<P2PPeerConnectionChannel>>
       pc_channels_;
@@ -363,7 +371,7 @@ class PeerClient : protected P2PSignalingSenderInterface,
   // It receives events from P2PPeerConnectionChannel and notify PeerClient.
   P2PPeerConnectionChannelObserverCppImpl* pcc_observer_impl_;
   PeerClientConfiguration configuration_;
-
+  std::mutex pc_channel_mutex_;
   friend class P2PPeerConnectionChannelObserverCppImpl;
 };
 }

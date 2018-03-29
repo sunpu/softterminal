@@ -48,6 +48,7 @@ namespace tahiti
 		void openScreenshot();
 	Q_SIGNALS:
 		void changeChatListOrder(QString jid);
+		void updateOthersMessage(QString);
 	protected:
 		bool eventFilter(QObject *obj, QEvent *e);
 

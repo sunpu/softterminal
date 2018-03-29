@@ -11,6 +11,7 @@ STChatDetail::STChatDetail(XmppClient* client, QWidget *parent)
 	ui.spChatDetail->setStretchFactor(1, 1);
 
 	connect(m_xmppClient, SIGNAL(showMessage(QString, QString)), this, SLOT(updateOthersMessage(QString, QString)));
+	connect(this, SIGNAL(updateOthersMessage(QString)), m_main, SLOT(updateOthersMessage(QString)));
 
 	ui.teChatWrite->installEventFilter(this);
 
@@ -111,6 +112,10 @@ void STChatDetail::on_pbSendMessage_clicked()
 	QString myMessage = ui.teChatWrite->toPlainText();
 	if (myMessage.size() == 0)
 	{
+		ui.teChatWrite->setFocus();
+		QPoint pos(ui.teChatWrite->mapToGlobal(ui.teChatWrite->pos()).x(),
+			ui.teChatWrite->mapToGlobal(ui.teChatWrite->pos()).y());
+		QToolTip::showText(pos, QStringLiteral("未输入信息"), ui.teChatWrite);
 		return;
 	}
 
@@ -263,7 +268,7 @@ void STChatDetail::onCancelScreenshot()
 
 void STChatDetail::updateOthersMessage(QString jid, QString msg)
 {
-	if (!m_userInfo.jid.contains(jid))
+	if (m_userInfo.jid != jid.append("@localhost"))
 	{
 		return;
 	}
@@ -284,10 +289,11 @@ void STChatDetail::updateOthersMessage(QString jid, QString msg)
 	m_recordItemList.append(chatDetailItem);
 	QSize itemSize = chatDetailItem->getItemSize();
 	QListWidgetItem* pItem = new QListWidgetItem();
-	pItem->setSizeHint(QSize(ui.lwChatRecordList->width() - 5, itemSize.height() + 56));
 	ui.lwChatRecordList->addItem(pItem);
 	ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
+	pItem->setSizeHint(QSize(ui.lwChatRecordList->width() - 5, itemSize.height() + 56));
 	ui.lwChatRecordList->scrollToBottom();
+	Q_EMIT updateOthersMessage(jid);
 }
 
 bool STChatDetail::eventFilter(QObject *obj, QEvent *e)

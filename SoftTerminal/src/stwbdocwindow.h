@@ -14,6 +14,7 @@
 #include "ui_STWBDocWindow.h"
 #include "stwbview.h"
 #include "stnetworkclient.h"
+#include "stconfig.h"
 
 namespace tahiti
 {

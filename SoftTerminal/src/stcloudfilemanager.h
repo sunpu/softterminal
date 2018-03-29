@@ -18,6 +18,7 @@
 #include <windows.h>
 #include <Winuser.h>
 #include "stcommon.h"
+#include "stconfig.h"
 #include "stnetworkclient.h"
 #include "ui_STCloudFileManager.h"
 #include "ui_STCloudSupport.h"
