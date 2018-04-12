@@ -126,5 +126,6 @@
         <file>images/message_warn_focus.png</file>
         <file>images/info.png</file>
         <file>images/logo.png</file>
+        <file>images/camoff.png</file>
     </qresource>
 </RCC>

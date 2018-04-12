@@ -671,10 +671,10 @@ void XmppClient::refreshSignal()
 
 void* XmppClient::refreshSignalProc(void* args)
 {
-	QThread::sleep(3);
+	QThread::sleep(2);
 	XmppClient* xmppClient = (XmppClient*)args;
 	xmppClient->queryRoster();
-	QThread::sleep(3);
+	QThread::sleep(2);
 	xmppClient->refreshSignal();
 	return NULL;
 }

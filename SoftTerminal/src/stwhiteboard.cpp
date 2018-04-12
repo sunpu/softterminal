@@ -455,16 +455,33 @@ void STWhiteBoard::logout()
 void STWhiteBoard::sendLocalCamera()
 {
 	int err_code;
-	std::vector<std::string> capturerIds = DeviceUtils::VideoCapturerIds();
-	if (capturerIds.size() == 0)
+
+	QString cameraId = STConfig::getConfig("/camera/id");
+	if (cameraId.size() == 0)
 	{
 		return;
 	}
-	std::string capturerId = DeviceUtils::VideoCapturerIds()[0];
+	std::string capturerId;
+	std::vector<std::string> capturerIds = DeviceUtils::VideoCapturerIds();
+	for (int i = 0; i < capturerIds.size(); i++)
+	{
+		if (cameraId.contains(capturerIds[i].c_str()))
+		{
+			capturerId = capturerIds[i];
+			break;
+		}
+	}
+	if (capturerId.size() == 0)
+	{
+		return;
+	}
+
+	int width = STConfig::getConfig("/camera/width").toInt();
+	int height = STConfig::getConfig("/camera/height").toInt();
 	if (!m_local_camera_stream.get())
 	{
 		m_local_camera_stream_param.reset(new LocalCameraStreamParameters(true, true));
-		m_local_camera_stream_param->Resolution(352, 288);
+		m_local_camera_stream_param->Resolution(width, height);
 		m_local_camera_stream_param->CameraId(capturerId);
 		m_local_camera_stream = LocalCameraStream::Create(*m_local_camera_stream_param, err_code);
 	}

@@ -25,9 +25,13 @@ void STNetworkClient::connectServer(QString ip, QString port)
 
 void STNetworkClient::disconnectServer()
 {
-	m_tcpSocket->disconnect();
-	delete(m_tcpSocket);
-	m_tcpSocket = NULL;
+	if (m_tcpSocket)
+	{
+		m_tcpSocket->write("bye");
+		m_tcpSocket->disconnectFromHost();
+		delete(m_tcpSocket);
+		m_tcpSocket = NULL;
+	}
 }
 
 void STNetworkClient::sendMessage(QString msg)

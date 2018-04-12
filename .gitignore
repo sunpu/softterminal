@@ -14,3 +14,13 @@
 /SoftTerminal/libs/pthreadVCE2.lib
 /SoftTerminal/libs/pthreadVSE2.lib
 /SoftTerminal/libs/sioclient_tls-debug.lib
+/SoftTerminal/Debug/*.log
+/SoftTerminal/Debug/*.obj
+/SoftTerminal/Debug/SoftTerminal.tlog/*.tlog
+/SoftTerminal/Debug/SoftTerminal.tlog/*.lastbuildstate
+/SoftTerminal/Debug/*.pdb
+/SoftTerminal/GeneratedFiles/Debug
+/SoftTerminal/GeneratedFiles
+/SoftTerminal/Release/SoftTerminal.tlog/*.tlog
+/SoftTerminal/Release
+/SoftTerminal.VC.db

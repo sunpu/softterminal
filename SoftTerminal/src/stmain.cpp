@@ -151,11 +151,10 @@ void STMain::initChatMainWindow()
 	ui.widChatBlank->setVisible(true);
 }
 
-void STMain::initChatWindow()
+void STMain::loadChatWindow()
 {
 	initChatData();
 	initChatList();
-	initChatMainWindow();
 }
 
 void STMain::reorderChatList(QString jid)
@@ -236,16 +235,16 @@ void STMain::initContactMainWindow()
 		"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
 }
 
-void STMain::initContactWindow()
+void STMain::loadContactWindow()
 {
 	initContactData();
 	initContactList();
-	initContactMainWindow();
 }
 
 void STMain::refreshContact()
 {
-	initContactWindow();
+	loadContactWindow();
+	initContactMainWindow();
 }
 
 void STMain::updateOthersMessage(QString jid)
@@ -279,10 +278,14 @@ void STMain::init()
 	ui.lblUserPic->setPixmap(QPixmap::fromImage(*image).scaled(45, 45));
 
 	// 初始化聊天
-	initChatWindow();
-
+	initChatMainWindow();
 	// 初始化联系人
-	initContactWindow();
+	initContactMainWindow();
+
+	connect(this, SIGNAL(loadChatWindowSignal()), this, SLOT(loadChatWindow()));
+	connect(this, SIGNAL(loadContactWindowSignal()), this, SLOT(loadContactWindow()));
+
+	pthread_create(&m_tidLoad, NULL, loadProc, this);
 }
 
 void STMain::destroy()
@@ -296,6 +299,19 @@ void STMain::destroy()
 
 	qDeleteAll(m_contactItemList);
 	m_contactItemList.clear();
+}
+
+void STMain::loadInfo()
+{
+	Q_EMIT loadChatWindowSignal();
+	Q_EMIT loadContactWindowSignal();
+}
+
+void* STMain::loadProc(void* args)
+{
+	STMain* main = (STMain*)args;
+	main->loadInfo();
+	return NULL;
 }
 
 void STMain::showMessageWarn()

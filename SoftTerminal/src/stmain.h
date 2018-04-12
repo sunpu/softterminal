@@ -40,6 +40,7 @@ namespace tahiti
 		~STMain();
 		void init();
 		void destroy();
+		static void* loadProc(void* args);
 		public Q_SLOTS:
 		void on_pbChat_clicked();
 		void on_pbContact_clicked();
@@ -59,18 +60,18 @@ namespace tahiti
 	Q_SIGNALS:
 		void changeLoginWindow();
 		void closeMain();
+		void loadChatWindowSignal();
+		void loadContactWindowSignal();
 	protected:
 		virtual void mouseMoveEvent(QMouseEvent* event);
 		virtual void mousePressEvent(QMouseEvent* event);
 		virtual void mouseReleaseEvent(QMouseEvent* event);
 		bool eventFilter(QObject* obj, QEvent* e);
 	private:
-		void initChatWindow();
 		void initChatData();
 		void initChatList();
 		void initChatMainWindow();
 
-		void initContactWindow();
 		void initContactData();
 		void initContactList();
 		void initContactMainWindow();
@@ -87,8 +88,10 @@ namespace tahiti
 		void deleteChat(QString jid);
 
 		void setPageIndex(int index);
-
+		void loadInfo();
 		private Q_SLOTS:
+		void loadChatWindow();
+		void loadContactWindow();
 		void reorderChatList(QString jid);
 		void switchChatWindow(QString jid);
 		void deleteFriend(QString jid);
@@ -131,6 +134,7 @@ namespace tahiti
 		int m_currentPageIndex;
 		QPushButton* m_clearBtn;
 		QString m_currentChatJid;
+		pthread_t m_tidLoad;
 	};
 }
 #endif
