@@ -57,6 +57,8 @@ namespace tahiti
 		void setTextColorSignal(QString color);
 		void setActionModeSignal(int mode);
 		void deleteActionSignal();
+		void showLocalCameraSignal();
+		void unshowLocalCameraSignal();
 		private Q_SLOTS:
 		void setPenThickness(int thickness);
 		void setPenColor(QString color);
@@ -80,6 +82,8 @@ namespace tahiti
 		void openCloudFile(QString path);
 		void closeCloudFile(int index);
 		void switchShowMode(bool mode);
+		void showLocalCamera();
+		void unshowLocalCamera();
 		public Q_SLOTS:
 		void on_pbMinimum_clicked();
 		void on_pbMaximum_clicked();
@@ -137,6 +141,7 @@ namespace tahiti
 		QString m_text_color;
 		int m_action_mode;
 		int m_currentIndex;
+		int m_localCameraRenderID;
 	};
 }
 #endif

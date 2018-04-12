@@ -14,6 +14,8 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	login();
 
 	QObject::connect(this, SIGNAL(newStreamSignal(QString, int, int)), this, SLOT(newStreamSlot(QString, int, int)));
+	QObject::connect(this, SIGNAL(showLocalCameraSignal()), this, SLOT(showLocalCamera()));
+	QObject::connect(this, SIGNAL(unshowLocalCameraSignal()), this, SLOT(unshowLocalCamera()));
 
 	qRegisterMetaType<std::shared_ptr<RemoteStream>>("std::shared_ptr<RemoteStream>");
 	QObject::connect(this, SIGNAL(attachRenderSignal(QString, std::shared_ptr<RemoteStream>)), this, SLOT(attachRenderSlot(QString, std::shared_ptr<RemoteStream>)));
@@ -39,6 +41,8 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 		m_big_videoItems[i]->setVisible(false);
 		gridLayout->addWidget(m_big_videoItems[i], i / 3, i % 3);
 	}
+
+	m_localCameraRenderID = -1;
 
 	// 白板相关
 	qRegisterMetaType<QVector<QPoint>>("QVector<QPoint>");
@@ -136,6 +140,17 @@ void STWhiteBoard::switchShowMode(bool mode)
 			m_big_videoItems[renderID]->setVisible(true);
 			m_all_stream_map[*it].stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
 		}
+
+		if (m_localCameraRenderID != -1)
+		{
+			m_local_camera_stream->DetachVideoRenderer();
+			m_videoItems[m_localCameraRenderID]->unuse();
+			m_videoItems[m_localCameraRenderID]->setVisible(false);
+
+			m_big_videoItems[m_localCameraRenderID]->use();
+			m_big_videoItems[m_localCameraRenderID]->setVisible(true);
+			m_local_camera_stream->AttachVideoRenderer(m_big_videoItems[m_localCameraRenderID]->getRenderWindow());
+		}
 	}
 	else
 	{
@@ -153,6 +168,17 @@ void STWhiteBoard::switchShowMode(bool mode)
 			m_videoItems[renderID]->use();
 			m_videoItems[renderID]->setVisible(true);
 			m_all_stream_map[*it].stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
+		}
+
+		if (m_localCameraRenderID != -1)
+		{
+			m_local_camera_stream->DetachVideoRenderer();
+			m_big_videoItems[m_localCameraRenderID]->unuse();
+			m_big_videoItems[m_localCameraRenderID]->setVisible(false);
+
+			m_videoItems[m_localCameraRenderID]->use();
+			m_videoItems[m_localCameraRenderID]->setVisible(true);
+			m_local_camera_stream->AttachVideoRenderer(m_videoItems[m_localCameraRenderID]->getRenderWindow());
 		}
 	}
 	ui.widVideo->update();
@@ -254,6 +280,10 @@ void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> st
 				break;
 			}
 		}
+		if (renderID == -1)
+		{
+			return;
+		}
 		stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
 		ui.widVideo->update();
 	}
@@ -268,6 +298,10 @@ void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> st
 				m_big_videoItems[i]->setVisible(true);
 				break;
 			}
+		}
+		if (renderID == -1)
+		{
+			return;
 		}
 		stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
 		StreamInfo info;
@@ -353,6 +387,10 @@ void STWhiteBoard::unsubscribeStream(QString id)
 
 void STWhiteBoard::OnStreamAdded(shared_ptr<RemoteCameraStream> stream)
 {
+	if (stream->Id().compare(m_local_camera_stream->Id()) == 0)
+	{
+		return;
+	}
 	addStream(stream);
 }
 
@@ -440,6 +478,8 @@ void STWhiteBoard::login()
 
 void STWhiteBoard::logout()
 {
+	Q_EMIT unshowLocalCameraSignal();
+
 	QList<QString> ids = m_all_stream_map.keys();
 
 	QList<QString>::Iterator it;
@@ -450,6 +490,68 @@ void STWhiteBoard::logout()
 	m_all_stream_map.clear();
 
 	stopSendLocalCamera();
+}
+
+void STWhiteBoard::showLocalCamera()
+{
+	int renderID = -1;
+	if (m_currentIndex == 0)
+	{
+		for (size_t i = 0; i < MAX_STREAM_NUM; i++)
+		{
+			if (!m_videoItems[i]->isusing())
+			{
+				renderID = i;
+				m_videoItems[i]->use();
+				m_videoItems[i]->setVisible(true);
+				break;
+			}
+		}
+		if (renderID == -1)
+		{
+			return;
+		}
+		m_local_camera_stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
+		ui.widVideo->update();
+	}
+	else
+	{
+		for (size_t i = 0; i < MAX_STREAM_NUM; i++)
+		{
+			if (!m_big_videoItems[i]->isusing())
+			{
+				renderID = i;
+				m_big_videoItems[i]->use();
+				m_big_videoItems[i]->setVisible(true);
+				break;
+			}
+		}
+		if (renderID == -1)
+		{
+			return;
+		}
+		m_local_camera_stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
+		ui.widVideoBig->update();
+	}
+	m_localCameraRenderID = renderID;
+}
+
+void STWhiteBoard::unshowLocalCamera()
+{
+	m_local_camera_stream->DetachVideoRenderer();
+	if (m_currentIndex == 0)
+	{
+		m_videoItems[m_localCameraRenderID]->unuse();
+		m_videoItems[m_localCameraRenderID]->setVisible(false);
+		ui.widVideo->update();
+	}
+	else
+	{
+		m_big_videoItems[m_localCameraRenderID]->unuse();
+		m_big_videoItems[m_localCameraRenderID]->setVisible(false);
+		ui.widVideoBig->update();
+	}
+	m_localCameraRenderID = -1;
 }
 
 void STWhiteBoard::sendLocalCamera()
@@ -489,6 +591,7 @@ void STWhiteBoard::sendLocalCamera()
 		[=]
 	{
 		TAHITI_INFO("发送本地视频成功...");
+		Q_EMIT showLocalCameraSignal();
 	},
 		[=](std::unique_ptr<ConferenceException> err)
 	{
