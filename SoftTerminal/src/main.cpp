@@ -1,3 +1,5 @@
+#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )
+
 #include "stcommon.h"
 #include "stsample.h"
 #include "stconfig.h"

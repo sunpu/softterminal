@@ -132,7 +132,10 @@ void STWhiteBoard::switchShowMode(bool mode)
 		for (it = ids.begin(); it != ids.end(); it++)
 		{
 			renderID = m_all_stream_map[*it].renderID;
-			m_all_stream_map[*it].stream->DetachVideoRenderer();
+			if (m_all_stream_map[*it].stream.get())
+			{
+				m_all_stream_map[*it].stream->DetachVideoRenderer();
+			}
 			m_videoItems[renderID]->unuse();
 			m_videoItems[renderID]->setVisible(false);
 
@@ -143,7 +146,10 @@ void STWhiteBoard::switchShowMode(bool mode)
 
 		if (m_localCameraRenderID != -1)
 		{
-			m_local_camera_stream->DetachVideoRenderer();
+			if (m_local_camera_stream.get())
+			{
+				m_local_camera_stream->DetachVideoRenderer();
+			}
 			m_videoItems[m_localCameraRenderID]->unuse();
 			m_videoItems[m_localCameraRenderID]->setVisible(false);
 
@@ -161,7 +167,10 @@ void STWhiteBoard::switchShowMode(bool mode)
 		for (it = ids.begin(); it != ids.end(); it++)
 		{
 			renderID = m_all_stream_map[*it].renderID;
-			m_all_stream_map[*it].stream->DetachVideoRenderer();
+			if (m_all_stream_map[*it].stream.get())
+			{
+				m_all_stream_map[*it].stream->DetachVideoRenderer();
+			}
 			m_big_videoItems[renderID]->unuse();
 			m_big_videoItems[renderID]->setVisible(false);
 
@@ -172,7 +181,10 @@ void STWhiteBoard::switchShowMode(bool mode)
 
 		if (m_localCameraRenderID != -1)
 		{
-			m_local_camera_stream->DetachVideoRenderer();
+			if (m_local_camera_stream.get())
+			{
+				m_local_camera_stream->DetachVideoRenderer();
+			}
 			m_big_videoItems[m_localCameraRenderID]->unuse();
 			m_big_videoItems[m_localCameraRenderID]->setVisible(false);
 
@@ -387,7 +399,8 @@ void STWhiteBoard::unsubscribeStream(QString id)
 
 void STWhiteBoard::OnStreamAdded(shared_ptr<RemoteCameraStream> stream)
 {
-	if (stream->Id().compare(m_local_camera_stream->Id()) == 0)
+	//string name = stream->Attributes().at("name");
+	if (m_local_camera_stream.get() && stream->Id().compare(m_local_camera_stream->Id()) == 0)
 	{
 		return;
 	}
@@ -478,7 +491,10 @@ void STWhiteBoard::login()
 
 void STWhiteBoard::logout()
 {
-	Q_EMIT unshowLocalCameraSignal();
+	if (m_localCameraRenderID != -1)
+	{
+		Q_EMIT unshowLocalCameraSignal();
+	}
 
 	QList<QString> ids = m_all_stream_map.keys();
 
@@ -538,7 +554,10 @@ void STWhiteBoard::showLocalCamera()
 
 void STWhiteBoard::unshowLocalCamera()
 {
-	m_local_camera_stream->DetachVideoRenderer();
+	if (m_local_camera_stream.get())
+	{
+		m_local_camera_stream->DetachVideoRenderer();
+	}
 	if (m_currentIndex == 0)
 	{
 		m_videoItems[m_localCameraRenderID]->unuse();
@@ -586,6 +605,13 @@ void STWhiteBoard::sendLocalCamera()
 		m_local_camera_stream_param->Resolution(width, height);
 		m_local_camera_stream_param->CameraId(capturerId);
 		m_local_camera_stream = LocalCameraStream::Create(*m_local_camera_stream_param, err_code);
+		if (!m_local_camera_stream.get())
+		{
+			return;
+		}
+		//unordered_map<string, string> attributes;
+		//attributes.insert(unordered_map<string, string>::value_type("name", "sunix"));
+		//m_local_camera_stream->Attributes(attributes);
 	}
 	m_client->Publish(m_local_camera_stream,
 		[=]
@@ -810,6 +836,12 @@ void STWhiteBoard::resizeEvent(QResizeEvent* size)
 	m_textStylePanel->move(QPoint(toolbarX + m_vtoolbar->width(), toolbarY + 52));
 
 	resizeMaximumDocWindow();
+}
+
+void STWhiteBoard::showEvent(QShowEvent* event)
+{
+	this->setAttribute(Qt::WA_Mapped);
+	QWidget::showEvent(event);
 }
 
 void STWhiteBoard::drawRemoteRealtimePen(QString color, int thickness, QVector<QPoint> points)

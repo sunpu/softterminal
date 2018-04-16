@@ -2,6 +2,7 @@
 #define _STWBVIEW_H
 
 #include <QWidget>
+#include <QtOpenGL>
 #include <QGraphicsView>
 #include "stcommon.h"
 #include "stnetworkclient.h"

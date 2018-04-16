@@ -95,6 +95,7 @@ namespace tahiti
 		virtual void mouseReleaseEvent(QMouseEvent* event);
 		bool eventFilter(QObject* watched, QEvent* e);
 		void resizeEvent(QResizeEvent* size);
+		void showEvent(QShowEvent* e);
 	private:
 		void initConferenceClient();
 		void OnStreamAdded(shared_ptr<RemoteCameraStream> stream) override;

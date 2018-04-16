@@ -10,12 +10,13 @@ STWBView::STWBView(STNetworkClient* network, bool subWin)
 	: m_network(network)
 {
 	setInteractive(true);
-	setOptimizationFlag(QGraphicsView::IndirectPainting);
+	//setOptimizationFlag(QGraphicsView::IndirectPainting);
 	setCacheMode(QGraphicsView::CacheBackground);
+	setViewport(QGLFormat::hasOpenGL() ? new QGLWidget(QGLFormat(QGL::SampleBuffers)) : new QWidget);
 
 	//antialiasing
-	setRenderHint(QPainter::HighQualityAntialiasing, true);
-	//setRenderHint(QPainter::Antialiasing, true);
+	//setRenderHint(QPainter::HighQualityAntialiasing, true);
+	//setRenderHint(QPainter::Antialiasing, false);
 	setObjectName("widWhiteboard");
 	if (subWin)
 	{

@@ -20,7 +20,7 @@
    <string>STWBVToolbar</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QDialog{background-color:rgba(61,63,68,0.7);border-radius:8px;}</string>
+   <string notr="true">QDialog{background-color:rgba(61,63,68,0.7);/*border-radius:8px;*/}</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
