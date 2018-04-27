@@ -6,7 +6,7 @@ STWBVideoItem::STWBVideoItem(QWidget * parent) : QWidget(parent)
 {
 	ui.setupUi(this);
 
-	m_isusing = false;
+	unuse();
 	m_render_window.SetWindowHandle((HWND)ui.widShow->winId());
 }
 
@@ -85,4 +85,52 @@ void STWBVideoItem::RenderFrame(std::unique_ptr<ARGBBuffer> video_frame)
 		frames = 0;
 		m_timer.restart();
 	}
+}
+void STWBVideoItem::use(QString id, QString showName, bool mute)
+{
+	m_isusing = true;
+	m_id = id;
+	ui.lblName->setText(showName);
+
+	if (id.isEmpty())
+	{
+		ui.pbMute->setVisible(false);
+		ui.pbUnmute->setVisible(false);
+	}
+	else
+	{
+		ui.pbMute->setVisible(!mute);
+		ui.pbUnmute->setVisible(mute);
+	}
+}
+
+void STWBVideoItem::unuse()
+{
+	m_isusing = false;
+	ui.lblName->clear();
+	ui.pbMute->setVisible(true);
+	ui.pbUnmute->setVisible(false);
+	m_id.clear();
+}
+
+void STWBVideoItem::on_pbMute_clicked()
+{
+	Q_EMIT muteSignal(m_id);
+}
+
+void STWBVideoItem::on_pbUnmute_clicked()
+{
+	Q_EMIT unmuteSignal(m_id);
+}
+
+void STWBVideoItem::onMuteResult(bool result)
+{
+	ui.pbMute->setVisible(!result);
+	ui.pbUnmute->setVisible(result);
+}
+
+void STWBVideoItem::onUnmuteResult(bool result)
+{
+	ui.pbMute->setVisible(result);
+	ui.pbUnmute->setVisible(!result);
 }

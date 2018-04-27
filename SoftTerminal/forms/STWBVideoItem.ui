@@ -84,20 +84,36 @@ border-bottom-right-radius: 3px;</string>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="spacing">
-       <number>18</number>
+       <number>5</number>
       </property>
       <property name="leftMargin">
-       <number>0</number>
+       <number>5</number>
       </property>
       <property name="topMargin">
        <number>0</number>
       </property>
       <property name="rightMargin">
-       <number>0</number>
+       <number>5</number>
       </property>
       <property name="bottomMargin">
        <number>0</number>
       </property>
+      <item>
+       <widget class="QLabel" name="lblName">
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
       <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
@@ -112,7 +128,7 @@ border-bottom-right-radius: 3px;</string>
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="pbMute">
         <property name="minimumSize">
          <size>
           <width>20</width>
@@ -126,7 +142,7 @@ border-bottom-right-radius: 3px;</string>
          </size>
         </property>
         <property name="styleSheet">
-         <string notr="true">border-image: url(:/SoftTerminal/images/doc.png);</string>
+         <string notr="true">border-image: url(:/SoftTerminal/images/mute.png);</string>
         </property>
         <property name="text">
          <string/>
@@ -134,7 +150,7 @@ border-bottom-right-radius: 3px;</string>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_2">
+       <widget class="QPushButton" name="pbUnmute">
         <property name="minimumSize">
          <size>
           <width>20</width>
@@ -148,47 +164,12 @@ border-bottom-right-radius: 3px;</string>
          </size>
         </property>
         <property name="styleSheet">
-         <string notr="true">border-image: url(:/SoftTerminal/images/pdf.png);</string>
+         <string notr="true">border-image: url(:/SoftTerminal/images/unmute.png);</string>
         </property>
         <property name="text">
          <string/>
         </property>
        </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_3">
-        <property name="minimumSize">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">border-image: url(:/SoftTerminal/images/ppt.png);</string>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
       </item>
      </layout>
     </widget>

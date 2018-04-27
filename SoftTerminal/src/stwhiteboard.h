@@ -16,15 +16,16 @@
 #include "logger.h"
 #include "stconfig.h"
 #include "token.h"
-#include "woogeen/base/deviceutils.h"
-#include "woogeen/base/stream.h"
-#include "woogeen/conference/conferenceclient.h"
-#include "woogeen/base/clientconfiguration.h"
-#include "woogeen/conference/remotemixedstream.h"
+#include "ics/base/deviceutils.h"
+#include "ics/base/stream.h"
+#include "ics/conference/conferenceclient.h"
+#include "ics/base/clientconfiguration.h"
+#include "ics/conference/remotemixedstream.h"
+#include "ics/base/globalconfiguration.h"
 
 using namespace std;
-using namespace woogeen::conference;
-using namespace woogeen::base;
+using namespace ics::conference;
+using namespace ics::base;
 
 namespace tahiti
 {
@@ -35,18 +36,35 @@ namespace tahiti
 		std::shared_ptr<RemoteStream> stream = NULL;
 		bool isShowing = false;
 		int renderID = -1;
-
+		std::shared_ptr<ConferenceSubscription> subscription;
+		bool mute = false;
+		QString showName;
 	} StreamInfo;
 
 	Q_DECLARE_METATYPE(std::shared_ptr<RemoteStream>);
+
+	class ConfSubObserver : public QObject, public ics::base::SubscriptionObserver
+	{
+		Q_OBJECT
+	public:
+		ConfSubObserver(QString id);
+		~ConfSubObserver();
+	public:
+		virtual void OnEnded();
+		virtual void OnMute(TrackKind track_kind);
+		virtual void OnUnmute(TrackKind track_kind);
+	Q_SIGNALS:
+		void subscriptionEndSignal(QString id);
+	private:
+		QString m_id;
+	};
 
 	class STWhiteBoard : public QWidget, public ConferenceClientObserver
 	{
 		Q_OBJECT
 	public:
-		STWhiteBoard(QWidget *parent = 0);
+		STWhiteBoard(QString jid, QString name, QWidget *parent = 0);
 		~STWhiteBoard();
-
 	Q_SIGNALS:
 		void newStreamSignal(QString id, int width, int height);
 		void attachRenderSignal(QString id, std::shared_ptr<RemoteStream> stream);
@@ -59,6 +77,8 @@ namespace tahiti
 		void deleteActionSignal();
 		void showLocalCameraSignal();
 		void unshowLocalCameraSignal();
+		void muteResultSignal(bool result);
+		void unmuteResultSignal(bool result);
 		private Q_SLOTS:
 		void setPenThickness(int thickness);
 		void setPenColor(QString color);
@@ -84,6 +104,9 @@ namespace tahiti
 		void switchShowMode(bool mode);
 		void showLocalCamera();
 		void unshowLocalCamera();
+		void mute(QString id);
+		void unmute(QString id);
+		void subscriptionEnd(QString id);
 		public Q_SLOTS:
 		void on_pbMinimum_clicked();
 		void on_pbMaximum_clicked();
@@ -98,14 +121,8 @@ namespace tahiti
 		void showEvent(QShowEvent* e);
 	private:
 		void initConferenceClient();
-		void OnStreamAdded(shared_ptr<RemoteCameraStream> stream) override;
-		void OnStreamAdded(shared_ptr<RemoteMixedStream> stream) override;
-		void OnStreamAdded(shared_ptr<RemoteScreenStream> stream) override;
-		void OnStreamRemoved(std::shared_ptr<RemoteCameraStream> stream) override;
-		void OnStreamRemoved(std::shared_ptr<RemoteMixedStream> stream) override;
-		void OnStreamRemoved(std::shared_ptr<RemoteScreenStream> stream) override;
-		void OnUserJoined(std::shared_ptr<const User> user) override;
-		void OnUserLeft(std::shared_ptr<const User> user) override;
+		void OnStreamAdded(std::shared_ptr<ics::conference::RemoteStream> stream);
+		void OnStreamRemoved(std::shared_ptr<ics::conference::RemoteStream> stream);
 		void OnServerDisconnected() override;
 		void subscribeStream(QString id);
 		void unsubscribeStream(QString id);
@@ -143,6 +160,10 @@ namespace tahiti
 		int m_action_mode;
 		int m_currentIndex;
 		int m_localCameraRenderID;
+		mutable std::mutex m_callback_mutex;
+		QString m_jid;
+		QString m_name;
+		std::shared_ptr<ConferencePublication> m_publication;
 	};
 }
 #endif

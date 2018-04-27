@@ -127,5 +127,7 @@
         <file>images/info.png</file>
         <file>images/logo.png</file>
         <file>images/camoff.png</file>
+        <file>images/mute.png</file>
+        <file>images/unmute.png</file>
     </qresource>
 </RCC>

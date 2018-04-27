@@ -7,11 +7,11 @@
 #include <fstream>
 #include <memory>
 #include <mutex>
-#include "woogeen/base/stream.h"
-#include "woogeen/base/videorendererinterface.h"
+#include "ics/base/stream.h"
+#include "ics/base/videorendererinterface.h"
 
 using namespace std;
-using namespace woogeen::base;
+using namespace ics::base;
 
 namespace tahiti
 {
@@ -24,7 +24,7 @@ namespace tahiti
 		bool isusing() { return m_isusing; }
 		void use() { m_isusing = true; }
 		void unuse() { m_isusing = false; }
-		woogeen::base::VideoRenderWindow getRenderWindow() { return render_window_; }
+		ics::base::VideoRenderWindow getRenderWindow() { return render_window_; }
 	private:
 		QTime timer, timer2;
 		void paintEvent(QPaintEvent* e);
@@ -33,7 +33,7 @@ namespace tahiti
 		void RenderFrame(std::unique_ptr<ARGBBuffer> video_frame);
 		// void SetSize(int width, int height);
 		bool m_isusing;
-		woogeen::base::VideoRenderWindow render_window_;
+		ics::base::VideoRenderWindow render_window_;
 	};
 }
 #endif

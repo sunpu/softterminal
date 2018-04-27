@@ -174,7 +174,7 @@ void STChatDetail::on_pbScreenShotOption_clicked()
 
 void STChatDetail::on_pbLesson_clicked()
 {
-	m_whiteboard = new STWhiteBoard;
+	m_whiteboard = new STWhiteBoard(m_selfInfo.jid, m_selfInfo.userName);
 
 	connect(m_main, SIGNAL(closeMain()), m_whiteboard, SLOT(on_pbClose_clicked()));
 	m_whiteboard->show();

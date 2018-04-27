@@ -131,12 +131,6 @@
     <ClCompile Include="GeneratedFiles\Release\moc_stpersonalinfo.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_stsample.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_stsample.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_stscreenshot.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
@@ -228,9 +222,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\strecordmanager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\stsample.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\stscreenshot.cpp">
@@ -460,9 +451,6 @@
     <CustomBuild Include="src\stpersonalinfo.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\stsample.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="src\stscreenshot.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
@@ -530,9 +518,6 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="forms\STWBCloudFileView.ui">
-      <Filter>Form Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="STTooltip.ui">
       <Filter>Form Files</Filter>
     </CustomBuild>
   </ItemGroup>
@@ -671,9 +656,6 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GeneratedFiles\ui_STTooltip.h">
-      <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

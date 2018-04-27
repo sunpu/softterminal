@@ -2,8 +2,8 @@
 
 using namespace tahiti;
 
-STWhiteBoard::STWhiteBoard(QWidget *parent)
-	: QWidget(parent)
+STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
+	: m_jid(jid), m_name(name), QWidget(parent)
 {
 	ui.setupUi(this);
 
@@ -28,6 +28,10 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 	for (size_t i = 0; i < MAX_STREAM_NUM; i++)
 	{
 		m_videoItems[i] = new STWBVideoItem(ui.widVideo);
+		QObject::connect(m_videoItems[i], SIGNAL(muteSignal(QString)), this, SLOT(mute(QString)));
+		QObject::connect(m_videoItems[i], SIGNAL(unmuteSignal(QString)), this, SLOT(unmute(QString)));
+		QObject::connect(this, SIGNAL(muteResultSignal(bool)), m_videoItems[i], SLOT(onMuteResult(bool)));
+		QObject::connect(this, SIGNAL(unmuteResultSignal(bool)), m_videoItems[i], SLOT(onUnmuteResult(bool)));
 		m_videoItems[i]->setRenderSize(192, 108);
 		m_videoItems[i]->setBgImage(":/SoftTerminal/images/video_bg.png");
 		m_videoItems[i]->setObjectName(QString::number(i));
@@ -35,6 +39,10 @@ STWhiteBoard::STWhiteBoard(QWidget *parent)
 		hboxLayout->addWidget(m_videoItems[i]);
 
 		m_big_videoItems[i] = new STWBVideoItem(ui.widVideoBig);
+		QObject::connect(m_big_videoItems[i], SIGNAL(muteSignal(QString)), this, SLOT(mute(QString)));
+		QObject::connect(m_big_videoItems[i], SIGNAL(unmuteSignal(QString)), this, SLOT(unmute(QString)));
+		QObject::connect(this, SIGNAL(muteResultSignal(bool)), m_big_videoItems[i], SLOT(onMuteResult(bool)));
+		QObject::connect(this, SIGNAL(unmuteResultSignal(bool)), m_big_videoItems[i], SLOT(onUnmuteResult(bool)));
 		m_big_videoItems[i]->setRenderSize(400, 225);
 		m_big_videoItems[i]->setBgImage(":/SoftTerminal/images/video_bg_big.png");
 		m_big_videoItems[i]->setObjectName(QString::number(i));
@@ -139,7 +147,7 @@ void STWhiteBoard::switchShowMode(bool mode)
 			m_videoItems[renderID]->unuse();
 			m_videoItems[renderID]->setVisible(false);
 
-			m_big_videoItems[renderID]->use();
+			m_big_videoItems[renderID]->use(*it, m_all_stream_map[*it].showName, m_all_stream_map[*it].mute);
 			m_big_videoItems[renderID]->setVisible(true);
 			m_all_stream_map[*it].stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
 		}
@@ -153,7 +161,7 @@ void STWhiteBoard::switchShowMode(bool mode)
 			m_videoItems[m_localCameraRenderID]->unuse();
 			m_videoItems[m_localCameraRenderID]->setVisible(false);
 
-			m_big_videoItems[m_localCameraRenderID]->use();
+			m_big_videoItems[m_localCameraRenderID]->use("", QStringLiteral("我"), false);
 			m_big_videoItems[m_localCameraRenderID]->setVisible(true);
 			m_local_camera_stream->AttachVideoRenderer(m_big_videoItems[m_localCameraRenderID]->getRenderWindow());
 		}
@@ -174,7 +182,7 @@ void STWhiteBoard::switchShowMode(bool mode)
 			m_big_videoItems[renderID]->unuse();
 			m_big_videoItems[renderID]->setVisible(false);
 
-			m_videoItems[renderID]->use();
+			m_videoItems[renderID]->use(*it, m_all_stream_map[*it].showName, m_all_stream_map[*it].mute);
 			m_videoItems[renderID]->setVisible(true);
 			m_all_stream_map[*it].stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
 		}
@@ -188,7 +196,7 @@ void STWhiteBoard::switchShowMode(bool mode)
 			m_big_videoItems[m_localCameraRenderID]->unuse();
 			m_big_videoItems[m_localCameraRenderID]->setVisible(false);
 
-			m_videoItems[m_localCameraRenderID]->use();
+			m_videoItems[m_localCameraRenderID]->use("", QStringLiteral("我"), false);
 			m_videoItems[m_localCameraRenderID]->setVisible(true);
 			m_local_camera_stream->AttachVideoRenderer(m_videoItems[m_localCameraRenderID]->getRenderWindow());
 		}
@@ -250,10 +258,10 @@ void STWhiteBoard::initConferenceClient()
 	m_screen_width = rec.width();
 
 	// ice server
-	woogeen::conference::IceServer ice;
+	ics::conference::IceServer ice;
 	ice.urls.push_back("stun:221.226.156.109:3478");
 	ice.username = ice.password = "";
-	vector<woogeen::conference::IceServer> ice_servers;
+	vector<ics::conference::IceServer> ice_servers;
 	ice_servers.push_back(ice);
 
 	GlobalConfiguration::SetVideoHardwareAccelerationEnabled(m_hardware_accelerated);
@@ -261,12 +269,7 @@ void STWhiteBoard::initConferenceClient()
 
 	// configuration
 	ConferenceClientConfiguration config = ConferenceClientConfiguration();
-	config.ice_servers = ice_servers;
-	MediaCodec mc;
-	mc.video_codec = MediaCodec::VP8;
-	//mc.video_codec = MediaCodec::H264;
-	config.media_codec = mc;
-	//config.max_video_bandwidth = 1000;
+	//config.ice_servers = ice_servers;
 
 	m_client = ConferenceClient::Create(config);
 	m_client->AddObserver(*this);
@@ -279,6 +282,7 @@ void STWhiteBoard::newStreamSlot(QString id, int width, int height)
 
 void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> stream)
 {
+	stream = m_all_stream_map[id].stream;
 	int renderID = -1;
 	if (m_currentIndex == 0)
 	{
@@ -287,7 +291,7 @@ void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> st
 			if (!m_videoItems[i]->isusing())
 			{
 				renderID = i;
-				m_videoItems[i]->use();
+				m_videoItems[i]->use(id, m_all_stream_map[id].showName, m_all_stream_map[id].mute);
 				m_videoItems[i]->setVisible(true);
 				break;
 			}
@@ -306,7 +310,7 @@ void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> st
 			if (!m_big_videoItems[i]->isusing())
 			{
 				renderID = i;
-				m_big_videoItems[i]->use();
+				m_big_videoItems[i]->use(id, m_all_stream_map[id].showName, m_all_stream_map[id].mute);
 				m_big_videoItems[i]->setVisible(true);
 				break;
 			}
@@ -316,11 +320,6 @@ void STWhiteBoard::attachRenderSlot(QString id, std::shared_ptr<RemoteStream> st
 			return;
 		}
 		stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
-		StreamInfo info;
-		info.stream = stream;
-		m_all_stream_map.insert(id, info);
-		m_all_stream_map[id].isShowing = true;
-		m_all_stream_map[id].renderID = renderID;
 		ui.widVideoBig->update();
 	}
 	m_all_stream_map[id].isShowing = true;
@@ -334,6 +333,10 @@ void STWhiteBoard::detachRenderSlot(QString id)
 		m_all_stream_map[id].stream->DetachVideoRenderer();
 	}
 	m_all_stream_map[id].isShowing = false;
+	if (m_all_stream_map[id].renderID == -1)
+	{
+		return;
+	}
 	if (m_currentIndex == 0)
 	{
 		m_videoItems[m_all_stream_map[id].renderID]->unuse();
@@ -349,6 +352,34 @@ void STWhiteBoard::detachRenderSlot(QString id)
 	m_all_stream_map[id].renderID = -1;
 }
 
+void STWhiteBoard::mute(QString id)
+{
+	m_all_stream_map[id].subscription->Mute(TrackKind::kAudio,
+		[=]()
+	{
+		m_all_stream_map[id].mute = true;
+		Q_EMIT muteResultSignal(true);
+	},
+		[=](std::unique_ptr<Exception>)
+	{
+		Q_EMIT muteResultSignal(false);
+	});
+}
+
+void STWhiteBoard::unmute(QString id)
+{
+	m_all_stream_map[id].subscription->Unmute(TrackKind::kAudio,
+		[=]()
+	{
+		m_all_stream_map[id].mute = false;
+		Q_EMIT unmuteResultSignal(true);
+	},
+		[=](std::unique_ptr<Exception>)
+	{
+		Q_EMIT unmuteResultSignal(false);
+	});
+}
+
 void STWhiteBoard::subscribeStream(QString id)
 {
 	if (!m_all_stream_map.contains(id))
@@ -357,20 +388,29 @@ void STWhiteBoard::subscribeStream(QString id)
 	}
 
 	shared_ptr<RemoteStream> mainStream = m_all_stream_map[id].stream;
-	m_all_stream_map.remove(id);
-	/*SubscribeOptions options;
-	options.resolution.width = m_all_stream_map[id].width;
-	options.resolution.height = m_all_stream_map[id].height;
-	//options.video_quality_level = woogeen::conference::SubscribeOptions::VideoQualityLevel::kBestSpeed;*/
+
+	SubscribeOptions options;
+	VideoCodecParameters codec_params;
+	codec_params.name = ics::base::VideoCodec::kH264;
+	options.video.codecs.push_back(codec_params);
+	//options.video.resolution.width = 1920;
+	//options.video.resolution.height = 1080;
+	AudioCodecParameters audio_params;
+	audio_params.name = ics::base::AudioCodec::kOpus;
+	options.audio.codecs.push_back(audio_params);
 	m_client->Subscribe(mainStream,
-		//options,
-		[&](std::shared_ptr<RemoteStream> stream)
+		options,
+		[&](std::shared_ptr<ConferenceSubscription> subscription)
 	{
-		string streamID = stream->Id();
-		Q_EMIT attachRenderSignal(QString::fromStdString(streamID), stream);
+		string streamID = subscription->StreamId();
+		m_all_stream_map[streamID.c_str()].subscription = subscription;
+		ConfSubObserver* subObserver = new ConfSubObserver(streamID.c_str());
+		connect(subObserver, SIGNAL(subscriptionEndSignal(QString)), this, SLOT(subscriptionEnd(QString)));
+		subscription->AddObserver(*subObserver);
+		Q_EMIT attachRenderSignal(QString::fromStdString(streamID), NULL);
 		TAHITI_INFO("订阅成功..." << streamID.c_str());
 	},
-		[=](std::unique_ptr<ConferenceException>)
+		[=](std::unique_ptr<Exception>)
 	{
 		TAHITI_ERROR("订阅失败...");
 	});
@@ -382,37 +422,30 @@ void STWhiteBoard::unsubscribeStream(QString id)
 	{
 		return;
 	}
-	m_curentID = id; // logout时，批量删除，容易冲突,暂时sleep
-	Q_EMIT detachRenderSignal(m_curentID);
-	std::shared_ptr<RemoteStream> stream = m_all_stream_map[m_curentID].stream;
-	m_client->Unsubscribe(stream,
-		[=]()
+	if (m_all_stream_map[id].stream.get())
 	{
-		TAHITI_INFO("取消订阅成功...");
-	},
-		[=](std::unique_ptr<ConferenceException>)
-	{
-		TAHITI_ERROR("取消订阅失败...");
-	});
-	QThread::msleep(500);
-}
-
-void STWhiteBoard::OnStreamAdded(shared_ptr<RemoteCameraStream> stream)
-{
-	//string name = stream->Attributes().at("name");
-	if (m_local_camera_stream.get() && stream->Id().compare(m_local_camera_stream->Id()) == 0)
-	{
-		return;
+		//m_curentID = id; // logout时，批量删除，容易冲突,暂时sleep
+		//Q_EMIT detachRenderSignal(m_curentID);
+		Q_EMIT detachRenderSignal(id);
+		//m_all_stream_map[id].subscription->Stop();
 	}
-	addStream(stream);
+	//QThread::msleep(500);
 }
 
-void STWhiteBoard::OnStreamAdded(shared_ptr<RemoteMixedStream> stream)
+void STWhiteBoard::OnStreamAdded(std::shared_ptr<ics::conference::RemoteStream> stream)
 {
-}
-
-void STWhiteBoard::OnStreamAdded(shared_ptr<RemoteScreenStream> stream)
-{
+	unordered_map<string, string> attributes = stream->Attributes();
+	if (attributes.find("jid") != attributes.end())
+	{
+		if (m_jid == attributes["jid"].c_str())
+		{
+			return;
+		}
+	}
+	if (stream->Source().video == VideoSourceInfo::kCamera)
+	{
+		addStream(stream);
+	}
 }
 
 void STWhiteBoard::addStream(shared_ptr<RemoteStream> stream, int width, int height)
@@ -422,22 +455,17 @@ void STWhiteBoard::addStream(shared_ptr<RemoteStream> stream, int width, int hei
 	info.stream = stream;
 	info.width = width;
 	info.height = height;
+	unordered_map<string, string> attributes = stream->Attributes();
+	if (attributes.find("name") != attributes.end())
+	{
+		info.showName = attributes["name"].c_str();
+	}
 	m_all_stream_map.insert(QString::fromStdString(id), info);
 
 	Q_EMIT newStreamSignal(QString::fromStdString(id), width, height);
 }
 
-void STWhiteBoard::OnStreamRemoved(std::shared_ptr<RemoteCameraStream> stream)
-{
-	removeStream(stream);
-}
-
-void STWhiteBoard::OnStreamRemoved(std::shared_ptr<RemoteMixedStream> stream)
-{
-	removeStream(stream);
-}
-
-void STWhiteBoard::OnStreamRemoved(std::shared_ptr<RemoteScreenStream> stream)
+void STWhiteBoard::OnStreamRemoved(std::shared_ptr<ics::conference::RemoteStream> stream)
 {
 	removeStream(stream);
 }
@@ -449,14 +477,11 @@ void STWhiteBoard::removeStream(std::shared_ptr<RemoteStream> stream)
 	m_all_stream_map.remove(QString::fromStdString(id));
 }
 
-void STWhiteBoard::OnUserJoined(std::shared_ptr<const User> user)
+void STWhiteBoard::subscriptionEnd(QString id)
 {
-
-}
-
-void STWhiteBoard::OnUserLeft(std::shared_ptr<const User> user)
-{
-
+	unsubscribeStream(id);
+	m_all_stream_map[id].subscription->Stop();
+	m_all_stream_map.remove(id);
 }
 
 void STWhiteBoard::OnServerDisconnected()
@@ -468,24 +493,36 @@ void STWhiteBoard::login()
 {
 	bool isTeacher = true;
 	QString server = STConfig::getConfig("/xmpp/server");
-	QString uri = QString("http://") + server + QString(":3001/createToken");
+	QString uri = QString("http://") + server + QString(":3001/CreateToken");
 
 	string token = getToken(string((const char *)uri.toLocal8Bit()), isTeacher);
 	if (token != "")
 	{
+		std::lock_guard<std::mutex> lock(m_callback_mutex);
 		m_client->Join(token,
-			[=](std::shared_ptr<User> user)
+			[=](std::shared_ptr<ConferenceInfo> info)
 		{
+			std::vector<std::shared_ptr<RemoteStream>> remote_streams = info->RemoteStreams();
+			for (auto& remote_stream : remote_streams)
+			{
+				if (remote_stream->Source().video == VideoSourceInfo::kCamera)
+				{
+					addStream(remote_stream);
+				}
+			}
 			TAHITI_INFO("登入成功...");
 			sendLocalCamera();
 		},
-			[=](std::unique_ptr<ConferenceException> err)
+			[=](unique_ptr<Exception> err)
 		{
 			TAHITI_ERROR("登入失败...");
-		});
+		}
+		);
 	}
 	else
-	{  // error occurs
+	{
+		// error occurs
+		cout << "Create token error!" << endl;
 	}
 }
 
@@ -518,7 +555,7 @@ void STWhiteBoard::showLocalCamera()
 			if (!m_videoItems[i]->isusing())
 			{
 				renderID = i;
-				m_videoItems[i]->use();
+				m_videoItems[i]->use("", QStringLiteral("我"), false);
 				m_videoItems[i]->setVisible(true);
 				break;
 			}
@@ -537,7 +574,7 @@ void STWhiteBoard::showLocalCamera()
 			if (!m_big_videoItems[i]->isusing())
 			{
 				renderID = i;
-				m_big_videoItems[i]->use();
+				m_big_videoItems[i]->use("", QStringLiteral("我"), false);
 				m_big_videoItems[i]->setVisible(true);
 				break;
 			}
@@ -604,22 +641,38 @@ void STWhiteBoard::sendLocalCamera()
 		m_local_camera_stream_param.reset(new LocalCameraStreamParameters(true, true));
 		m_local_camera_stream_param->Resolution(width, height);
 		m_local_camera_stream_param->CameraId(capturerId);
-		m_local_camera_stream = LocalCameraStream::Create(*m_local_camera_stream_param, err_code);
+		m_local_camera_stream = LocalStream::Create(*m_local_camera_stream_param, err_code);
 		if (!m_local_camera_stream.get())
 		{
 			return;
 		}
-		//unordered_map<string, string> attributes;
-		//attributes.insert(unordered_map<string, string>::value_type("name", "sunix"));
-		//m_local_camera_stream->Attributes(attributes);
 	}
+	PublishOptions options;
+	VideoCodecParameters codec_params;
+	codec_params.name = ics::base::VideoCodec::kH264;
+	VideoEncodingParameters video_params(codec_params, 0, m_hardware_accelerated);
+	options.video.push_back(video_params);
+
+	AudioEncodingParameters audio_params;
+	audio_params.codec.name = ics::base::AudioCodec::kOpus;
+	options.audio.push_back(audio_params);
+
+	unordered_map<string, string> attributes;
+	string jid = m_jid.toStdString();
+	string name = m_name.toStdString();
+	attributes.insert(unordered_map<string, string>::value_type("jid", jid));
+	attributes.insert(unordered_map<string, string>::value_type("name", name));
+	m_local_camera_stream->Attributes(attributes);
+
 	m_client->Publish(m_local_camera_stream,
-		[=]
+		options,
+		[=](std::shared_ptr<ConferencePublication> publication)
 	{
+		m_publication = publication;
 		TAHITI_INFO("发送本地视频成功...");
 		Q_EMIT showLocalCameraSignal();
 	},
-		[=](std::unique_ptr<ConferenceException> err)
+		[=](unique_ptr<Exception> err)
 	{
 		TAHITI_ERROR("发送本地视频失败...");
 	});
@@ -627,27 +680,18 @@ void STWhiteBoard::sendLocalCamera()
 
 void STWhiteBoard::stopSendLocalCamera()
 {
-	m_client->Unpublish(m_local_camera_stream,
-		[=]
+	if (m_publication.get())
 	{
-		TAHITI_INFO("停止发送本地视频成功...");
+		m_publication->Stop();
+
+		m_publication.reset();
+		m_publication = nullptr;
+		m_local_camera_stream->Close();
+		m_local_camera_stream.reset();
 		m_local_camera_stream_param = nullptr;
 		m_local_camera_stream = nullptr;
-
-		m_client->Leave(
-			[=]
-		{
-			TAHITI_INFO("登出成功...");
-		},
-			[=](std::unique_ptr<woogeen::conference::ConferenceException> err)
-		{
-			TAHITI_ERROR("登出失败...");
-		});
-	},
-		[=](std::unique_ptr<ConferenceException> err)
-	{
-		TAHITI_ERROR("停止发送本地视频失败...");
-	});
+		TAHITI_INFO("停止发送本地视频成功...");
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -720,7 +764,7 @@ void STWhiteBoard::openCloudFile(QString path)
 
 void STWhiteBoard::closeCloudFile(int index)
 {
-	QVector<STWBDocWindow*> ::Iterator it;
+	QVector<STWBDocWindow*>::Iterator it;
 	for (it = m_docWindows.begin(); it != m_docWindows.end(); it++)
 	{
 		if ((*it)->getDocWindowIndex() == index)
@@ -890,4 +934,29 @@ void STWhiteBoard::editableAuthority(QString editable)
 		m_textStylePanel->hide();
 		m_vtoolbar->hide();
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+ConfSubObserver::ConfSubObserver(QString id)
+	: m_id(id)
+{
+}
+
+ConfSubObserver::~ConfSubObserver()
+{
+}
+
+void ConfSubObserver::OnEnded()
+{
+	Q_EMIT subscriptionEndSignal(m_id);
+}
+
+void ConfSubObserver::OnMute(ics::base::TrackKind track_kind)
+{
+	cout << "on video/audio muted" << endl;
+}
+
+void ConfSubObserver::OnUnmute(ics::base::TrackKind track_kind)
+{
+	cout << "on video/audio unmuted" << endl;
 }
