@@ -77,8 +77,8 @@ namespace tahiti
 		void deleteActionSignal();
 		void showLocalCameraSignal();
 		void unshowLocalCameraSignal();
-		void muteResultSignal(bool result);
-		void unmuteResultSignal(bool result);
+		void muteResultSignal(bool result, QString);
+		void unmuteResultSignal(bool result, QString);
 		private Q_SLOTS:
 		void setPenThickness(int thickness);
 		void setPenColor(QString color);

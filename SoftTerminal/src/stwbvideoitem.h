@@ -36,8 +36,8 @@ namespace tahiti
 		void muteSignal(QString id);
 		void unmuteSignal(QString id);
 		private Q_SLOTS:
-		void onMuteResult(bool result);
-		void onUnmuteResult(bool result);
+		void onMuteResult(bool result, QString);
+		void onUnmuteResult(bool result, QString);
 	private:
 		void paintEvent(QPaintEvent* e);
 		void RenderFrame(std::unique_ptr<ARGBBuffer> video_frame);

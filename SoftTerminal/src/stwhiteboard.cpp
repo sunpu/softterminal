@@ -30,8 +30,8 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
 		m_videoItems[i] = new STWBVideoItem(ui.widVideo);
 		QObject::connect(m_videoItems[i], SIGNAL(muteSignal(QString)), this, SLOT(mute(QString)));
 		QObject::connect(m_videoItems[i], SIGNAL(unmuteSignal(QString)), this, SLOT(unmute(QString)));
-		QObject::connect(this, SIGNAL(muteResultSignal(bool)), m_videoItems[i], SLOT(onMuteResult(bool)));
-		QObject::connect(this, SIGNAL(unmuteResultSignal(bool)), m_videoItems[i], SLOT(onUnmuteResult(bool)));
+		QObject::connect(this, SIGNAL(muteResultSignal(bool, QString)), m_videoItems[i], SLOT(onMuteResult(bool, QString)));
+		QObject::connect(this, SIGNAL(unmuteResultSignal(bool, QString)), m_videoItems[i], SLOT(onUnmuteResult(bool, QString)));
 		m_videoItems[i]->setRenderSize(192, 108);
 		m_videoItems[i]->setBgImage(":/SoftTerminal/images/video_bg.png");
 		m_videoItems[i]->setObjectName(QString::number(i));
@@ -41,8 +41,8 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
 		m_big_videoItems[i] = new STWBVideoItem(ui.widVideoBig);
 		QObject::connect(m_big_videoItems[i], SIGNAL(muteSignal(QString)), this, SLOT(mute(QString)));
 		QObject::connect(m_big_videoItems[i], SIGNAL(unmuteSignal(QString)), this, SLOT(unmute(QString)));
-		QObject::connect(this, SIGNAL(muteResultSignal(bool)), m_big_videoItems[i], SLOT(onMuteResult(bool)));
-		QObject::connect(this, SIGNAL(unmuteResultSignal(bool)), m_big_videoItems[i], SLOT(onUnmuteResult(bool)));
+		QObject::connect(this, SIGNAL(muteResultSignal(bool, QString)), m_big_videoItems[i], SLOT(onMuteResult(bool, QString)));
+		QObject::connect(this, SIGNAL(unmuteResultSignal(bool, QString)), m_big_videoItems[i], SLOT(onUnmuteResult(bool, QString)));
 		m_big_videoItems[i]->setRenderSize(400, 225);
 		m_big_videoItems[i]->setBgImage(":/SoftTerminal/images/video_bg_big.png");
 		m_big_videoItems[i]->setObjectName(QString::number(i));
@@ -358,11 +358,11 @@ void STWhiteBoard::mute(QString id)
 		[=]()
 	{
 		m_all_stream_map[id].mute = true;
-		Q_EMIT muteResultSignal(true);
+		Q_EMIT muteResultSignal(true, id);
 	},
 		[=](std::unique_ptr<Exception>)
 	{
-		Q_EMIT muteResultSignal(false);
+		Q_EMIT muteResultSignal(false, id);
 	});
 }
 
@@ -372,11 +372,11 @@ void STWhiteBoard::unmute(QString id)
 		[=]()
 	{
 		m_all_stream_map[id].mute = false;
-		Q_EMIT unmuteResultSignal(true);
+		Q_EMIT unmuteResultSignal(true, id);
 	},
 		[=](std::unique_ptr<Exception>)
 	{
-		Q_EMIT unmuteResultSignal(false);
+		Q_EMIT unmuteResultSignal(false, id);
 	});
 }
 

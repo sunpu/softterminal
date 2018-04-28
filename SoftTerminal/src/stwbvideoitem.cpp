@@ -123,14 +123,20 @@ void STWBVideoItem::on_pbUnmute_clicked()
 	Q_EMIT unmuteSignal(m_id);
 }
 
-void STWBVideoItem::onMuteResult(bool result)
+void STWBVideoItem::onMuteResult(bool result, QString id)
 {
-	ui.pbMute->setVisible(!result);
-	ui.pbUnmute->setVisible(result);
+	if (m_id == id)
+	{
+		ui.pbMute->setVisible(!result);
+		ui.pbUnmute->setVisible(result);
+	}
 }
 
-void STWBVideoItem::onUnmuteResult(bool result)
+void STWBVideoItem::onUnmuteResult(bool result, QString id)
 {
-	ui.pbMute->setVisible(result);
-	ui.pbUnmute->setVisible(!result);
+	if (m_id == id)
+	{
+		ui.pbMute->setVisible(result);
+		ui.pbUnmute->setVisible(!result);
+	}
 }
