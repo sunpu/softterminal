@@ -45,14 +45,14 @@
     <widget class="QWidget" name="widget_2" native="true">
      <property name="minimumSize">
       <size>
-       <width>40</width>
-       <height>40</height>
+       <width>0</width>
+       <height>0</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>40</width>
-       <height>40</height>
+       <width>16777215</width>
+       <height>16777215</height>
       </size>
      </property>
      <layout class="QGridLayout" name="gridLayout">

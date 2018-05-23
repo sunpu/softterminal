@@ -22,6 +22,7 @@ namespace tahiti
 		public Q_SLOTS:
 		void on_pbSearch_clicked();
 		void on_pbAddNew_clicked();
+		void on_pbAddNewAgain_clicked();
 		private Q_SLOTS:
 		void onContactFoundResult(int result, QVariant dataVar);
 		void handleCheckResult(bool result);
@@ -33,6 +34,7 @@ namespace tahiti
 		XmppClient* m_xmppClient;
 		XmppRegister* m_xmppRegister;
 		QString m_jidName;
+		bool m_waitQuery;
 	};
 }
 #endif

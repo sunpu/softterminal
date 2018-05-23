@@ -50,11 +50,6 @@ void STContactDetail::on_pbSendMessage_clicked()
 	Q_EMIT openChatDetail(m_userInfo.jid);
 }
 
-void STContactDetail::on_pbOpenClass_clicked()
-{
-
-}
-
 void STContactDetail::on_pbDeleteFriend_clicked()
 {
 	ui.widButton->setVisible(false);

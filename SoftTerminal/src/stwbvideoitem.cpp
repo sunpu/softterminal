@@ -86,6 +86,7 @@ void STWBVideoItem::RenderFrame(std::unique_ptr<ARGBBuffer> video_frame)
 		m_timer.restart();
 	}
 }
+
 void STWBVideoItem::use(QString id, QString showName, bool mute)
 {
 	m_isusing = true;

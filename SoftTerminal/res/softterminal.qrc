@@ -129,5 +129,8 @@
         <file>images/camoff.png</file>
         <file>images/mute.png</file>
         <file>images/unmute.png</file>
+        <file>images/add_list.png</file>
+        <file>images/right_arrow.png</file>
+        <file>images/group_icon.png</file>
     </qresource>
 </RCC>

@@ -20,7 +20,6 @@ namespace tahiti
 		void setContactDetail(UserInfo userInfo);
 		public Q_SLOTS:
 		void on_pbSendMessage_clicked();
-		void on_pbOpenClass_clicked();
 		void on_pbDeleteFriend_clicked();
 	Q_SIGNALS:
 		void openChatDetail(QString jid);

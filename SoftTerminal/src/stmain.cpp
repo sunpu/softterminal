@@ -40,7 +40,6 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 
 	// 初始化左侧工具栏
 	ui.pbChat->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/chat_on.png);}");
-	ui.pbGroup->setVisible(false);
 
 	m_menu = new STMenu(this);
 	connect(m_menu, SIGNAL(confirmExit()), this, SLOT(confirmExit()));
@@ -63,11 +62,16 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 
 	// 初始化右侧窗口
 	initContactAddNew();
+	initGroupAddNew();
 
 	m_contactDetail = new STContactDetail();
 	ui.widContactDetail->layout()->addWidget(m_contactDetail);
 	connect(m_contactDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
 	connect(m_contactDetail, SIGNAL(deleteFriend(QString)), this, SLOT(deleteFriend(QString)));
+
+	m_groupDetail = new STGroupDetail(m_xmppClient);
+	connect(m_groupDetail, SIGNAL(refreshGroupSignal(QString)), this, SLOT(refreshGroup(QString)));
+	ui.widGroupDetail->layout()->addWidget(m_groupDetail);
 
 	ui.lblDirect->installEventFilter(this);
 	ui.lblFriend->installEventFilter(this);
@@ -90,6 +94,7 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 STMain::~STMain()
 {
 	delete m_contactDetail;
+	delete m_groupDetail;
 }
 
 void STMain::initChatData()
@@ -231,8 +236,6 @@ void STMain::initContactMainWindow()
 	ui.widContactDetail->setVisible(false);
 	ui.widContactBlank->setVisible(true);
 	ui.widContactAddNew->setVisible(false);
-	ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
-		"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
 }
 
 void STMain::loadContactWindow()
@@ -244,7 +247,77 @@ void STMain::loadContactWindow()
 void STMain::refreshContact()
 {
 	loadContactWindow();
-	initContactMainWindow();
+	//initContactMainWindow();
+}
+
+void STMain::initGroupAddNew()
+{
+	m_groupAddNew = new STGroupAddNew(m_xmppClient);
+	connect(m_groupAddNew, SIGNAL(refreshGroupSignal(QString)), this, SLOT(refreshGroup(QString)));
+	ui.widGroupAddNew->layout()->addWidget(m_groupAddNew);
+}
+
+void STMain::initGroupData()
+{
+	m_groupItemList.clear();
+	STGroupItem* groupItem;
+
+	QList<XmppGroup*> groups = m_xmppClient->getGroups();
+	QList<XmppGroup*>::const_iterator it;
+	for (it = groups.constBegin(); it != groups.constEnd(); it++)
+	{
+		groupItem = new STGroupItem(m_xmppClient, *it);
+		m_groupItemList.push_back(groupItem);
+	}
+}
+
+void STMain::initGroupList()
+{
+	ui.lwGroupList->clear();
+
+	QListWidgetItem* item;
+	QList<STGroupItem*>::Iterator it;
+	for (it = m_groupItemList.begin(); it != m_groupItemList.end(); it++)
+	{
+		item = new QListWidgetItem();
+		ui.lwGroupList->addItem(item);
+		ui.lwGroupList->setItemWidget(item, *it);
+	}
+	ui.lblGroupNum->setText(QString::number(m_groupItemList.size()));
+}
+
+void STMain::initGroupMainWindow()
+{
+	ui.widGroupDetail->setVisible(false);
+	ui.widGroupBlank->setVisible(true);
+	ui.widGroupAddNew->setVisible(false);
+}
+
+void STMain::loadGroupWindow()
+{
+	initGroupData();
+	initGroupList();
+}
+
+void STMain::refreshGroup(QString id)
+{
+	loadGroupWindow();
+
+	QListWidgetItem* item;
+	QWidget* widget;
+	STGroupItem* groupItem;
+	for (int i = 0; i < ui.lwGroupList->count(); i++)
+	{
+		item = ui.lwGroupList->item(i);
+		widget = ui.lwGroupList->itemWidget(item);
+		groupItem = (STGroupItem*)widget;
+
+		if (groupItem->getGroupInfo().id == id)
+		{
+			ui.lwGroupList->setCurrentItem(item);
+			return;
+		}
+	}
 }
 
 void STMain::updateOthersMessage(QString jid)
@@ -281,9 +354,12 @@ void STMain::init()
 	initChatMainWindow();
 	// 初始化联系人
 	initContactMainWindow();
+	// 初始化群组
+	initGroupMainWindow();
 
 	connect(this, SIGNAL(loadChatWindowSignal()), this, SLOT(loadChatWindow()));
 	connect(this, SIGNAL(loadContactWindowSignal()), this, SLOT(loadContactWindow()));
+	connect(this, SIGNAL(loadGroupWindowSignal()), this, SLOT(loadGroupWindow()));
 
 	pthread_create(&m_tidLoad, NULL, loadProc, this);
 }
@@ -305,6 +381,7 @@ void STMain::loadInfo()
 {
 	Q_EMIT loadChatWindowSignal();
 	Q_EMIT loadContactWindowSignal();
+	Q_EMIT loadGroupWindowSignal();
 }
 
 void* STMain::loadProc(void* args)
@@ -355,7 +432,28 @@ void STMain::on_lwContactList_itemClicked()
 	ui.widContactDetail->setVisible(true);
 	ui.widContactBlank->setVisible(false);
 	ui.widContactAddNew->setVisible(false);
-	ui.widTitle->setStyleSheet("QWidget{border:0px;background-color:#434555;}");
+}
+
+void STMain::on_lwGroupList_itemClicked()
+{
+	if (ui.swMain->currentIndex() == 0)
+	{
+		return;
+	}
+	QListWidgetItem* item;
+	item = ui.lwGroupList->currentItem();
+	QWidget* widget = ui.lwGroupList->itemWidget(item);
+	STGroupItem* groupItem = (STGroupItem*)widget;
+
+	XmppGroup* group = groupItem->getGroup();
+	GroupInfo groupInfo = groupItem->getGroupInfo();
+	UserInfo ownerInfo = groupItem->getOwnerInfo();
+	QMap<QString, UserInfo> membersInfo = groupItem->getMembersInfo();
+	m_groupDetail->setGroupDetail(group, groupInfo, ownerInfo, membersInfo);
+
+	ui.widGroupDetail->setVisible(true);
+	ui.widGroupBlank->setVisible(false);
+	ui.widGroupAddNew->setVisible(false);
 }
 
 void STMain::switchChatItem(QString jid)
@@ -570,6 +668,14 @@ void STMain::on_lwContactList_itemDoubleClicked()
 	switchChatWindow(userInfo.jid);
 }
 
+void STMain::on_lwGroupList_itemDoubleClicked()
+{
+	QListWidgetItem* item;
+	item = ui.lwGroupList->currentItem();
+	QWidget* widget = ui.lwGroupList->itemWidget(item);
+	STGroupItem* groupItem = (STGroupItem*)widget;
+}
+
 void STMain::on_pbChat_clicked()
 {
 	setPageIndex(0);
@@ -581,8 +687,6 @@ void STMain::on_pbChat_clicked()
 		"QPushButton:hover:!pressed{border-image:url(:/SoftTerminal/images/group_focus.png);}");
 	ui.pbCloud->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/cloud.png);}"
 		"QPushButton:hover:!pressed{border-image:url(:/SoftTerminal/images/cloud_focus.png);}");
-	ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
-		"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
 	if (ui.lwChatList->selectedItems().size() > 0)
 	{
 		ui.lblChatTitle->setText(((STChatItem*)
@@ -605,10 +709,6 @@ void STMain::on_pbContact_clicked()
 		"QPushButton:hover:!pressed{border-image:url(:/SoftTerminal/images/group_focus.png);}");
 	ui.pbCloud->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/cloud.png);}"
 		"QPushButton:hover:!pressed{border-image:url(:/SoftTerminal/images/cloud_focus.png);}");
-	if (ui.lwContactList->selectedItems().size() > 0 && !ui.widContactAddNew->isVisible())
-	{
-		ui.widTitle->setStyleSheet("QWidget{border:0px;background-color:#434555;}");
-	}
 	ui.lblChatTitle->clear();
 }
 
@@ -624,14 +724,13 @@ void STMain::on_pbGroup_clicked()
 	ui.pbCloud->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/cloud.png);}"
 		"QPushButton:hover:!pressed{border-image:url(:/SoftTerminal/images/cloud_focus.png);}");
 	ui.lblChatTitle->clear();
+
 }
 
 void STMain::on_pbCloud_clicked()
 {
 	setPageIndex(4);
 	ui.widSearch->setVisible(false);
-	ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
-		"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
 	ui.pbChat->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/chat.png);}"
 		"QPushButton:hover:!pressed{border-image:url(:/SoftTerminal/images/chat_focus.png);}");
 	ui.pbContact->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/contact.png);}"
@@ -639,7 +738,7 @@ void STMain::on_pbCloud_clicked()
 	ui.pbGroup->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/group.png);}"
 		"QPushButton:hover:!pressed{border-image:url(:/SoftTerminal/images/group_focus.png);}");
 	ui.pbCloud->setStyleSheet("QPushButton{border-image: url(:/SoftTerminal/images/cloud_on.png);}");
-	ui.lblChatTitle->setText(QStringLiteral("我的云盘"));
+	ui.lblChatTitle->clear();
 	m_cloudFileManager->initCloudFileView();
 }
 
@@ -650,10 +749,15 @@ void STMain::on_pbAddContact_clicked()
 	ui.widContactAddNew->setVisible(true);
 
 	m_contactAddNew->initAddNewWindow();
+}
 
-	on_pbContact_clicked();
-	ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
-		"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
+void STMain::on_pbNewGroup_clicked()
+{
+	ui.widGroupBlank->setVisible(false);
+	ui.widGroupDetail->setVisible(false);
+	ui.widGroupAddNew->setVisible(true);
+
+	m_groupAddNew->initAddNewWindow();
 }
 
 void STMain::on_pbMessage_clicked()
@@ -755,8 +859,6 @@ bool STMain::eventFilter(QObject* obj, QEvent* e)
 			ui.widSearch->setVisible(false);
 			setPageIndex(2);
 			ui.lblChatTitle->clear();
-			ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
-				"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
 		}
 	}
 	else if (e->type() == QEvent::MouseButtonDblClick && ui.widTitle == obj)
@@ -776,9 +878,7 @@ bool STMain::eventFilter(QObject* obj, QEvent* e)
 		{
 			m_clearBtn->setVisible(true);
 			refreshSearchList();
-			ui.swMain->setCurrentIndex(5);
-			ui.widTitle->setStyleSheet("QWidget#widTitle{border-bottom:1px solid #e3e3e3;"
-				"border-top:1px solid #e3e3e3;border-right:1px solid #e3e3e3;background-color:#ffffff;}");
+			//ui.swMain->setCurrentIndex(5);
 		}
 		else if (e->type() == QEvent::FocusOut)
 		{
@@ -843,11 +943,6 @@ void STMain::clearSearchInput()
 	ui.swMain->setCurrentIndex(m_currentPageIndex);
 	ui.leContactSearch->clear();
 	m_clearBtn->setVisible(false);
-	if (m_currentPageIndex == 1
-		&& ui.lwContactList->selectedItems().size() > 0 && !ui.widContactAddNew->isVisible())
-	{
-		ui.widTitle->setStyleSheet("QWidget{border:0px;background-color:#434555;}");
-	}
 }
 
 void STMain::on_lwSearchList_itemDoubleClicked()

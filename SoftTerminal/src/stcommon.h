@@ -2,6 +2,7 @@
 #define _STCOMMON_H_
 
 #include <QString>
+#include <QMetaType>
 
 namespace tahiti
 {
@@ -54,6 +55,15 @@ namespace tahiti
 		QString email;
 		QString description;
 	} UserInfo;
+
+	Q_DECLARE_METATYPE(UserInfo);
+
+	typedef struct group
+	{
+		QString id;
+		QString name;
+		QString description;
+	} GroupInfo;
 
 	typedef struct recordItem
 	{

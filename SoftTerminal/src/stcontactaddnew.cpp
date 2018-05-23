@@ -17,6 +17,8 @@ STContactAddNew::STContactAddNew(XmppClient* client) : m_xmppClient(client)
 	}
 	m_xmppRegister = new XmppRegister(server, port);
 	connect((const QObject *)m_xmppRegister, SIGNAL(checkResult(bool)), this, SLOT(handleCheckResult(bool)));
+
+	m_waitQuery = false;
 }
 
 STContactAddNew::~STContactAddNew()
@@ -30,6 +32,7 @@ void STContactAddNew::initAddNewWindow()
 	ui.widSearch->setVisible(true);
 	ui.widAddNewDetail->setVisible(false);
 	ui.widNotFound->setVisible(false);
+	ui.pbAddNewAgain->setVisible(false);
 }
 
 void STContactAddNew::handleCheckResult(bool result)
@@ -44,11 +47,17 @@ void STContactAddNew::handleCheckResult(bool result)
 	{
 		// 不是联系人，则查询具体信息
 		m_xmppClient->queryVCard(m_jidName.append("@localhost"));
+		m_waitQuery = true;
 	}
 }
 
 void STContactAddNew::onContactFoundResult(int result, QVariant dataVar)
 {
+	if (!m_waitQuery)
+	{
+		return;
+	}
+	m_waitQuery = false;
 	if (result == 0)
 	{
 		ui.widAddNewDetail->setVisible(false);
@@ -128,6 +137,12 @@ void STContactAddNew::on_pbAddNew_clicked()
 	ui.lblInfoPic->setVisible(true);
 	ui.lblAlreadyFriend->setVisible(false);
 	ui.lblHasSendRequest->setVisible(true);
+	ui.pbAddNewAgain->setVisible(true);
+}
+
+void STContactAddNew::on_pbAddNewAgain_clicked()
+{
+	initAddNewWindow();
 }
 
 bool STContactAddNew::eventFilter(QObject *obj, QEvent *e)

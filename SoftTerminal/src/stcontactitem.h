@@ -14,13 +14,20 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STContactItem(QWidget* parent = 0);
+		STContactItem(bool littleMode = false, bool showAddBtn = false, bool showDeleteBtn = false, QWidget* parent = 0);
 		~STContactItem();
 		void setUserInfo(UserInfo userInfo);
 		UserInfo getUserInfo();
+		public Q_SLOTS:
+		void on_pbAdd_clicked();
+		void on_pbDelete_clicked();
+	Q_SIGNALS:
+		void addFriendSignal(UserInfo userInfo);
+		void deleteMemberSignal(UserInfo userInfo);
 	private:
 		Ui::STContactItemClass ui;
 		UserInfo m_userInfo;
+		bool m_littleMode;
 	};
 }
 #endif

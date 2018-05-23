@@ -11,7 +11,10 @@
 #include "stchatdetail.h"
 #include "stcontactitem.h"
 #include "stcontactdetail.h"
+#include "stgroupdetail.h"
 #include "stcontactaddnew.h"
+#include "stgroupitem.h"
+#include "stgroupaddnew.h"
 #include "stpersonalinfo.h"
 #include "stcloudfilemanager.h"
 #include "stchatitem.h"
@@ -57,11 +60,15 @@ namespace tahiti
 		void on_lwContactList_itemClicked();
 		void on_lwContactList_itemDoubleClicked();
 		void on_lwSearchList_itemDoubleClicked();
+		void on_pbNewGroup_clicked();
+		void on_lwGroupList_itemClicked();
+		void on_lwGroupList_itemDoubleClicked();
 	Q_SIGNALS:
 		void changeLoginWindow();
 		void closeMain();
 		void loadChatWindowSignal();
 		void loadContactWindowSignal();
+		void loadGroupWindowSignal();
 	protected:
 		virtual void mouseMoveEvent(QMouseEvent* event);
 		virtual void mousePressEvent(QMouseEvent* event);
@@ -75,8 +82,12 @@ namespace tahiti
 		void initContactData();
 		void initContactList();
 		void initContactMainWindow();
-
 		void initContactAddNew();
+
+		void initGroupData();
+		void initGroupList();
+		void initGroupMainWindow();
+		void initGroupAddNew();
 
 		void refreshSearchData();
 		void refreshSearchList();
@@ -92,6 +103,7 @@ namespace tahiti
 		private Q_SLOTS:
 		void loadChatWindow();
 		void loadContactWindow();
+		void loadGroupWindow();
 		void reorderChatList(QString jid);
 		void switchChatWindow(QString jid);
 		void deleteFriend(QString jid);
@@ -104,6 +116,7 @@ namespace tahiti
 		void onTextChanged();
 		void showMessageWarn();
 		void refreshContact();
+		void refreshGroup(QString id);
 		void updateOthersMessage(QString jid);
 	private:
 		Ui::STMainClass ui;
@@ -118,13 +131,16 @@ namespace tahiti
 
 		//STContactDetail* m_contactDetail;
 		STContactAddNew* m_contactAddNew;
+		STGroupAddNew* m_groupAddNew;
 		//STChatDetail* m_chatDetail;
 
 		QList<STChatItem*> m_chatItemList;
 		QList<STChatDetail*> m_chatDetailList;
 		QList<STContactItem*> m_contactItemList;
-		QList<STContactItem*> m_searchItemList;
 		STContactDetail* m_contactDetail;
+		QList<STGroupItem*> m_groupItemList;
+		STGroupDetail* m_groupDetail;
+		QList<STContactItem*> m_searchItemList;
 		STPersonalInfo* m_personalInfo;
 		STCloudFileManager* m_cloudFileManager;
 		STMenu* m_menu;

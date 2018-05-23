@@ -4,94 +4,6 @@ using namespace std;
 using namespace gloox;
 using namespace tahiti;
 
-CEventHandler::CEventHandler()
-{
-	m_count = 0;
-}
-
-CEventHandler::~CEventHandler()
-{
-}
-
-void CEventHandler::resetHeartBeatCount()
-{
-	m_count = 0;
-	return;
-}
-
-void CEventHandler::increaceHeartBeatCount()
-{
-	m_count++;
-	return;
-}
-
-void CEventHandler::decreaceHeartBeatCount()
-{
-	if (m_count > 0)
-	{
-		m_count--;
-	}
-	return;
-}
-
-void CEventHandler::handleEvent(const Event& event)
-{
-	string sEvent;
-	switch (event.eventType())
-	{
-	case Event::PingPing:
-		sEvent = "PingPing";
-		break;
-	case Event::PingPong:
-		sEvent = "PingPong";
-		decreaceHeartBeatCount();
-		break;
-	case Event::PingError:
-		sEvent = "PingError";
-		break;
-	default:
-		break;
-	}
-	//printf("handleEvent:-------------%s\n", sEvent.c_str());
-	return;
-}
-
-static string getIPAddress()
-{
-	QString localAddr = "";
-	/*QList<QHostAddress> addrList = QNetworkInterface::allAddresses();
-	for (int i = 0; i < addrList.count(); i++)
-	{
-		if (addrList[i].protocol() == QAbstractSocket::IPv4Protocol
-			&& !(addrList[i].toString().contains("127.0.")))
-		{
-			localAddr = addrList[i].toString();
-			break;
-		}
-	}*/
-
-	return localAddr.toStdString();
-}
-
-static string getMacAddress()
-{
-	QString macAddr = "";
-	/*QList<QNetworkInterface> macList = QNetworkInterface::allInterfaces();
-	for (int i = 0; i < macList.count(); i++)
-	{
-		if (macList[i].flags().testFlag(QNetworkInterface::IsUp)
-			&& macList[i].flags().testFlag(QNetworkInterface::IsRunning)
-			&& !macList[i].flags().testFlag(QNetworkInterface::IsLoopBack))
-		{
-			macAddr = macList[i].hardwareAddress();
-			break;
-		}
-	}
-	macAddr = macAddr.replace(":", "");
-	TAHITI_INFO("Mac address:[" << macAddr.toStdString().c_str() << "]");*/
-	return macAddr.toStdString();
-}
-
 XmppClient::XmppClient()
 {
 	//m_ipAddress = getIPAddress();
@@ -158,7 +70,7 @@ void XmppClient::setXmppStatus(Presence::PresenceType status)
 
 void XmppClient::notifyMyInfo()
 {
-	m_client->setPresence(m_xmppStatus, 0, "");
+	m_client->setPresence(m_xmppStatus, 0);
 }
 
 int XmppClient::getKeepaliveInterval()
@@ -171,48 +83,10 @@ int XmppClient::getKeepaliveCount()
 	return m_keepaliveCount;
 }
 
-void* XmppClient::keepaliveProc(void* args)
-{
-	return NULL;
-	CEventHandler* pEventHandler = new CEventHandler();
-	XmppClient* xmppClient = (XmppClient*)args;
-	Client* client = (Client*)xmppClient->getClient();
-	while (true)
-	{
-		if (xmppClient->getXmppStatus() == Presence::Unavailable)
-		{
-			QThread::usleep(500);
-			if (xmppClient->isNeedLogin())
-			{
-				TAHITI_INFO("keepalive try to login xmpp server...");
-				xmppClient->login();
-				pEventHandler->resetHeartBeatCount();
-			}
-			continue;
-		}
-
-		int interval = xmppClient->getKeepaliveInterval();
-		int count = xmppClient->getKeepaliveCount();
-		//QThread::sleep(interval);
-		QThread::sleep(3);
-
-		if (pEventHandler->getHeartBeatCount() > count)
-		{
-			TAHITI_ERROR("keepalive timeout, times > " << count << "!!!");
-			xmppClient->setXmppStatus(Presence::Unavailable);
-			continue;
-		}
-		client->xmppPing(JID(STR_EMPTY), pEventHandler);
-		pEventHandler->increaceHeartBeatCount();
-	}
-	delete pEventHandler;
-}
-
 void XmppClient::run()
 {
 	createNewClient();
 	login();
-	pthread_create(&m_tidKeepalive, NULL, keepaliveProc, this);
 }
 
 /* 登录 */
@@ -277,9 +151,7 @@ void XmppClient::onConnect()
 
 	Q_EMIT loginResult(true);
 
-	m_client->disco()->getDiscoItems(JID("conference.localhost"), "", this, GetRoomItems, "");
-	//JID nick("test@conference.jabber.org/glooxmuctest");
-	//MUCRoom* room = new MUCRoom(m_client, nick, this, 0);
+	m_client->disco()->getDiscoItems(JID("conference.localhost"), "", this, GetRoomItems);
 }
 
 void XmppClient::handleDiscoItems(const JID& from, const Disco::Items& items, int context)
@@ -288,16 +160,42 @@ void XmppClient::handleDiscoItems(const JID& from, const Disco::Items& items, in
 	{
 	case GetRoomItems:
 	{
-		JID nick("222@conference.localhost");
-		MUCRoom* room = new MUCRoom(m_client, nick, this, 0);
-		room->getRoomItems();
-		room->getRoomInfo();
+		QList<QString> idList;
+		Disco::ItemList list = items.items();
+		Disco::ItemList::iterator it;
+		for (it = list.begin(); it != list.end(); it++)
+		{
+			idList.append((*it)->jid().bare().c_str());
+		}
+		qSort(idList.begin(), idList.end());
+		QList<QString>::iterator iter;
+		for (iter = idList.begin(); iter != idList.end(); iter++)
+		{
+			QString nick = QString("%1/%2").arg(*iter, m_xmppUser);
+			XmppGroup* group = new XmppGroup(this, nick);
+			connect(group, SIGNAL(joinGroupResultSignal(bool)), this, SLOT(joinGroupResultSlot(bool)));
+			m_mucGroupList.append(group);
+		}
 		break;
 	}
 	default:
 		break;
 	}
 }
+
+void XmppClient::joinGroupResultSlot(bool result)
+{
+	if (!result)
+	{
+		m_mucGroupList.removeOne((XmppGroup*)sender());
+	}
+}
+
+void XmppClient::createGroupResultSlot(QString id)
+{
+	Q_EMIT createGroupResultSignal(id);
+}
+
 void XmppClient::handleDiscoInfo(const JID& /*from*/, const Disco::Info& info, int context)
 {
 	switch (context)
@@ -467,6 +365,27 @@ void XmppClient::handleVCard(const JID& jid, const VCard *v)
 		file.close();
 	}
 
+	// 返回用户资料
+	UserInfo userInfo;
+	userInfo.jid = jid.full().c_str();
+	userInfo.userName = m_current_vcard->nickname().c_str();
+	if (photoContent.size() != 0)
+	{
+		userInfo.photoPath = path;
+	}
+	if (m_current_vcard->telephone().size() > 0)
+	{
+		userInfo.telephone = m_current_vcard->telephone().front().number.c_str();
+	}
+	if (m_current_vcard->emailAddresses().size() > 0)
+	{
+		userInfo.email = m_current_vcard->emailAddresses().front().userid.c_str();
+	}
+	userInfo.description = m_current_vcard->desc().c_str();
+	QVariant userInfoVar;
+	userInfoVar.setValue(userInfo);
+	Q_EMIT contactFoundResult(1, userInfoVar);
+
 	// 如果是自己，更新本人资料
 	if (m_selfInfo.jid == jid.full().c_str())
 	{
@@ -525,27 +444,6 @@ void XmppClient::handleVCard(const JID& jid, const VCard *v)
 			return;
 		}
 	}
-
-	// 如果不是好友，将返回用户资料
-	UserInfo userInfo;
-	userInfo.jid = jid.full().c_str();
-	userInfo.userName = m_current_vcard->nickname().c_str();
-	if (photoContent.size() != 0)
-	{
-		userInfo.photoPath = path;
-	}
-	if (m_current_vcard->telephone().size() > 0)
-	{
-		userInfo.telephone = m_current_vcard->telephone().front().number.c_str();
-	}
-	if (m_current_vcard->emailAddresses().size() > 0)
-	{
-		userInfo.email = m_current_vcard->emailAddresses().front().userid.c_str();
-	}
-	userInfo.description = m_current_vcard->desc().c_str();
-	QVariant userInfoVar;
-	userInfoVar.setValue(userInfo);
-	Q_EMIT contactFoundResult(1, userInfoVar);
 }
 
 /* 修改个人资料 */
@@ -786,25 +684,132 @@ void XmppClient::handleNonrosterPresence(const Presence& presence)
 	printf("received presence from entity not in the roster: %s\n", presence.from().full().c_str());
 }
 
+Client* XmppClient::getClient()
+{
+	return m_client;
+}
 
-void XmppClient::handleMUCParticipantPresence(MUCRoom * /*room*/, const MUCRoomParticipant participant,
+void XmppClient::createGroup(GroupInfo info, QList<QString> members)
+{
+	QDateTime time = QDateTime::currentDateTime();
+	QString timeStr = time.toString("yyyyMMddhhmmsszzz");
+	QList<XmppGroup*>::const_iterator it;
+	for (it = m_mucGroupList.constBegin(); it != m_mucGroupList.constEnd(); it++)
+	{
+		if ((*it)->getGroupInfo().id == timeStr)
+		{
+			Q_EMIT createGroupResultSignal("");
+			return;
+		}
+	}
+	QString nick = QString("%1@conference.localhost/%2").arg(timeStr, m_xmppUser);
+	XmppGroup* group = new XmppGroup(this, nick);
+	connect(group, SIGNAL(createGroupResultSignal(QString)), this, SLOT(createGroupResultSlot(QString)));
+	group->setGroupInfo(info);
+	group->setMembers(members);
+	m_mucGroupList.append(group);
+}
+
+void XmppClient::removeGroup(QString id)
+{
+	QList<XmppGroup*>::const_iterator it;
+	for (it = m_mucGroupList.constBegin(); it != m_mucGroupList.constEnd(); it++)
+	{
+		if ((*it)->getGroupInfo().id == id)
+		{
+			(*it)->remove();
+			m_mucGroupList.removeOne((*it));
+			break;
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+XmppGroup::XmppGroup(XmppClient* client, QString nick)
+{
+	m_info.id = nick.split("@")[0];
+	m_owner = nick.split("/")[1];
+
+	m_room = new MUCRoom(client->getClient(), JID(nick.toUtf8().constData()), this, this);
+	//room->setPassword("111");
+	m_room->join();
+	m_room->requestList(RequestOwnerList);
+	m_room->requestList(RequestMemberList);
+	//m_room->getRoomInfo();
+	//m_room->getRoomItems();
+	m_room->requestRoomConfig();
+}
+
+XmppGroup::~XmppGroup()
+{
+	m_room->leave();
+	delete m_room;
+}
+
+void XmppGroup::remove()
+{
+	m_room->destroy();
+}
+
+void XmppGroup::setMembers(QList<QString> members)
+{
+	/*m_members.clear();
+
+	QList<QString>::iterator it;
+	for (it = members.begin(); it != members.end(); it++)
+	{
+		m_members.append(JID(it->toUtf8().constData()).username().c_str());
+	}*/
+
+	m_members = members;
+	QList<QString>::iterator it;
+	MUCListItemList items;
+	for (it = m_members.begin(); it != m_members.end(); it++)
+	{
+		MUCListItem item(JID(it->toUtf8().constData()), RoleParticipant, AffiliationMember, "");
+		items.push_back(item);
+	}
+	m_room->storeList(items, StoreMemberList);
+	m_room->requestList(RequestMemberList);
+}
+
+void XmppGroup::setGroupInfo(GroupInfo info)
+{
+	m_info.name = info.name;
+	m_info.description = info.description;
+
+	DataForm* form = new DataForm(TypeSubmit);
+	form->addField(DataFormField::FieldType::TypeBoolean,
+		"muc#roomconfig_persistentroom", "true");
+	form->addField(DataFormField::FieldType::TypeBoolean,
+		"muc#roomconfig_membersonly", "true");
+	form->addField(DataFormField::FieldType::TypeTextSingle,
+		"muc#roomconfig_roomname", m_info.name.toUtf8().constData());
+	form->addField(DataFormField::FieldType::TypeTextSingle,
+		"muc#roomconfig_roomdesc", m_info.description.toUtf8().constData());
+	m_room->setRoomConfig(form);
+	m_room->requestRoomConfig();
+}
+
+void XmppGroup::handleMUCParticipantPresence(MUCRoom * /*room*/, const MUCRoomParticipant participant,
 	const Presence& presence)
 {
-	if (presence.presence() == Presence::Available)
+	printf("!!!!!!!!!!!!!!!! %s, %d\n", participant.nick->resource().c_str(), presence.presence());
+	/*if (presence.presence() == Presence::Available)
 		printf("!!!!!!!!!!!!!!!! %s is in the room, too\n", participant.nick->resource().c_str());
 	else if (presence.presence() == Presence::Unavailable)
 		printf("!!!!!!!!!!!!!!!! %s left the room\n", participant.nick->resource().c_str());
 	else
-		printf("Presence is %d of %s\n", presence.presence(), participant.nick->resource().c_str());
+		printf("Presence is %d of %s\n", presence.presence(), participant.nick->resource().c_str());*/
 }
 
-void XmppClient::handleMUCMessage(MUCRoom* /*room*/, const Message& msg, bool priv)
+void XmppGroup::handleMUCMessage(MUCRoom* /*room*/, const Message& msg, bool priv)
 {
 	printf("%s said: '%s' (history: %s, private: %s)\n", msg.from().resource().c_str(), msg.body().c_str(),
 		msg.when() ? "yes" : "no", priv ? "yes" : "no");
 }
 
-void XmppClient::handleMUCSubject(MUCRoom * /*room*/, const std::string& nick, const std::string& subject)
+void XmppGroup::handleMUCSubject(MUCRoom * /*room*/, const std::string& nick, const std::string& subject)
 {
 	if (nick.empty())
 		printf("Subject: %s\n", subject.c_str());
@@ -812,19 +817,25 @@ void XmppClient::handleMUCSubject(MUCRoom * /*room*/, const std::string& nick, c
 		printf("%s has set the subject to: '%s'\n", nick.c_str(), subject.c_str());
 }
 
-void XmppClient::handleMUCError(MUCRoom * /*room*/, StanzaError error)
+void XmppGroup::handleMUCError(MUCRoom * /*room*/, StanzaError error)
 {
 	printf("!!!!!!!!got an error: %d", error);
+	if (error == StanzaErrorRegistrationRequired)
+	{
+		Q_EMIT joinGroupResultSignal(false);
+		m_room->leave();
+		delete m_room;
+	}
 }
 
-void XmppClient::handleMUCInfo(MUCRoom * /*room*/, int features, const std::string& name,
+void XmppGroup::handleMUCInfo(MUCRoom * /*room*/, int features, const std::string& name,
 	const DataForm* infoForm)
 {
-	//printf("features: %d, name: %s, form xml: %s\n",
-	//	features, name.c_str(), infoForm->tag()->xml().c_str());
+	printf("features: %d, name: %s, form xml: %s\n",
+		features, name.c_str(), infoForm->tag()->xml().c_str());
 }
 
-void XmppClient::handleMUCItems(MUCRoom * /*room*/, const Disco::ItemList& items)
+void XmppGroup::handleMUCItems(MUCRoom * /*room*/, const Disco::ItemList& items)
 {
 	Disco::ItemList::const_iterator it = items.begin();
 	for (; it != items.end(); ++it)
@@ -833,128 +844,59 @@ void XmppClient::handleMUCItems(MUCRoom * /*room*/, const Disco::ItemList& items
 	}
 }
 
-void XmppClient::handleMUCInviteDecline(MUCRoom * /*room*/, const JID& invitee, const std::string& reason)
+void XmppGroup::handleMUCInviteDecline(MUCRoom * /*room*/, const JID& invitee, const std::string& reason)
 {
 	printf("Invitee %s declined invitation. reason given: %s\n", invitee.full().c_str(), reason.c_str());
 }
 
-bool XmppClient::handleMUCRoomCreation(MUCRoom *room)
+bool XmppGroup::handleMUCRoomCreation(MUCRoom *room)
 {
 	printf("room %s didn't exist, beeing created.\n", room->name().c_str());
+	Q_EMIT createGroupResultSignal(m_info.id);
 	return true;
 }
 
-Client* XmppClient::getClient()
+void XmppGroup::handleMUCConfigList(MUCRoom* room, const MUCListItemList& items, MUCOperation operation)
 {
-	return m_client;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*string XmppClient::deviceName(string deviceName)
-{
-	if (!deviceName.empty())
+	MUCListItemList::const_iterator it;
+	if (operation == RequestOwnerList)
 	{
-		TAHITI_INFO("set deviceName:[" << deviceName.c_str() << "]");
-		m_deviceName = deviceName;
-	}
-	TAHITI_INFO("get deviceName:[" << m_deviceName.c_str() << "]");
-	return m_deviceName;
-}
-
-string XmppClient::xmppAccount(string xmppAccount)
-{
-	if (!xmppAccount.empty())
-	{
-		TAHITI_INFO("set xmppAccount:[" << xmppAccount.c_str() << "]");
-		m_xmppAccount = xmppAccount;
-
-		Json::Value xmppAccountJson;
-		Json::Reader reader;
-		if (reader.parse(xmppAccount, xmppAccountJson))
+		for (it = items.begin(); it != items.end(); it++)
 		{
-			m_xmppUser = xmppAccountJson["user"].asCString();
-			m_xmppPasswd = xmppAccountJson["passwd"].asCString();
-			m_xmppServerIP = xmppAccountJson["server"].asCString();
-			m_xmppID = xmppAccountJson["id"].asCString();
-			TAHITI_INFO("user:[" << m_xmppUser.c_str() << "],passwd:[" << m_xmppPasswd.c_str()
-				<< "],server:[" << m_xmppServerIP.c_str() << "],id:[" << m_xmppID.c_str()
-				<< "]");
-			createNewClient();
+			printf("owner----------- %s\n", it->jid().username().c_str());
+			m_owner = QString(it->jid().username().c_str()).append("@localhost");
+			break;
 		}
 	}
-	TAHITI_INFO("get xmppAccount:[" << m_xmppAccount.c_str() << "]");
-	return m_xmppAccount;
-}
-
-string XmppClient::xmppStatus()
-{
-	string status;
-	switch (m_xmppStatus)
+	else if (operation == RequestMemberList)
 	{
-	case Presence::Chat:
-		status = "chat";
-		break;
-	case Presence::DND:
-		status = "dnd";
-		break;
-	case Presence::Unavailable:
-		status = "offline";
-		break;
-	default:
-		status = "unknown";
-		break;
-	}
-	TAHITI_INFO("get xmppStatus:[" << m_xmppStatus << "]");
-	return status;
-}
-
-string XmppClient::xmppLogin()
-{
-	TAHITI_INFO("xmppLogin...");
-	login();
-	return xmppStatus();
-}
-
-string XmppClient::xmppLogout()
-{
-	TAHITI_INFO("xmppLogout...");
-	logout();
-	return xmppStatus();
-}
-
-string XmppClient::xmppKeepalive(string xmppKeepalive)
-{
-	if (!xmppKeepalive.empty())
-	{
-		TAHITI_INFO("set xmppKeepalive:[" << xmppKeepalive.c_str() << "]");
-		m_xmppKeepalive = xmppKeepalive;
-
-		Json::Value xmppKeepaliveJson;
-		Json::Reader reader;
-		if (reader.parse(xmppKeepalive, xmppKeepaliveJson))
+		m_members.clear();
+		for (it = items.begin(); it != items.end(); it++)
 		{
-			m_keepaliveInterval = xmppKeepaliveJson["interval"].asInt();
-			m_keepaliveCount = xmppKeepaliveJson["count"].asInt();
-			TAHITI_INFO("interval:[" << m_keepaliveInterval << "],count:["
-				<< m_keepaliveCount << "]");
+			printf("member----------- %s\n", it->jid().username().c_str());
+			m_members.append(QString(it->jid().username().c_str()).append("@localhost"));
 		}
 	}
-	TAHITI_INFO("get xmppKeepalive:[" << m_xmppKeepalive.c_str() << "]");
-	return m_xmppKeepalive;
 }
-*/
+
+void XmppGroup::handleMUCConfigForm(MUCRoom* room, const DataForm& form)
+{
+	string name = form.field("muc#roomconfig_roomname")->value();
+	string desc = form.field("muc#roomconfig_roomdesc")->value();
+	if (m_info.id == name.c_str() || m_info.id == desc.c_str())
+	{
+		return;
+	}
+	m_info.name = name.c_str();
+	m_info.description = desc.c_str();
+}
+
+void XmppGroup::handleMUCConfigResult(MUCRoom* room, bool success, MUCOperation operation)
+{
+
+}
+
+void XmppGroup::handleMUCRequest(MUCRoom* room, const DataForm& form)
+{
+
+}

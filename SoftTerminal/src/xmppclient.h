@@ -12,6 +12,8 @@
 #include <QStandardPaths>
 #include <QFileInfo>
 #include <QDirIterator>
+#include <QDateTime>
+#include "gloox/macros.h"
 #include "gloox/registration.h"
 #include "gloox/vcardhandler.h"
 #include "gloox/vcardmanager.h"
@@ -35,6 +37,7 @@
 #include "gloox/eventhandler.h"
 #include "gloox/mucroomhandler.h"
 #include "gloox/mucroom.h"
+#include "gloox/dataform.h"
 #include "logger.h"
 #include "json/json.h"
 #include "pthread/pthread.h"
@@ -54,34 +57,20 @@ using namespace tahiti;
 #define MSG_LEN 2048
 #define SQL_LEN 2048
 
-Q_DECLARE_METATYPE(UserInfo)
+//Q_DECLARE_METATYPE(UserInfo)
 
 namespace tahiti
 {
-	class CEventHandler :public EventHandler
-	{
-	public:
-		CEventHandler();
-		virtual ~CEventHandler();
-		virtual void handleEvent(const Event& event);
-		void resetHeartBeatCount();
-		void increaceHeartBeatCount();
-		int getHeartBeatCount() { return m_count; }
-	private:
-		void decreaceHeartBeatCount();
-	private:
-		int m_count;
-	};
-
+	class XmppGroup;
 	class XmppClient : public QObject, RegistrationHandler, RosterListener, ConnectionListener,
-		MessageSessionHandler, LogHandler, MessageEventHandler, MessageHandler, VCardHandler, MUCRoomHandler, DiscoHandler
+		MessageSessionHandler, LogHandler, MessageEventHandler, MessageHandler, VCardHandler,
+		DiscoHandler
 	{
 		Q_OBJECT
 	public:
 		XmppClient();
 		virtual ~XmppClient();
 		static void* longConnectProc(void* args);
-		static void* keepaliveProc(void* args);
 		static void* refreshSignalProc(void* args);
 		void setXmppAccount(QString user, QString passwd, QString server, QString port);
 		void run();
@@ -96,12 +85,6 @@ namespace tahiti
 		void modifySelfPic(QString picFile);
 		bool subscribeOther(QString jid);
 		bool unsubscribeOther(QString jid);
-		/*string deviceName(string deviceName);
-		string xmppAccount(string xmppAccount);
-		string xmppStatus();
-		string xmppLogin();
-		string xmppLogout();
-		string xmppKeepalive(string xmppKeepalive);*/
 		int getKeepaliveInterval();
 		int getKeepaliveCount();
 		Presence::PresenceType getXmppStatus();
@@ -111,14 +94,22 @@ namespace tahiti
 		void sendMsg(QString dest, QString msg);
 		QList<QString> getSubscriptionRequests() { return m_subscriptionRequestList; };
 		void refreshSignal();
+		Client* getClient();
+		QList<XmppGroup*> getGroups() { return m_mucGroupList; };
+		void createGroup(GroupInfo info, QList<QString> members);
+		void removeGroup(QString id);
 		private Q_SLOTS:
 		void ackSubscriptionRequest(QString jid, bool ack);
+		void joinGroupResultSlot(bool result);
+		void createGroupResultSlot(QString id);
 	Q_SIGNALS:
 		void loginResult(bool result);
 		void contactFoundResult(int result, QVariant dataVar);
 		void showMessage(QString jid, QString msg);
 		void subscriptionRequest(QString jid);
 		void refreshContactSignal();
+		void joinGroupResultSignal(bool result);
+		void createGroupResultSignal(QString id);
 	private:
 		void notifyMyInfo();
 		void createNewClient();
@@ -155,18 +146,6 @@ namespace tahiti
 		virtual void handleDiscoItems(const JID& /*from*/, const Disco::Items& items, int context);
 		virtual void handleDiscoInfo(const JID& /*from*/, const Disco::Info& info, int context);
 		virtual void handleDiscoError(const JID& /*from*/, const Error* /*error*/, int context);
-
-		virtual void handleMUCParticipantPresence(MUCRoom * /*room*/, const MUCRoomParticipant participant,
-			const Presence& presence);
-		virtual void handleMUCMessage(MUCRoom* /*room*/, const Message& msg, bool priv);
-		virtual void handleMUCSubject(MUCRoom * /*room*/, const std::string& nick, const std::string& subject);
-		virtual void handleMUCError(MUCRoom * /*room*/, StanzaError error);
-		virtual void handleMUCInfo(MUCRoom * /*room*/, int features, const std::string& name,
-			const DataForm* infoForm);
-		virtual void handleMUCItems(MUCRoom * /*room*/, const Disco::ItemList& items);
-		virtual void handleMUCInviteDecline(MUCRoom * /*room*/, const JID& invitee, const std::string& reason);
-		virtual bool handleMUCRoomCreation(MUCRoom *room);
-		Client* getClient();
 	private:
 		Client* m_client;
 		VCardManager* m_vManager;
@@ -199,6 +178,44 @@ namespace tahiti
 		UserInfo m_selfInfo;
 		QList<QString> m_subscriptionRequestList;
 		MessageSession* m_sess;
+		QList<XmppGroup*> m_mucGroupList;
+	};
+
+	class XmppGroup : public QObject, MUCRoomHandler, MUCRoomConfigHandler
+	{
+		Q_OBJECT
+	public:
+		XmppGroup(XmppClient* client, QString nick);
+		virtual ~XmppGroup();
+		void remove();
+		QString getOwner() { return m_owner; };
+		QList<QString> getMembers() { return m_members; };
+		void setMembers(QList<QString> members);
+		void setGroupInfo(GroupInfo info);
+		GroupInfo getGroupInfo() { return m_info; };
+	Q_SIGNALS:
+		void joinGroupResultSignal(bool result);
+		void createGroupResultSignal(QString id);
+	private:
+		virtual void handleMUCParticipantPresence(MUCRoom * /*room*/, const MUCRoomParticipant participant,
+			const Presence& presence);
+		virtual void handleMUCMessage(MUCRoom* /*room*/, const Message& msg, bool priv);
+		virtual void handleMUCSubject(MUCRoom * /*room*/, const std::string& nick, const std::string& subject);
+		virtual void handleMUCError(MUCRoom * /*room*/, StanzaError error);
+		virtual void handleMUCInfo(MUCRoom * /*room*/, int features, const std::string& name,
+			const DataForm* infoForm);
+		virtual void handleMUCItems(MUCRoom * /*room*/, const Disco::ItemList& items);
+		virtual void handleMUCInviteDecline(MUCRoom * /*room*/, const JID& invitee, const std::string& reason);
+		virtual bool handleMUCRoomCreation(MUCRoom *room);
+		virtual void handleMUCConfigList(MUCRoom* room, const MUCListItemList& items, MUCOperation operation);
+		virtual void handleMUCConfigForm(MUCRoom* room, const DataForm& form);
+		virtual void handleMUCConfigResult(MUCRoom* room, bool success, MUCOperation operation);
+		virtual void handleMUCRequest(MUCRoom* room, const DataForm& form);
+	private:
+		MUCRoom* m_room;
+		QString m_owner;
+		QList<QString> m_members;
+		GroupInfo m_info;
 	};
 }
 #endif
