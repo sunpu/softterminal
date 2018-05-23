@@ -64,12 +64,12 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	initContactAddNew();
 	initGroupAddNew();
 
-	m_contactDetail = new STContactDetail();
+	m_contactDetail = new STContactDetail(this);
 	ui.widContactDetail->layout()->addWidget(m_contactDetail);
 	connect(m_contactDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
 	connect(m_contactDetail, SIGNAL(deleteFriend(QString)), this, SLOT(deleteFriend(QString)));
 
-	m_groupDetail = new STGroupDetail(m_xmppClient);
+	m_groupDetail = new STGroupDetail(m_xmppClient, this);
 	connect(m_groupDetail, SIGNAL(refreshGroupSignal(QString)), this, SLOT(refreshGroup(QString)));
 	ui.widGroupDetail->layout()->addWidget(m_groupDetail);
 
@@ -674,6 +674,8 @@ void STMain::on_lwGroupList_itemDoubleClicked()
 	item = ui.lwGroupList->currentItem();
 	QWidget* widget = ui.lwGroupList->itemWidget(item);
 	STGroupItem* groupItem = (STGroupItem*)widget;
+
+	switchChatWindow(groupItem->getGroupInfo().id);
 }
 
 void STMain::on_pbChat_clicked()

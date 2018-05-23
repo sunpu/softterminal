@@ -33,9 +33,13 @@ STGroupMemberItem::~STGroupMemberItem()
 
 }
 
-STGroupDetail::STGroupDetail(XmppClient* client) : m_xmppClient(client)
+STGroupDetail::STGroupDetail(XmppClient* client, QWidget* parent)
+	: m_xmppClient(client), m_main(parent)
 {
 	ui.setupUi(this);
+
+	m_confirm = new STConfirm(this);
+	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
 }
 
 STGroupDetail::~STGroupDetail()
@@ -242,6 +246,20 @@ void STGroupDetail::on_pbSaveMember_clicked()
 }
 
 void STGroupDetail::on_pbDeleteGroup_clicked()
+{
+	confirmDeleteGroup();
+}
+
+void STGroupDetail::confirmDeleteGroup()
+{
+	m_confirm->setText(QStringLiteral("您是否确定解散该群组？"));
+	int x = m_main->pos().x() + (m_main->width() - m_confirm->width()) / 2;
+	int y = m_main->pos().y() + (m_main->height() - m_confirm->height()) / 2;
+	m_confirm->move(QPoint(x, y));
+	m_confirm->exec();
+}
+
+void STGroupDetail::handleConfirmOK()
 {
 	m_xmppClient->removeGroup(m_groupInfo.id);
 	ui.widMain->setVisible(false);

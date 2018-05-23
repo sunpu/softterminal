@@ -728,7 +728,7 @@ void XmppClient::removeGroup(QString id)
 XmppGroup::XmppGroup(XmppClient* client, QString nick)
 {
 	m_info.id = nick.split("@")[0];
-	m_owner = nick.split("/")[1];
+	m_owner = nick.split("/")[1].append("@localhost");
 
 	m_room = new MUCRoom(client->getClient(), JID(nick.toUtf8().constData()), this, this);
 	//room->setPassword("111");
@@ -753,13 +753,17 @@ void XmppGroup::remove()
 
 void XmppGroup::setMembers(QList<QString> members)
 {
-	/*m_members.clear();
-
-	QList<QString>::iterator it;
-	for (it = members.begin(); it != members.end(); it++)
+	MUCListItemList banList;
+	QList<QString>::iterator iter;
+	for (iter = m_members.begin(); iter != m_members.end(); iter++)
 	{
-		m_members.append(JID(it->toUtf8().constData()).username().c_str());
-	}*/
+		if (!members.contains(*iter))
+		{
+			MUCListItem item(JID(iter->toUtf8().constData()), RoleNone, AffiliationNone, "");
+			banList.push_back(item);
+		}
+	}
+	m_room->storeList(banList, StoreBanList);
 
 	m_members = members;
 	QList<QString>::iterator it;

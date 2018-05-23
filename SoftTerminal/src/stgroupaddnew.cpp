@@ -23,9 +23,25 @@ void STGroupAddNew::initAddNewWindow()
 	ui.pbAddNew->setVisible(true);
 	ui.leGroupName->clear();
 	ui.leGroupDesc->clear();
+	ui.leGroupName->setVisible(true);
+	ui.leGroupDesc->setVisible(true);
+	ui.lblGroupName->setVisible(false);
+	ui.lblGroupDesc->setVisible(false);
+	ui.widMemberPreview->setVisible(false);
+	ui.widMember->setVisible(true);
 	ui.lwContactList->clear();
 	ui.lwGroupMemberList->clear();
 	m_memberList.clear();
+
+	QLayoutItem *layoutItem;
+	while ((layoutItem = ui.widMemberList->layout()->takeAt(0)) != 0)
+	{
+		if (layoutItem->widget())
+		{
+			delete layoutItem->widget();
+		}
+		delete layoutItem;
+	}
 
 	STContactItem* contactItem;
 	QListWidgetItem* item;
@@ -82,10 +98,44 @@ void STGroupAddNew::createGroupResultSlot(QString id)
 {
 	if (!id.isEmpty())
 	{
+		STGroupMemberItem* memberItem;
+		QGridLayout* gridLayout = (QGridLayout*)ui.widMemberList->layout();
+
+		memberItem = new STGroupMemberItem(m_xmppClient->getSelfInfo(), true);
+		gridLayout->addWidget(memberItem, 0, 0);
+
+		QList<UserInfo> friendList = m_xmppClient->getRoster();
+		QList<UserInfo>::const_iterator it;
+		QList<QString>::const_iterator iter;
+		int  i = 1;
+		STContactItem* contactItem;
+		QListWidgetItem* item;
+
+		for (iter = m_memberList.constBegin(); iter != m_memberList.constEnd(); iter++, i++)
+		{
+			for (it = friendList.constBegin(); it != friendList.constEnd(); it++)
+			{
+				if (*iter == it->jid)
+				{
+					memberItem = new STGroupMemberItem(*it);
+					gridLayout->addWidget(memberItem, i / 6, i % 6);
+					break;
+				}
+			}
+		}
+
 		ui.lblInfoPic->setVisible(true);
 		ui.lblHasAddNew->setVisible(true);
 		ui.pbAddNewAgain->setVisible(true);
 		ui.pbAddNew->setVisible(false);
+		ui.leGroupName->setVisible(false);
+		ui.leGroupDesc->setVisible(false);
+		ui.lblGroupName->setText(ui.leGroupName->text());
+		ui.lblGroupDesc->setText(ui.leGroupDesc->text());
+		ui.widMemberPreview->setVisible(true);
+		ui.widMember->setVisible(false);
+		ui.lblGroupName->setVisible(true);
+		ui.lblGroupDesc->setVisible(true);
 		Q_EMIT refreshGroupSignal("");
 	}
 	else

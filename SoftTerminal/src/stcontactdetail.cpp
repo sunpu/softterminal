@@ -2,10 +2,13 @@
 
 using namespace tahiti;
 
-STContactDetail::STContactDetail(QWidget* parent) : QWidget(parent)
+STContactDetail::STContactDetail(QWidget* parent)
+	: QWidget(parent), m_main(parent)
 {
-
 	ui.setupUi(this);
+
+	m_confirm = new STConfirm(this);
+	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
 }
 
 STContactDetail::~STContactDetail()
@@ -51,6 +54,20 @@ void STContactDetail::on_pbSendMessage_clicked()
 }
 
 void STContactDetail::on_pbDeleteFriend_clicked()
+{
+	confirmDeleteFriend();
+}
+
+void STContactDetail::confirmDeleteFriend()
+{
+	m_confirm->setText(QStringLiteral("您是否确定删除该好友？"));
+	int x = m_main->pos().x() + (m_main->width() - m_confirm->width()) / 2;
+	int y = m_main->pos().y() + (m_main->height() - m_confirm->height()) / 2;
+	m_confirm->move(QPoint(x, y));
+	m_confirm->exec();
+}
+
+void STContactDetail::handleConfirmOK()
 {
 	ui.widButton->setVisible(false);
 	ui.widText->setVisible(true);

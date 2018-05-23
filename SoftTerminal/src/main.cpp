@@ -1,7 +1,6 @@
-#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )
+ï»¿//#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )
 
 #include "stcommon.h"
-#include "stsample.h"
 #include "stconfig.h"
 #include "stloginrotate.h"
 #include <QtWidgets/QApplication>
@@ -10,7 +9,7 @@ using namespace tahiti;
 
 int main(int argc, char *argv[])
 {
-	// ³õÊ¼»¯Êý¾Ý´æ´¢Î»ÖÃ
+	// åˆå§‹åŒ–æ•°æ®å­˜å‚¨ä½ç½®
 	QString rootPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
 		+ DATA_ROOT_PATH;
 	QDir* dir = new QDir;
@@ -44,9 +43,10 @@ int main(int argc, char *argv[])
 		return false;
 	}
 	QApplication a(argc, argv);
-	//STSample w;
-	//w.show();
 	STLoginRotate loginRotateWindow(xmpp_client);
 	loginRotateWindow.show();
+
+	//STWhiteBoard* m_whiteboard = new STWhiteBoard("sunix", "Sunix");
+	//m_whiteboard->show();
 	return a.exec();
 }

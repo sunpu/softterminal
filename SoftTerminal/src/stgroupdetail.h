@@ -8,6 +8,7 @@
 #include "stcommon.h"
 #include "stcontactitem.h"
 #include "xmppclient.h"
+#include "stconfirm.h"
 
 using namespace tahiti;
 
@@ -29,10 +30,12 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STGroupDetail(XmppClient* client);
+		STGroupDetail(XmppClient* client, QWidget* parent = 0);
 		~STGroupDetail();
 		void clearGroupDetail();
 		void setGroupDetail(XmppGroup* group, GroupInfo groupInfo, UserInfo ownerInfo, QMap<QString, UserInfo> membersInfo);
+	private:
+		void confirmDeleteGroup();
 		public Q_SLOTS:
 		void on_pbJoinChat_clicked();
 		void on_pbEdit_clicked();
@@ -42,6 +45,7 @@ namespace tahiti
 		private Q_SLOTS:
 		void addFriendSlot(UserInfo userInfo);
 		void deleteMemberSlot(UserInfo userInfo);
+		void handleConfirmOK();
 	Q_SIGNALS:
 		void refreshGroupSignal(QString id);
 	private:
@@ -51,6 +55,8 @@ namespace tahiti
 		GroupInfo m_groupInfo;
 		UserInfo m_ownerInfo;
 		QList<QString> m_memberList;
+		STConfirm* m_confirm;
+		QWidget* m_main;
 	};
 }
 #endif

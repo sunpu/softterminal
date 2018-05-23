@@ -9,6 +9,7 @@
 #include "xmppclient.h"
 #include "stcontactitem.h"
 #include "stcommon.h"
+#include "stgroupdetail.h"
 
 using namespace tahiti;
 
