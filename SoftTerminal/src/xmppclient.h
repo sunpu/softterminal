@@ -192,10 +192,12 @@ namespace tahiti
 		QList<QString> getMembers() { return m_members; };
 		void setMembers(QList<QString> members);
 		void setGroupInfo(GroupInfo info);
+		void sendMsg(QString msg);
 		GroupInfo getGroupInfo() { return m_info; };
 	Q_SIGNALS:
 		void joinGroupResultSignal(bool result);
 		void createGroupResultSignal(QString id);
+		void showGroupMessage(QString jid, QString user, QString msg);
 	private:
 		virtual void handleMUCParticipantPresence(MUCRoom * /*room*/, const MUCRoomParticipant participant,
 			const Presence& presence);
@@ -216,6 +218,7 @@ namespace tahiti
 		QString m_owner;
 		QList<QString> m_members;
 		GroupInfo m_info;
+		XmppClient* m_client;
 	};
 }
 #endif

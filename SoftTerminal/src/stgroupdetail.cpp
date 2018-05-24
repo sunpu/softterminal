@@ -86,6 +86,13 @@ void STGroupDetail::setGroupDetail(XmppGroup* group, GroupInfo groupInfo, UserIn
 	ui.pbEdit->setVisible(true);
 	ui.pbSave->setVisible(false);
 
+	QString path = ":/SoftTerminal/images/group_icon.png";
+	QImage* image = new QImage(path);
+	ui.lblPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
+
+	ui.lblGroupName->setText(groupInfo.name);
+	ui.leGroupName->setText(groupInfo.name);
+
 	if (groupInfo.description.isEmpty())
 	{
 		ui.lblDesc->setText(QStringLiteral("暂无群组说明。"));
@@ -97,17 +104,6 @@ void STGroupDetail::setGroupDetail(XmppGroup* group, GroupInfo groupInfo, UserIn
 	ui.leDesc->setText(groupInfo.description);
 	ui.lblDesc->setVisible(true);
 	ui.leDesc->setVisible(false);
-
-	ui.pbDeleteGroup->setVisible(true);
-	ui.widMessage->setVisible(false);
-	ui.tabWidget->setCurrentIndex(0);
-
-	QString path = ":/SoftTerminal/images/group_icon.png";
-	QImage* image = new QImage(path);
-	ui.lblPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
-
-	ui.lblGroupName->setText(groupInfo.name);
-	ui.leGroupName->setText(groupInfo.name);
 
 	STGroupMemberItem* memberItem;
 	STContactItem* contactItem;
@@ -145,6 +141,17 @@ void STGroupDetail::setGroupDetail(XmppGroup* group, GroupInfo groupInfo, UserIn
 		ui.lwGroupMemberList->setItemWidget(item, contactItem);
 		m_memberList.append(iter->jid);
 	}
+
+	ui.pbDeleteGroup->setVisible(true);
+	ui.widMessage->setVisible(false);
+	ui.tabWidget->setCurrentIndex(0);
+
+	if (ownerInfo.jid != m_xmppClient->getSelfInfo().jid)
+	{
+		ui.pbEdit->setVisible(false);
+		ui.tabWidget->removeTab(1);
+		ui.tabWidget->removeTab(1);
+	}
 }
 
 void STGroupDetail::addFriendSlot(UserInfo userInfo)
@@ -171,6 +178,7 @@ void STGroupDetail::deleteMemberSlot(UserInfo userInfo)
 
 void STGroupDetail::on_pbJoinChat_clicked()
 {
+	Q_EMIT openChatDetail(m_groupInfo.id);
 }
 
 void STGroupDetail::on_pbEdit_clicked()

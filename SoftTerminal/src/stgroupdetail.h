@@ -47,6 +47,7 @@ namespace tahiti
 		void deleteMemberSlot(UserInfo userInfo);
 		void handleConfirmOK();
 	Q_SIGNALS:
+		void openChatDetail(QString jid);
 		void refreshGroupSignal(QString id);
 	private:
 		Ui::STGroupDetailClass ui;

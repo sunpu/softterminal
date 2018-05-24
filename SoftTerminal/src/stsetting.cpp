@@ -12,6 +12,20 @@ STSetting::STSetting(QWidget * parent) : QDialog(parent)
 
 	ui.cbxCamera->setItemDelegate(new NoFocusFrameDelegate(this));
 
+	/*QList<QAudioDeviceInfo> audioInputs = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
+	QList<QAudioDeviceInfo>::Iterator it1;
+	QString audioInputId;
+	for (it1 = audioInputs.begin(); it1 != audioInputs.end(); it1++)
+	{
+		audioInputId = it1->deviceName();
+	}
+	QList<QAudioDeviceInfo> audioOutputs = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
+	QList<QAudioDeviceInfo>::Iterator it2;
+	QString audioOutputId;
+	for (it2 = audioOutputs.begin(); it2 != audioOutputs.end(); it2++)
+	{
+		audioOutputId = it2->deviceName();
+	}*/
 	QList<QCameraInfo> cameras = QCameraInfo::availableCameras();
 	QList<QCameraInfo>::Iterator it;
 	QString cameraId;

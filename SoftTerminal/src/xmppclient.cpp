@@ -122,6 +122,7 @@ void XmppClient::logout()
 		return;
 	}
 	m_friendList.clear();
+	m_mucGroupList.clear();
 	m_requestId = 0;
 	m_xmppStatus = Presence::Unavailable;
 	m_needLogin = true;
@@ -725,7 +726,7 @@ void XmppClient::removeGroup(QString id)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-XmppGroup::XmppGroup(XmppClient* client, QString nick)
+XmppGroup::XmppGroup(XmppClient* client, QString nick) : m_client(client)
 {
 	m_info.id = nick.split("@")[0];
 	m_owner = nick.split("/")[1].append("@localhost");
@@ -735,9 +736,9 @@ XmppGroup::XmppGroup(XmppClient* client, QString nick)
 	m_room->join();
 	m_room->requestList(RequestOwnerList);
 	m_room->requestList(RequestMemberList);
-	//m_room->getRoomInfo();
+	m_room->getRoomInfo();
 	//m_room->getRoomItems();
-	m_room->requestRoomConfig();
+	//m_room->requestRoomConfig();
 }
 
 XmppGroup::~XmppGroup()
@@ -792,7 +793,12 @@ void XmppGroup::setGroupInfo(GroupInfo info)
 	form->addField(DataFormField::FieldType::TypeTextSingle,
 		"muc#roomconfig_roomdesc", m_info.description.toUtf8().constData());
 	m_room->setRoomConfig(form);
-	m_room->requestRoomConfig();
+	//m_room->requestRoomConfig();
+}
+
+void XmppGroup::sendMsg(QString msg)
+{
+	m_room->send(msg.toUtf8().constData());
 }
 
 void XmppGroup::handleMUCParticipantPresence(MUCRoom * /*room*/, const MUCRoomParticipant participant,
@@ -809,6 +815,16 @@ void XmppGroup::handleMUCParticipantPresence(MUCRoom * /*room*/, const MUCRoomPa
 
 void XmppGroup::handleMUCMessage(MUCRoom* /*room*/, const Message& msg, bool priv)
 {
+	if (m_client->getSelfInfo().jid.startsWith(msg.from().resource().c_str()))
+	{
+		return;
+	}
+
+	if (msg.subtype() == Message::Groupchat && msg.body().size() != 0)
+	{
+		TAHITI_INFO("user:" << msg.from().resource().c_str() << ", message:" << msg.body().c_str());
+		Q_EMIT showGroupMessage(msg.from().username().c_str(), msg.from().resource().c_str(), msg.body().c_str());
+	}
 	printf("%s said: '%s' (history: %s, private: %s)\n", msg.from().resource().c_str(), msg.body().c_str(),
 		msg.when() ? "yes" : "no", priv ? "yes" : "no");
 }
@@ -837,6 +853,13 @@ void XmppGroup::handleMUCInfo(MUCRoom * /*room*/, int features, const std::strin
 {
 	printf("features: %d, name: %s, form xml: %s\n",
 		features, name.c_str(), infoForm->tag()->xml().c_str());
+	string desc = infoForm->field("muc#roominfo_description")->value();
+	/*if (m_info.id == name.c_str() || m_info.id == desc.c_str())
+	{
+		return;
+	}*/
+	m_info.name = name.c_str();
+	m_info.description = desc.c_str();
 }
 
 void XmppGroup::handleMUCItems(MUCRoom * /*room*/, const Disco::ItemList& items)
@@ -885,14 +908,7 @@ void XmppGroup::handleMUCConfigList(MUCRoom* room, const MUCListItemList& items,
 
 void XmppGroup::handleMUCConfigForm(MUCRoom* room, const DataForm& form)
 {
-	string name = form.field("muc#roomconfig_roomname")->value();
-	string desc = form.field("muc#roomconfig_roomdesc")->value();
-	if (m_info.id == name.c_str() || m_info.id == desc.c_str())
-	{
-		return;
-	}
-	m_info.name = name.c_str();
-	m_info.description = desc.c_str();
+
 }
 
 void XmppGroup::handleMUCConfigResult(MUCRoom* room, bool success, MUCOperation operation)

@@ -39,6 +39,7 @@ STChatRecordItem::STChatRecordItem(RecordItem item)
 	}
 	QImage* image = new QImage(path);
 
+	ui.lblUserName->setVisible(false);
 	if (item.from == MessageFrom::Self)
 	{
 		ui.lblChatRecordPicSelf->setPixmap(QPixmap::fromImage(*image).scaled(36, 36));
@@ -53,6 +54,12 @@ STChatRecordItem::STChatRecordItem(RecordItem item)
 	}
 	else
 	{
+		if (!item.jid.isEmpty())
+		{
+			ui.lblUserName->setText(item.jid);
+			ui.lblUserName->setVisible(true);
+			m_height += 20;
+		}
 		ui.lblChatRecordPicOther->setPixmap(QPixmap::fromImage(*image).scaled(36, 36));
 		ui.teMessageOther->setMaximumWidth(m_width + 22);
 		ui.teMessageOther->setMaximumHeight(m_height + 22);

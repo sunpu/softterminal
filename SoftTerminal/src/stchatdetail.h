@@ -29,7 +29,7 @@ namespace tahiti
 		STChatDetail(XmppClient* client, QWidget *parent = 0);
 		~STChatDetail();
 		void clearChatDetail();
-		void setChatDetail(UserInfo userInfo);
+		void setChatDetail(UserInfo userInfo, XmppGroup* group = NULL);
 		UserInfo getUserInfo();
 		void updateSelfPic(QString picPath);
 		public Q_SLOTS:
@@ -39,6 +39,7 @@ namespace tahiti
 		void on_pbScreenShotOption_clicked();
 		void on_pbLesson_clicked();
 		void updateOthersMessage(QString jid, QString msg);
+		void updateGroupMessage(QString jid, QString user, QString msg);
 		void onScreenshot();
 		void onScreenshotWithoutWindow();
 		void onChooseEmotion(int index);
@@ -64,6 +65,7 @@ namespace tahiti
 		STEmotion* m_emotion;
 		QWidget* m_main;
 		STWhiteBoard* m_whiteboard;
+		XmppGroup* m_group;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

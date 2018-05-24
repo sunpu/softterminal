@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QMouseEvent>
 #include <QCameraInfo>
+#include <QAudioDeviceInfo>
 #include <QStyledItemDelegate>
 #include <QCameraViewfinder>
 #include "stconfig.h"

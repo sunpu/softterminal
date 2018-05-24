@@ -69,6 +69,7 @@ namespace tahiti
 	{
 		QString time;
 		MessageFrom from;
+		QString jid;
 		QString pic;
 		MessageType type;
 		QString content;

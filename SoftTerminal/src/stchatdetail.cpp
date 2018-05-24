@@ -42,9 +42,15 @@ void STChatDetail::clearChatDetail()
 	m_recordItemList.clear();
 }
 
-void STChatDetail::setChatDetail(UserInfo userInfo)
+void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 {
 	m_userInfo = userInfo;
+	m_group = group;
+	if (m_group)
+	{
+		connect(m_group, SIGNAL(showGroupMessage(QString, QString, QString)),
+			this, SLOT(updateGroupMessage(QString, QString, QString)));
+	}
 	m_selfInfo = m_xmppClient->getSelfInfo();
 
 	QString desPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
@@ -146,7 +152,14 @@ void STChatDetail::on_pbSendMessage_clicked()
 	Q_EMIT changeChatListOrder(m_userInfo.jid);
 
 	// 发送消息给远端
-	m_xmppClient->sendMsg(m_userInfo.jid, myMessage);
+	if (m_group)
+	{
+		m_group->sendMsg(myMessage);
+	}
+	else
+	{
+		m_xmppClient->sendMsg(m_userInfo.jid, myMessage);
+	}
 }
 
 void STChatDetail::on_pbEmotion_clicked()
@@ -283,6 +296,37 @@ void STChatDetail::updateOthersMessage(QString jid, QString msg)
 	// 写文件
 	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
 	recordManager->writeRecordItem(item);
+
+	// 更新聊天记录界面
+	STChatRecordItem* chatDetailItem = new STChatRecordItem(item);
+	m_recordItemList.append(chatDetailItem);
+	QSize itemSize = chatDetailItem->getItemSize();
+	QListWidgetItem* pItem = new QListWidgetItem();
+	ui.lwChatRecordList->addItem(pItem);
+	ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
+	pItem->setSizeHint(QSize(ui.lwChatRecordList->width() - 5, itemSize.height() + 56));
+	ui.lwChatRecordList->scrollToBottom();
+	Q_EMIT updateOthersMessage(jid);
+}
+
+void STChatDetail::updateGroupMessage(QString jid, QString user, QString msg)
+{
+	if (m_userInfo.jid != jid)
+	{
+		return;
+	}
+
+	RecordItem item;
+	item.time = QTime::currentTime().toString();
+	item.from = MessageFrom::Other;
+	item.jid = user;
+	item.type = MessageType::MT_Text;
+	item.content = msg;
+	item.pic = m_otherPicPath;
+
+	// 写文件
+	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
+	recordManager->writeRecordItem(item, true);
 
 	// 更新聊天记录界面
 	STChatRecordItem* chatDetailItem = new STChatRecordItem(item);

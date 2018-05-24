@@ -70,6 +70,7 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	connect(m_contactDetail, SIGNAL(deleteFriend(QString)), this, SLOT(deleteFriend(QString)));
 
 	m_groupDetail = new STGroupDetail(m_xmppClient, this);
+	connect(m_groupDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
 	connect(m_groupDetail, SIGNAL(refreshGroupSignal(QString)), this, SLOT(refreshGroup(QString)));
 	ui.widGroupDetail->layout()->addWidget(m_groupDetail);
 
@@ -111,15 +112,20 @@ void STMain::initChatData()
 	QList<UserInfo> friendList = m_xmppClient->getRoster();
 	QList<UserInfo>::const_iterator friendIt;
 
+	QList<XmppGroup*> groupList = m_xmppClient->getGroups();
+	QList<XmppGroup*>::const_iterator groupIt;
+
 	STChatItem* chatItem;
 	STChatDetail* chatDetail;
 	QList<QString>::Iterator fileIt;
+	UserInfo groupInfo;
+	groupInfo.photoPath = ":/SoftTerminal/images/group_icon.png";
 	// 过滤
 	for (fileIt = files.begin(); fileIt != files.end(); fileIt++)
 	{
 		for (friendIt = friendList.constBegin(); friendIt != friendList.constEnd(); friendIt++)
 		{
-			if (fileIt->split(".")[0] == friendIt->jid)
+			if (fileIt->startsWith(friendIt->jid))
 			{
 				chatItem = new STChatItem();
 				chatItem->setUserInfo(*friendIt);
@@ -131,6 +137,28 @@ void STMain::initChatData()
 				m_chatDetailList.push_back(chatDetail);
 
 				ui.swChatDetail->addWidget(chatDetail);
+				break;
+			}
+		}
+
+		for (groupIt = groupList.constBegin(); groupIt != groupList.constEnd(); groupIt++)
+		{
+			if (fileIt->startsWith((*groupIt)->getGroupInfo().id))
+			{
+				groupInfo.jid = (*groupIt)->getGroupInfo().id;
+				groupInfo.userName = (*groupIt)->getGroupInfo().name;
+
+				chatItem = new STChatItem();
+				chatItem->setUserInfo(groupInfo);
+				m_chatItemList.push_back(chatItem);
+
+				chatDetail = new STChatDetail(m_xmppClient, this);
+				chatDetail->setChatDetail(groupInfo, *groupIt);
+				connect(chatDetail, SIGNAL(changeChatListOrder(QString)), this, SLOT(reorderChatList(QString)));
+				m_chatDetailList.push_back(chatDetail);
+
+				ui.swChatDetail->addWidget(chatDetail);
+				break;
 			}
 		}
 	}
@@ -262,9 +290,9 @@ void STMain::initGroupData()
 	m_groupItemList.clear();
 	STGroupItem* groupItem;
 
-	QList<XmppGroup*> groups = m_xmppClient->getGroups();
+	QList<XmppGroup*> groupList = m_xmppClient->getGroups();
 	QList<XmppGroup*>::const_iterator it;
-	for (it = groups.constBegin(); it != groups.constEnd(); it++)
+	for (it = groupList.constBegin(); it != groupList.constEnd(); it++)
 	{
 		groupItem = new STGroupItem(m_xmppClient, *it);
 		m_groupItemList.push_back(groupItem);
@@ -523,13 +551,12 @@ void STMain::createChat(QString jid)
 		}
 	}
 
-	QList<UserInfo> friendList = m_xmppClient->getRoster();
-	QList<UserInfo>::const_iterator friendIt;
-
 	STChatItem* chatItem;
 	STChatDetail* chatDetail;
 	QListWidgetItem* item;
 
+	QList<UserInfo> friendList = m_xmppClient->getRoster();
+	QList<UserInfo>::const_iterator friendIt;
 	for (friendIt = friendList.constBegin(); friendIt != friendList.constEnd(); friendIt++)
 	{
 		if (friendIt->jid == jid)
@@ -540,6 +567,35 @@ void STMain::createChat(QString jid)
 
 			chatDetail = new STChatDetail(m_xmppClient, this);
 			chatDetail->setChatDetail(*friendIt);
+			connect(chatDetail, SIGNAL(changeChatListOrder(QString)), this, SLOT(reorderChatList(QString)));
+			m_chatDetailList.push_back(chatDetail);
+
+			ui.swChatDetail->addWidget(chatDetail);
+
+			item = new QListWidgetItem();
+			ui.lwChatList->insertItem(0, item);
+			ui.lwChatList->setItemWidget(item, chatItem);
+			break;
+		}
+	}
+
+	QList<XmppGroup*> groupList = m_xmppClient->getGroups();
+	QList<XmppGroup*>::const_iterator groupIt;
+	UserInfo groupInfo;
+	groupInfo.photoPath = ":/SoftTerminal/images/group_icon.png";
+	for (groupIt = groupList.constBegin(); groupIt != groupList.constEnd(); groupIt++)
+	{
+		if ((*groupIt)->getGroupInfo().id == jid)
+		{
+			groupInfo.jid = jid;
+			groupInfo.userName = (*groupIt)->getGroupInfo().name;
+
+			chatItem = new STChatItem();
+			chatItem->setUserInfo(groupInfo);
+			m_chatItemList.push_front(chatItem);
+
+			chatDetail = new STChatDetail(m_xmppClient, this);
+			chatDetail->setChatDetail(groupInfo, *groupIt);
 			connect(chatDetail, SIGNAL(changeChatListOrder(QString)), this, SLOT(reorderChatList(QString)));
 			m_chatDetailList.push_back(chatDetail);
 
