@@ -25,9 +25,9 @@ bool STRecordManager::isRecordExist()
 	return QFile::exists(m_recordFilePath);
 }
 
-void STRecordManager::writeRecordItem(RecordItem item, bool isGroup)
+void STRecordManager::writeRecordItem(RecordItem item)
 {
-	if (isGroup)
+	if (!item.jid.isEmpty())
 	{
 		m_recordFile->open(QIODevice::WriteOnly);
 	}

@@ -14,6 +14,7 @@ XmppClient::XmppClient()
 	m_xmppStatus = Presence::Unavailable;
 	m_needLogin = true;
 	m_client = NULL;
+	m_isWorking = false;
 
 	qRegisterMetaType<QVariant>("QVariant");
 }
@@ -138,6 +139,7 @@ void XmppClient::logout()
 	m_responseMap.clear();
 	setXmppStatus(Presence::Unavailable);
 	m_client = NULL;
+	m_isWorking = false;
 }
 
 /* а╛╫сио */
@@ -153,6 +155,31 @@ void XmppClient::onConnect()
 	Q_EMIT loginResult(true);
 
 	m_client->disco()->getDiscoItems(JID("conference.localhost"), "", this, GetRoomItems);
+
+	pthread_create(&m_tidLoadOfflineMsg, NULL, loadOfflineMsgProc, this);
+}
+
+void* XmppClient::loadOfflineMsgProc(void* args)
+{
+	TAHITI_INFO("loadOfflineMsgProc...");
+	QThread::sleep(5);
+	XmppClient* xmppClient = (XmppClient*)args;
+	xmppClient->processOfflineMsg();
+	return NULL;
+}
+
+void XmppClient::processOfflineMsg()
+{
+	m_isWorking = true;
+	QMap<QString, QList<QString>>::Iterator it;
+	QList<QString>::Iterator iter;
+	for (it = m_offlineMsgMap.begin(); it != m_offlineMsgMap.end(); it++)
+	{
+		for (iter = it.value().begin(); iter != it.value().end(); iter++)
+		{
+			Q_EMIT showMessage(it.key(), *iter);
+		}
+	}
 }
 
 void XmppClient::handleDiscoItems(const JID& from, const Disco::Items& items, int context)
@@ -541,7 +568,23 @@ void XmppClient::handleMessage(const Message& msg, MessageSession* session)
 	if (msg.subtype() == Message::Chat && msg.body().size() != 0)
 	{
 		TAHITI_INFO("type:" << msg.subtype() << ", message:" << msg.body().c_str());
-		Q_EMIT showMessage(msg.from().username().c_str(), msg.body().c_str());
+		QString jid = msg.from().username().c_str();
+		QString message = msg.body().c_str();
+		if (!m_isWorking)
+		{
+			if (m_offlineMsgMap.contains(jid))
+			{
+				m_offlineMsgMap[jid].append(message);
+			}
+			else
+			{
+				QList<QString> msgList;
+				msgList.append(message);
+				m_offlineMsgMap.insert(jid, msgList);
+			}
+			return;
+		}
+		Q_EMIT showMessage(jid, message);
 	}
 }
 
@@ -728,11 +771,13 @@ void XmppClient::removeGroup(QString id)
 ////////////////////////////////////////////////////////////////////////////////////////////////
 XmppGroup::XmppGroup(XmppClient* client, QString nick) : m_client(client)
 {
+	connect(m_client, SIGNAL(contactFoundResult(int, QVariant)), this, SLOT(onContactFoundResult(int, QVariant)));
+
 	m_info.id = nick.split("@")[0];
 	m_owner = nick.split("/")[1].append("@localhost");
+	m_client->queryVCard(m_owner);
 
 	m_room = new MUCRoom(client->getClient(), JID(nick.toUtf8().constData()), this, this);
-	//room->setPassword("111");
 	m_room->join();
 	m_room->requestList(RequestOwnerList);
 	m_room->requestList(RequestMemberList);
@@ -773,6 +818,7 @@ void XmppGroup::setMembers(QList<QString> members)
 	{
 		MUCListItem item(JID(it->toUtf8().constData()), RoleParticipant, AffiliationMember, "");
 		items.push_back(item);
+		m_client->queryVCard(*it);
 	}
 	m_room->storeList(items, StoreMemberList);
 	m_room->requestList(RequestMemberList);
@@ -793,7 +839,9 @@ void XmppGroup::setGroupInfo(GroupInfo info)
 	form->addField(DataFormField::FieldType::TypeTextSingle,
 		"muc#roomconfig_roomdesc", m_info.description.toUtf8().constData());
 	m_room->setRoomConfig(form);
+	m_room->getRoomInfo();
 	//m_room->requestRoomConfig();
+	m_room->setRequestHistory(50, MUCRoom::HistoryMaxStanzas);
 }
 
 void XmppGroup::sendMsg(QString msg)
@@ -892,6 +940,7 @@ void XmppGroup::handleMUCConfigList(MUCRoom* room, const MUCListItemList& items,
 		{
 			printf("owner----------- %s\n", it->jid().username().c_str());
 			m_owner = QString(it->jid().username().c_str()).append("@localhost");
+			m_client->queryVCard(m_owner);
 			break;
 		}
 	}
@@ -902,6 +951,7 @@ void XmppGroup::handleMUCConfigList(MUCRoom* room, const MUCListItemList& items,
 		{
 			printf("member----------- %s\n", it->jid().username().c_str());
 			m_members.append(QString(it->jid().username().c_str()).append("@localhost"));
+			m_client->queryVCard(QString(it->jid().username().c_str()).append("@localhost"));
 		}
 	}
 }
@@ -919,4 +969,14 @@ void XmppGroup::handleMUCConfigResult(MUCRoom* room, bool success, MUCOperation 
 void XmppGroup::handleMUCRequest(MUCRoom* room, const DataForm& form)
 {
 
+}
+
+void XmppGroup::onContactFoundResult(int result, QVariant dataVar)
+{
+	if (result == 1)
+	{
+		UserInfo userInfo;
+		userInfo = dataVar.value<UserInfo>();
+		m_membersInfoMap.insert(userInfo.jid, userInfo);
+	}
 }

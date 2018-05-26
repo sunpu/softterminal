@@ -72,6 +72,7 @@ namespace tahiti
 		virtual ~XmppClient();
 		static void* longConnectProc(void* args);
 		static void* refreshSignalProc(void* args);
+		static void* loadOfflineMsgProc(void* args);
 		void setXmppAccount(QString user, QString passwd, QString server, QString port);
 		void run();
 		void login();
@@ -102,6 +103,7 @@ namespace tahiti
 		void ackSubscriptionRequest(QString jid, bool ack);
 		void joinGroupResultSlot(bool result);
 		void createGroupResultSlot(QString id);
+		void processOfflineMsg();
 	Q_SIGNALS:
 		void loginResult(bool result);
 		void contactFoundResult(int result, QVariant dataVar);
@@ -152,6 +154,7 @@ namespace tahiti
 		pthread_t m_tidConnect;
 		pthread_t m_tidKeepalive;
 		pthread_t m_tidRefreshSignal;
+		pthread_t m_tidLoadOfflineMsg;
 		//MessageSession* m_msgSession;
 		MessageEventFilter* m_msgEventFilter;
 		Presence::PresenceType m_xmppStatus;
@@ -179,6 +182,8 @@ namespace tahiti
 		QList<QString> m_subscriptionRequestList;
 		MessageSession* m_sess;
 		QList<XmppGroup*> m_mucGroupList;
+		bool m_isWorking;
+		QMap<QString, QList<QString>> m_offlineMsgMap;
 	};
 
 	class XmppGroup : public QObject, MUCRoomHandler, MUCRoomConfigHandler
@@ -194,10 +199,13 @@ namespace tahiti
 		void setGroupInfo(GroupInfo info);
 		void sendMsg(QString msg);
 		GroupInfo getGroupInfo() { return m_info; };
+		UserInfo getUserInfo(QString jid) { return m_membersInfoMap[jid]; };
 	Q_SIGNALS:
 		void joinGroupResultSignal(bool result);
 		void createGroupResultSignal(QString id);
 		void showGroupMessage(QString jid, QString user, QString msg);
+		private Q_SLOTS:
+		void onContactFoundResult(int result, QVariant dataVar);
 	private:
 		virtual void handleMUCParticipantPresence(MUCRoom * /*room*/, const MUCRoomParticipant participant,
 			const Presence& presence);
@@ -219,6 +227,7 @@ namespace tahiti
 		QList<QString> m_members;
 		GroupInfo m_info;
 		XmppClient* m_client;
+		QMap<QString, UserInfo> m_membersInfoMap;
 	};
 }
 #endif

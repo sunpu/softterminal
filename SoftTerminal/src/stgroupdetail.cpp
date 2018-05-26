@@ -73,11 +73,11 @@ void STGroupDetail::clearGroupDetail()
 	m_memberList.clear();
 }
 
-void STGroupDetail::setGroupDetail(XmppGroup* group, GroupInfo groupInfo, UserInfo ownerInfo, QMap<QString, UserInfo> membersInfo)
+void STGroupDetail::setGroupDetail(XmppGroup* group)
 {
 	m_group = group;
-	m_groupInfo = groupInfo;
-	m_ownerInfo = ownerInfo;
+	m_groupInfo = m_group->getGroupInfo();
+	m_ownerInfo = m_group->getUserInfo(m_group->getOwner());
 
 	clearGroupDetail();
 
@@ -90,18 +90,18 @@ void STGroupDetail::setGroupDetail(XmppGroup* group, GroupInfo groupInfo, UserIn
 	QImage* image = new QImage(path);
 	ui.lblPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
 
-	ui.lblGroupName->setText(groupInfo.name);
-	ui.leGroupName->setText(groupInfo.name);
+	ui.lblGroupName->setText(m_groupInfo.name);
+	ui.leGroupName->setText(m_groupInfo.name);
 
-	if (groupInfo.description.isEmpty())
+	if (m_groupInfo.description.isEmpty())
 	{
 		ui.lblDesc->setText(QStringLiteral("暂无群组说明。"));
 	}
 	else
 	{
-		ui.lblDesc->setText(groupInfo.description);
+		ui.lblDesc->setText(m_groupInfo.description);
 	}
-	ui.leDesc->setText(groupInfo.description);
+	ui.leDesc->setText(m_groupInfo.description);
 	ui.lblDesc->setVisible(true);
 	ui.leDesc->setVisible(false);
 
@@ -122,31 +122,34 @@ void STGroupDetail::setGroupDetail(XmppGroup* group, GroupInfo groupInfo, UserIn
 	}
 
 	QGridLayout* gridLayout = (QGridLayout*)ui.widMemberList->layout();
-	QMap<QString, UserInfo>::const_iterator iter;
-	int  i = 1;
 
-	memberItem = new STGroupMemberItem(ownerInfo, true);
+	memberItem = new STGroupMemberItem(m_ownerInfo, true);
 	gridLayout->addWidget(memberItem, 0, 0);
 
-	for (iter = membersInfo.constBegin(); iter != membersInfo.constEnd(); iter++, i++)
+	m_memberList = m_group->getMembers();
+
+	QList<QString>::const_iterator iter;
+	int i = 1;
+	UserInfo info;
+	for (iter = m_memberList.constBegin(); iter != m_memberList.constEnd(); iter++, i++)
 	{
-		memberItem = new STGroupMemberItem(iter.value());
+		info = m_group->getUserInfo(*iter);
+		memberItem = new STGroupMemberItem(info);
 		gridLayout->addWidget(memberItem, i / 6, i % 6);
 
 		contactItem = new STContactItem(true, false, true);
-		contactItem->setUserInfo(iter.value());
+		contactItem->setUserInfo(info);
 		connect(contactItem, SIGNAL(deleteMemberSignal(UserInfo)), this, SLOT(deleteMemberSlot(UserInfo)));
 		item = new QListWidgetItem();
 		ui.lwGroupMemberList->addItem(item);
 		ui.lwGroupMemberList->setItemWidget(item, contactItem);
-		m_memberList.append(iter->jid);
 	}
 
 	ui.pbDeleteGroup->setVisible(true);
 	ui.widMessage->setVisible(false);
 	ui.tabWidget->setCurrentIndex(0);
 
-	if (ownerInfo.jid != m_xmppClient->getSelfInfo().jid)
+	if (m_ownerInfo.jid != m_xmppClient->getSelfInfo().jid)
 	{
 		ui.pbEdit->setVisible(false);
 		ui.tabWidget->removeTab(1);
@@ -273,4 +276,5 @@ void STGroupDetail::handleConfirmOK()
 	ui.widMain->setVisible(false);
 	ui.widMessage->setVisible(true);
 	Q_EMIT refreshGroupSignal("");
+	Q_EMIT deleteGroupChatSignal(m_groupInfo.id);
 }

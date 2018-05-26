@@ -38,8 +38,7 @@ namespace tahiti
 		void on_pbScreenShot_clicked();
 		void on_pbScreenShotOption_clicked();
 		void on_pbLesson_clicked();
-		void updateOthersMessage(QString jid, QString msg);
-		void updateGroupMessage(QString jid, QString user, QString msg);
+		void updateOthersMessage(RecordItem item);
 		void onScreenshot();
 		void onScreenshotWithoutWindow();
 		void onChooseEmotion(int index);

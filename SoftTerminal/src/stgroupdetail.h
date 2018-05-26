@@ -33,7 +33,7 @@ namespace tahiti
 		STGroupDetail(XmppClient* client, QWidget* parent = 0);
 		~STGroupDetail();
 		void clearGroupDetail();
-		void setGroupDetail(XmppGroup* group, GroupInfo groupInfo, UserInfo ownerInfo, QMap<QString, UserInfo> membersInfo);
+		void setGroupDetail(XmppGroup* group);
 	private:
 		void confirmDeleteGroup();
 		public Q_SLOTS:
@@ -49,6 +49,7 @@ namespace tahiti
 	Q_SIGNALS:
 		void openChatDetail(QString jid);
 		void refreshGroupSignal(QString id);
+		void deleteGroupChatSignal(QString jid);
 	private:
 		Ui::STGroupDetailClass ui;
 		XmppClient* m_xmppClient;

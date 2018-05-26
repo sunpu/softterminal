@@ -14,9 +14,10 @@ STChatItem::~STChatItem()
 
 }
 
-void STChatItem::setUserInfo(UserInfo userInfo)
+void STChatItem::setChatInfo(UserInfo userInfo, XmppGroup* group)
 {
 	m_userInfo = userInfo;
+	m_group = group;
 
 	ui.lblChatName->setText(userInfo.userName);
 
@@ -34,23 +35,49 @@ void STChatItem::setUserInfo(UserInfo userInfo)
 	QString time = recordItem.time;
 	QString content = recordItem.content;
 	ui.lblTime->setText(time);
+	if (m_group)
+	{
+		QString name = m_group->getUserInfo(recordItem.jid).userName;
+		if (name.isEmpty())
+		{
+			name = recordItem.jid;
+		}
+		if (!recordItem.content.isEmpty())
+		{
+			content = QString("%1:%2").arg(name, recordItem.content);
+		}
+	}
 	ui.lblChatPreview->setText(content);
 }
 
-void STChatItem::updateMessage()
+void STChatItem::updateOthersMessage(RecordItem item)
 {
 	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
-	RecordItem recordItem = recordManager->getLastestRecordItem();
+	recordManager->writeRecordItem(item);
 
-	QString time = recordItem.time;
-	QString content = recordItem.content;
+	QString time = item.time;
+	QString content = item.content;
 	ui.lblTime->setText(time);
+	if (m_group)
+	{
+		QString name = m_group->getUserInfo(item.jid).userName;
+		if (name.isEmpty())
+		{
+			name = item.jid;
+		}
+		content = QString("%1:%2").arg(name, item.content);
+	}
 	ui.lblChatPreview->setText(content);
 }
 
 UserInfo STChatItem::getUserInfo()
 {
 	return m_userInfo;
+}
+
+XmppGroup* STChatItem::getGroup()
+{
+	return m_group;
 }
 
 void STChatItem::updateUnreadNum()

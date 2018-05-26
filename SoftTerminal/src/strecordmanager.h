@@ -20,7 +20,7 @@ namespace tahiti
 		~STRecordManager();
 		bool isRecordExist();
 		void removeRecord();
-		void writeRecordItem(RecordItem item, bool isGroup = false);
+		void writeRecordItem(RecordItem item);
 		QList<RecordItem> getRecordItemList();
 		RecordItem getLastestRecordItem();
 	private:

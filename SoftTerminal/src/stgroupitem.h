@@ -15,21 +15,14 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STGroupItem(XmppClient* client, XmppGroup* group);
+		STGroupItem(XmppGroup* group);
 		~STGroupItem();
 		XmppGroup* getGroup() { return m_group; };
 		GroupInfo getGroupInfo() { return m_groupInfo; };
-		UserInfo getOwnerInfo() { return m_ownerInfo; };
-		QMap<QString, UserInfo> getMembersInfo() { return m_membersInfoMap; };
-		private Q_SLOTS:
-		void onContactFoundResult(int result, QVariant dataVar);
 	private:
 		Ui::STGroupItemClass ui;
-		XmppClient* m_xmppClient;
 		XmppGroup* m_group;
 		GroupInfo m_groupInfo;
-		UserInfo m_ownerInfo;
-		QMap<QString, UserInfo> m_membersInfoMap;
 	};
 }
 #endif

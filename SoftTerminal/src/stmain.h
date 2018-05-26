@@ -8,6 +8,8 @@
 #include <QDir>
 #include <QtMath>
 #include "ui_STMain.h"
+#include "ui_STMenu.h"
+#include "ui_STChatDeleteMenu.h"
 #include "stchatdetail.h"
 #include "stcontactitem.h"
 #include "stcontactdetail.h"
@@ -19,7 +21,6 @@
 #include "stcloudfilemanager.h"
 #include "stchatitem.h"
 #include "xmppclient.h"
-#include "stmenu.h"
 #include "stsetting.h"
 #include "stmessagecenter.h"
 
@@ -34,6 +35,43 @@ namespace tahiti
 	class STContactItem;
 	class STContactDetail;
 
+	class STMenu : public QWidget
+	{
+		Q_OBJECT
+
+	public:
+		STMenu(QWidget* parent = 0);
+		~STMenu();
+	protected:
+		bool eventFilter(QObject* obj, QEvent* e);
+		bool event(QEvent* event);
+	Q_SIGNALS:
+		void confirmExit();
+		void confirmRelogin();
+		void showSettingWindow();
+	private:
+		Ui::STMenuClass ui;
+
+	};
+
+	class STChatDeleteMenu : public QWidget
+	{
+		Q_OBJECT
+
+	public:
+		STChatDeleteMenu(QWidget* parent = 0);
+		~STChatDeleteMenu();
+		void setJid(QString jid);
+	protected:
+		bool eventFilter(QObject* obj, QEvent* e);
+		bool event(QEvent* event);
+	Q_SIGNALS:
+		void deleteChatSingal(QString jid);
+	private:
+		Ui::STChatDeleteMenuClass ui;
+		QString m_jid;
+	};
+
 	class STMain : public QWidget
 	{
 		Q_OBJECT
@@ -43,7 +81,6 @@ namespace tahiti
 		~STMain();
 		void init();
 		void destroy();
-		static void* loadProc(void* args);
 		public Q_SLOTS:
 		void on_pbChat_clicked();
 		void on_pbContact_clicked();
@@ -66,9 +103,6 @@ namespace tahiti
 	Q_SIGNALS:
 		void changeLoginWindow();
 		void closeMain();
-		void loadChatWindowSignal();
-		void loadContactWindowSignal();
-		void loadGroupWindowSignal();
 	protected:
 		virtual void mouseMoveEvent(QMouseEvent* event);
 		virtual void mousePressEvent(QMouseEvent* event);
@@ -99,7 +133,6 @@ namespace tahiti
 		void deleteChat(QString jid);
 
 		void setPageIndex(int index);
-		void loadInfo();
 		private Q_SLOTS:
 		void loadChatWindow();
 		void loadContactWindow();
@@ -117,7 +150,9 @@ namespace tahiti
 		void showMessageWarn();
 		void refreshContact();
 		void refreshGroup(QString id);
-		void updateOthersMessage(QString jid);
+		void updateOthersMessage(QString jid, QString msg);
+		void updateGroupMessage(QString jid, QString user, QString msg);
+		void deleteChatSlot(QString id);
 	private:
 		Ui::STMainClass ui;
 		QPoint mousePosition;
@@ -135,7 +170,8 @@ namespace tahiti
 		//STChatDetail* m_chatDetail;
 
 		QList<STChatItem*> m_chatItemList;
-		QList<STChatDetail*> m_chatDetailList;
+		//QList<STChatDetail*> m_chatDetailList;
+		STChatDetail* m_chatDetail;
 		QList<STContactItem*> m_contactItemList;
 		STContactDetail* m_contactDetail;
 		QList<STGroupItem*> m_groupItemList;
@@ -144,13 +180,13 @@ namespace tahiti
 		STPersonalInfo* m_personalInfo;
 		STCloudFileManager* m_cloudFileManager;
 		STMenu* m_menu;
+		STChatDeleteMenu* m_chatDeleteMenu;
 		STConfirm* m_confirm;
 		STMessageCenter* m_messageCenterWindow;
 		QString m_confirmMode;
 		int m_currentPageIndex;
 		QPushButton* m_clearBtn;
 		QString m_currentChatJid;
-		pthread_t m_tidLoad;
 	};
 }
 #endif

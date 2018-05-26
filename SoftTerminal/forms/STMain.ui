@@ -632,7 +632,7 @@ QScrollBar::sub-line:vertical
 }</string>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="pgChatWindow">
          <layout class="QHBoxLayout" name="horizontalLayout_8">
@@ -834,7 +834,62 @@ QWidget#widChatBlank{border-bottom: 1px solid #e3e3e3;border-right: 1px solid #e
               </widget>
              </item>
              <item>
-              <widget class="QStackedWidget" name="swChatDetail"/>
+              <widget class="QWidget" name="widChatDetail" native="true">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(255, 255, 255);
+
+
+QTabWidget::pane{border-bottom: 1px solid #e3e3e3;
+border-right: 1px solid #e3e3e3;}
+
+QTabWidget::tab-bar{alignment:center;}
+
+#tabWidget QTabBar::tab
+{
+    min-width: 75px;
+    min-height: 28px;
+	font: 12pt &quot;微软雅黑&quot;;
+}
+
+
+
+#tabWidget QTabBar::tab:selected
+{
+    border-top: 3px solid #00c36e;
+	color:#00c36e;
+}
+
+#tabWidget QTabBar::tab:!selected
+{
+    border-top: 0px;
+	color: rgb(67, 69, 85);
+}
+</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_10">
+                <property name="spacing">
+                 <number>0</number>
+                </property>
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+               </layout>
+              </widget>
              </item>
             </layout>
            </widget>

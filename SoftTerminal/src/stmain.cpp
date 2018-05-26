@@ -2,6 +2,165 @@
 
 using namespace tahiti;
 
+STMenu::STMenu(QWidget * parent) : QWidget(parent)
+{
+	ui.setupUi(this);
+	setAttribute(Qt::WA_TranslucentBackground, true);
+	setWindowFlags(windowFlags() | Qt::FramelessWindowHint | Qt::Popup);
+
+	ui.widParam->installEventFilter(this);
+	ui.widRelogin->installEventFilter(this);
+	ui.widExit->installEventFilter(this);
+}
+
+STMenu::~STMenu()
+{
+
+}
+
+bool STMenu::eventFilter(QObject* obj, QEvent* e)
+{
+	if (e->type() == QEvent::Enter)
+	{
+		if (ui.widParam == obj)
+		{
+			ui.widParam->setStyleSheet("background:#ececec;");
+		}
+		else if (ui.widRelogin == obj)
+		{
+			ui.widRelogin->setStyleSheet("background:#ececec;");
+		}
+		else if (ui.widExit == obj)
+		{
+			ui.widExit->setStyleSheet("background:#ececec;");
+		}
+		return true;
+	}
+	else if (e->type() == QEvent::Leave)
+	{
+		if (ui.widParam == obj)
+		{
+			ui.widParam->setStyleSheet("");
+		}
+		else if (ui.widRelogin == obj)
+		{
+			ui.widRelogin->setStyleSheet("");
+		}
+		else if (ui.widExit == obj)
+		{
+			ui.widExit->setStyleSheet("");
+		}
+		return true;
+	}
+	else if (e->type() == QEvent::MouseButtonPress)
+	{
+		if (ui.widParam == obj)
+		{
+			Q_EMIT showSettingWindow();
+		}
+		else if (ui.widRelogin == obj)
+		{
+			Q_EMIT confirmRelogin();
+		}
+		else if (ui.widExit == obj)
+		{
+			Q_EMIT confirmExit();
+		}
+		return true;
+	}
+	return false;
+}
+
+bool STMenu::event(QEvent* event)
+{
+	// class_ameneded 不能是custommenu的成员, 因为winidchange事件触发时, 类成员尚未初始化  
+	static bool class_amended = false;
+	if (event->type() == QEvent::WinIdChange)
+	{
+		HWND hwnd = reinterpret_cast<HWND>(winId());
+		if (class_amended == false)
+		{
+			class_amended = true;
+			DWORD class_style = ::GetClassLong(hwnd, GCL_STYLE);
+			class_style &= ~CS_DROPSHADOW;
+			::SetClassLong(hwnd, GCL_STYLE, class_style); // windows系统函数  
+		}
+	}
+	return QWidget::event(event);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+STChatDeleteMenu::STChatDeleteMenu(QWidget * parent) : QWidget(parent)
+{
+	ui.setupUi(this);
+	setAttribute(Qt::WA_TranslucentBackground, true);
+	setWindowFlags(windowFlags() | Qt::FramelessWindowHint | Qt::Popup);
+
+	ui.lblDelete->installEventFilter(this);
+}
+
+STChatDeleteMenu::~STChatDeleteMenu()
+{
+
+}
+
+void STChatDeleteMenu::setJid(QString jid)
+{
+	m_jid = jid;
+}
+
+bool STChatDeleteMenu::eventFilter(QObject* obj, QEvent* e)
+{
+	if (e->type() == QEvent::Enter)
+	{
+		if (ui.lblDelete == obj)
+		{
+			ui.lblDelete->setStyleSheet("color:rgb(67, 69, 85);"
+				"background:#ececec;border:1px solid #e3e3e3;");
+		}
+		return true;
+	}
+	else if (e->type() == QEvent::Leave)
+	{
+		if (ui.lblDelete == obj)
+		{
+			ui.lblDelete->setStyleSheet("color:rgb(67, 69, 85);"
+				"background:rgb(255, 255, 255);border:1px solid #e3e3e3;");
+		}
+		return true;
+	}
+	else if (e->type() == QEvent::MouseButtonPress)
+	{
+		if (ui.lblDelete == obj)
+		{
+			Q_EMIT deleteChatSingal(m_jid);
+			hide();
+		}
+		return true;
+	}
+	return false;
+}
+
+bool STChatDeleteMenu::event(QEvent* event)
+{
+	// class_ameneded 不能是custommenu的成员, 因为winidchange事件触发时, 类成员尚未初始化  
+	static bool class_amended = false;
+	if (event->type() == QEvent::WinIdChange)
+	{
+		HWND hwnd = reinterpret_cast<HWND>(winId());
+		if (class_amended == false)
+		{
+			class_amended = true;
+			DWORD class_style = ::GetClassLong(hwnd, GCL_STYLE);
+			class_style &= ~CS_DROPSHADOW;
+			::SetClassLong(hwnd, GCL_STYLE, class_style); // windows系统函数  
+		}
+	}
+	return QWidget::event(event);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 STMain::STMain(XmppClient* client) : m_xmppClient(client)
 {
 
@@ -45,12 +204,16 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	connect(m_menu, SIGNAL(confirmExit()), this, SLOT(confirmExit()));
 	connect(m_menu, SIGNAL(confirmRelogin()), this, SLOT(confirmRelogin()));
 	connect(m_menu, SIGNAL(showSettingWindow()), this, SLOT(showSettingWindow()));
-	
 	m_menu->hide();
+
+	m_chatDeleteMenu = new STChatDeleteMenu();
+	connect(m_chatDeleteMenu, SIGNAL(deleteChatSingal(QString)), this, SLOT(deleteChatSlot(QString)));
+	m_chatDeleteMenu->hide();
+
 	m_confirm = new STConfirm(this);
 	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
 
-
+	connect(m_xmppClient, SIGNAL(showMessage(QString, QString)), this, SLOT(updateOthersMessage(QString, QString)));
 	connect(m_xmppClient, SIGNAL(subscriptionRequest(QString)), this, SLOT(showMessageWarn()));
 	connect(m_xmppClient, SIGNAL(refreshContactSignal()), this, SLOT(refreshContact()));
 
@@ -64,6 +227,10 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	initContactAddNew();
 	initGroupAddNew();
 
+	m_chatDetail = new STChatDetail(m_xmppClient, this);
+	ui.widChatDetail->layout()->addWidget(m_chatDetail);
+	connect(m_chatDetail, SIGNAL(changeChatListOrder(QString)), this, SLOT(reorderChatList(QString)));
+
 	m_contactDetail = new STContactDetail(this);
 	ui.widContactDetail->layout()->addWidget(m_contactDetail);
 	connect(m_contactDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
@@ -72,6 +239,7 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	m_groupDetail = new STGroupDetail(m_xmppClient, this);
 	connect(m_groupDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
 	connect(m_groupDetail, SIGNAL(refreshGroupSignal(QString)), this, SLOT(refreshGroup(QString)));
+	connect(m_groupDetail, SIGNAL(deleteGroupChatSignal(QString)), this, SLOT(deleteChatSlot(QString)));
 	ui.widGroupDetail->layout()->addWidget(m_groupDetail);
 
 	ui.lblDirect->installEventFilter(this);
@@ -81,6 +249,7 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	ui.widTitle->installEventFilter(this);
 	ui.lblUserPic->installEventFilter(this);
 	ui.leContactSearch->installEventFilter(this);
+	ui.lwChatList->installEventFilter(this);
 
 	m_personalInfo = new STPersonalInfo(m_xmppClient);
 	connect(m_personalInfo, SIGNAL(updateSelfPic(QString)), this, SLOT(updateSelfPic(QString)));
@@ -116,7 +285,6 @@ void STMain::initChatData()
 	QList<XmppGroup*>::const_iterator groupIt;
 
 	STChatItem* chatItem;
-	STChatDetail* chatDetail;
 	QList<QString>::Iterator fileIt;
 	UserInfo groupInfo;
 	groupInfo.photoPath = ":/SoftTerminal/images/group_icon.png";
@@ -128,15 +296,8 @@ void STMain::initChatData()
 			if (fileIt->startsWith(friendIt->jid))
 			{
 				chatItem = new STChatItem();
-				chatItem->setUserInfo(*friendIt);
+				chatItem->setChatInfo(*friendIt);
 				m_chatItemList.push_back(chatItem);
-
-				chatDetail = new STChatDetail(m_xmppClient, this);
-				chatDetail->setChatDetail(*friendIt);
-				connect(chatDetail, SIGNAL(changeChatListOrder(QString)), this, SLOT(reorderChatList(QString)));
-				m_chatDetailList.push_back(chatDetail);
-
-				ui.swChatDetail->addWidget(chatDetail);
 				break;
 			}
 		}
@@ -149,15 +310,8 @@ void STMain::initChatData()
 				groupInfo.userName = (*groupIt)->getGroupInfo().name;
 
 				chatItem = new STChatItem();
-				chatItem->setUserInfo(groupInfo);
+				chatItem->setChatInfo(groupInfo, *groupIt);
 				m_chatItemList.push_back(chatItem);
-
-				chatDetail = new STChatDetail(m_xmppClient, this);
-				chatDetail->setChatDetail(groupInfo, *groupIt);
-				connect(chatDetail, SIGNAL(changeChatListOrder(QString)), this, SLOT(reorderChatList(QString)));
-				m_chatDetailList.push_back(chatDetail);
-
-				ui.swChatDetail->addWidget(chatDetail);
 				break;
 			}
 		}
@@ -180,7 +334,7 @@ void STMain::initChatList()
 
 void STMain::initChatMainWindow()
 {
-	ui.swChatDetail->setVisible(false);
+	ui.widChatDetail->setVisible(false);
 	ui.widChatBlank->setVisible(true);
 }
 
@@ -195,6 +349,7 @@ void STMain::reorderChatList(QString jid)
 	int index = 0;
 	STChatItem* chatItem;
 	UserInfo userInfo;
+	XmppGroup* group;
 	QList<STChatItem*>::Iterator it;
 	for (it = m_chatItemList.begin(); it != m_chatItemList.end(); it++, index++)
 	{
@@ -202,12 +357,13 @@ void STMain::reorderChatList(QString jid)
 		{
 			chatItem = *it;
 			userInfo = (*it)->getUserInfo();
+			group = (*it)->getGroup();
 			break;
 		}
 	}
 
 	STChatItem* chatItemNew = new STChatItem();
-	chatItemNew->setUserInfo(userInfo);
+	chatItemNew->setChatInfo(userInfo, group);
 
 	QListWidgetItem* item = ui.lwChatList->currentItem();
 	ui.lwChatList->removeItemWidget(item);
@@ -294,7 +450,9 @@ void STMain::initGroupData()
 	QList<XmppGroup*>::const_iterator it;
 	for (it = groupList.constBegin(); it != groupList.constEnd(); it++)
 	{
-		groupItem = new STGroupItem(m_xmppClient, *it);
+		connect(*it, SIGNAL(showGroupMessage(QString, QString, QString)),
+			this, SLOT(updateGroupMessage(QString, QString, QString)));
+		groupItem = new STGroupItem(*it);
 		m_groupItemList.push_back(groupItem);
 	}
 }
@@ -348,20 +506,73 @@ void STMain::refreshGroup(QString id)
 	}
 }
 
-void STMain::updateOthersMessage(QString jid)
+void STMain::deleteChatSlot(QString id)
 {
+	deleteChat(id);
+}
+
+void STMain::updateOthersMessage(QString jid, QString msg)
+{
+	jid = jid.append("@localhost");
+
+	createChat(jid);
+
 	STChatItem* chatItem;
 	QList<STChatItem*>::Iterator it;
 	for (it = m_chatItemList.begin(); it != m_chatItemList.end(); it++)
 	{
 		if ((*it)->getUserInfo().jid == jid)
 		{
+			RecordItem item;
+			item.time = QTime::currentTime().toString();
+			item.from = MessageFrom::Other;
+			item.jid = "";
+			item.type = MessageType::MT_Text;
+			item.content = msg;
+			item.pic = (*it)->getUserInfo().photoPath;
+
 			if (m_currentChatJid != jid)
 			{
 				(*it)->updateUnreadNum();
 			}
-			(*it)->updateMessage();
-			break;
+			else
+			{
+				m_chatDetail->updateOthersMessage(item);
+			}
+			(*it)->updateOthersMessage(item);
+			return;
+		}
+	}
+}
+
+void STMain::updateGroupMessage(QString jid, QString user, QString msg)
+{
+	createChat(jid);
+
+	STChatItem* chatItem;
+	QList<STChatItem*>::Iterator it;
+	for (it = m_chatItemList.begin(); it != m_chatItemList.end(); it++)
+	{
+		if ((*it)->getUserInfo().jid == jid)
+		{
+			RecordItem item;
+			item.time = QTime::currentTime().toString();
+			item.from = MessageFrom::Other;
+			item.jid = user;//
+			item.type = MessageType::MT_Text;
+			item.content = msg;
+			item.pic = (*it)->getUserInfo().photoPath;//
+
+			if (m_currentChatJid != jid)
+			{
+				(*it)->updateUnreadNum();
+			}
+			else
+			{
+				m_chatDetail->updateOthersMessage(item);
+			}
+			(*it)->updateOthersMessage(item);
+			return;
 		}
 	}
 }
@@ -385,11 +596,9 @@ void STMain::init()
 	// 初始化群组
 	initGroupMainWindow();
 
-	connect(this, SIGNAL(loadChatWindowSignal()), this, SLOT(loadChatWindow()));
-	connect(this, SIGNAL(loadContactWindowSignal()), this, SLOT(loadContactWindow()));
-	connect(this, SIGNAL(loadGroupWindowSignal()), this, SLOT(loadGroupWindow()));
-
-	pthread_create(&m_tidLoad, NULL, loadProc, this);
+	loadChatWindow();
+	loadContactWindow();
+	loadGroupWindow();
 }
 
 void STMain::destroy()
@@ -398,25 +607,8 @@ void STMain::destroy()
 	qDeleteAll(m_chatItemList);
 	m_chatItemList.clear();
 
-	qDeleteAll(m_chatDetailList);
-	m_chatDetailList.clear();
-
 	qDeleteAll(m_contactItemList);
 	m_contactItemList.clear();
-}
-
-void STMain::loadInfo()
-{
-	Q_EMIT loadChatWindowSignal();
-	Q_EMIT loadContactWindowSignal();
-	Q_EMIT loadGroupWindowSignal();
-}
-
-void* STMain::loadProc(void* args)
-{
-	STMain* main = (STMain*)args;
-	main->loadInfo();
-	return NULL;
 }
 
 void STMain::showMessageWarn()
@@ -439,7 +631,7 @@ void STMain::on_lwChatList_itemClicked()
 	UserInfo userInfo = chatItem->getUserInfo();
 	switchChatDetail(userInfo.jid);
 
-	ui.swChatDetail->setVisible(true);
+	ui.widChatDetail->setVisible(true);
 	ui.widChatBlank->setVisible(false);
 }
 
@@ -474,10 +666,7 @@ void STMain::on_lwGroupList_itemClicked()
 	STGroupItem* groupItem = (STGroupItem*)widget;
 
 	XmppGroup* group = groupItem->getGroup();
-	GroupInfo groupInfo = groupItem->getGroupInfo();
-	UserInfo ownerInfo = groupItem->getOwnerInfo();
-	QMap<QString, UserInfo> membersInfo = groupItem->getMembersInfo();
-	m_groupDetail->setGroupDetail(group, groupInfo, ownerInfo, membersInfo);
+	m_groupDetail->setGroupDetail(group);
 
 	ui.widGroupDetail->setVisible(true);
 	ui.widGroupBlank->setVisible(false);
@@ -501,15 +690,14 @@ void STMain::switchChatItem(QString jid)
 
 void STMain::switchChatDetail(QString jid)
 {
-	int index = 0;
-	QList<STChatDetail*>::Iterator it;
-	for (it = m_chatDetailList.begin(); it != m_chatDetailList.end(); it++, index++)
+	QList<STChatItem*>::Iterator it;
+	for (it = m_chatItemList.begin(); it != m_chatItemList.end(); it++)
 	{
 		if ((*it)->getUserInfo().jid == jid)
 		{
-			ui.swChatDetail->setCurrentIndex(index);
 			ui.lblChatTitle->setText((*it)->getUserInfo().userName);
 			m_currentChatJid = jid;
+			m_chatDetail->setChatDetail((*it)->getUserInfo(), (*it)->getGroup());
 			break;
 		}
 	}
@@ -521,7 +709,7 @@ void STMain::switchChatWindow(QString jid)
 	switchChatItem(jid);
 	switchChatDetail(jid);
 
-	ui.swChatDetail->setVisible(true);
+	ui.widChatDetail->setVisible(true);
 	ui.widChatBlank->setVisible(false);
 
 	on_pbChat_clicked();
@@ -552,7 +740,6 @@ void STMain::createChat(QString jid)
 	}
 
 	STChatItem* chatItem;
-	STChatDetail* chatDetail;
 	QListWidgetItem* item;
 
 	QList<UserInfo> friendList = m_xmppClient->getRoster();
@@ -562,15 +749,10 @@ void STMain::createChat(QString jid)
 		if (friendIt->jid == jid)
 		{
 			chatItem = new STChatItem();
-			chatItem->setUserInfo(*friendIt);
+			chatItem->setChatInfo(*friendIt);
 			m_chatItemList.push_front(chatItem);
 
-			chatDetail = new STChatDetail(m_xmppClient, this);
-			chatDetail->setChatDetail(*friendIt);
-			connect(chatDetail, SIGNAL(changeChatListOrder(QString)), this, SLOT(reorderChatList(QString)));
-			m_chatDetailList.push_back(chatDetail);
-
-			ui.swChatDetail->addWidget(chatDetail);
+			//m_chatDetail
 
 			item = new QListWidgetItem();
 			ui.lwChatList->insertItem(0, item);
@@ -591,15 +773,10 @@ void STMain::createChat(QString jid)
 			groupInfo.userName = (*groupIt)->getGroupInfo().name;
 
 			chatItem = new STChatItem();
-			chatItem->setUserInfo(groupInfo);
+			chatItem->setChatInfo(groupInfo, *groupIt);
 			m_chatItemList.push_front(chatItem);
 
-			chatDetail = new STChatDetail(m_xmppClient, this);
-			chatDetail->setChatDetail(groupInfo, *groupIt);
-			connect(chatDetail, SIGNAL(changeChatListOrder(QString)), this, SLOT(reorderChatList(QString)));
-			m_chatDetailList.push_back(chatDetail);
-
-			ui.swChatDetail->addWidget(chatDetail);
+			//m_chatDetail
 
 			item = new QListWidgetItem();
 			ui.lwChatList->insertItem(0, item);
@@ -611,7 +788,7 @@ void STMain::createChat(QString jid)
 
 void STMain::deleteChat(QString jid)
 {
-	ui.swChatDetail->setVisible(false);
+	ui.widChatDetail->setVisible(false);
 	ui.widChatBlank->setVisible(true);
 	ui.lblChatTitle->clear();
 
@@ -621,20 +798,12 @@ void STMain::deleteChat(QString jid)
 	{
 		if ((*itemIt)->getUserInfo().jid == jid)
 		{
-			QListWidgetItem* item = ui.lwChatList->item(index);
-			ui.lwChatList->removeItemWidget(item);
+			if (index == ui.lwChatList->currentRow())
+			{
+				ui.lwChatList->setCurrentRow(-1);
+			}
+			ui.lwChatList->takeItem(index);
 			m_chatItemList.removeOne(*itemIt);
-			break;
-		}
-	}
-
-	QList<STChatDetail*>::Iterator detailIt;
-	for (detailIt = m_chatDetailList.begin(); detailIt != m_chatDetailList.end(); detailIt++)
-	{
-		if ((*detailIt)->getUserInfo().jid == jid)
-		{
-			ui.swChatDetail->removeWidget(*detailIt);
-			m_chatDetailList.removeOne(*detailIt);
 			break;
 		}
 	}
@@ -648,11 +817,7 @@ void STMain::updateSelfPic(QString picPath)
 	QImage* image = new QImage(picPath);
 	ui.lblUserPic->setPixmap(QPixmap::fromImage(*image).scaled(45, 45));
 
-	QList<STChatDetail*>::Iterator it;
-	for (it = m_chatDetailList.begin(); it != m_chatDetailList.end(); it++)
-	{
-		(*it)->updateSelfPic(picPath);
-	}
+	m_chatDetail->updateSelfPic(picPath);
 }
 
 void STMain::confirmExit()
@@ -942,6 +1107,20 @@ bool STMain::eventFilter(QObject* obj, QEvent* e)
 		{
 			clearSearchInput();
 		}
+	}
+	else if (e->type() == QEvent::ContextMenu)
+	{
+		QPoint pos = QCursor::pos();
+		QListWidgetItem* item = ui.lwChatList->itemAt(ui.lwChatList->mapFromGlobal(pos));
+		QWidget* widget = ui.lwChatList->itemWidget(item);
+		STChatItem* chatItem = (STChatItem*)widget;
+		QString jid = chatItem->getUserInfo().jid;
+
+		m_chatDeleteMenu->hide();
+		m_chatDeleteMenu->setJid(jid);
+		m_chatDeleteMenu->move(QPoint(pos.x() + 1, pos.y()));
+		m_chatDeleteMenu->show();
+		return true;
 	}
 	return false;
 }

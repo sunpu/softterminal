@@ -10,9 +10,6 @@ STChatDetail::STChatDetail(XmppClient* client, QWidget *parent)
 	ui.spChatDetail->setStretchFactor(0, 10);
 	ui.spChatDetail->setStretchFactor(1, 1);
 
-	connect(m_xmppClient, SIGNAL(showMessage(QString, QString)), this, SLOT(updateOthersMessage(QString, QString)));
-	connect(this, SIGNAL(updateOthersMessage(QString)), m_main, SLOT(updateOthersMessage(QString)));
-
 	ui.teChatWrite->installEventFilter(this);
 
 	m_option = new STScreenshotOption(this);
@@ -46,12 +43,9 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 {
 	m_userInfo = userInfo;
 	m_group = group;
-	if (m_group)
-	{
-		connect(m_group, SIGNAL(showGroupMessage(QString, QString, QString)),
-			this, SLOT(updateGroupMessage(QString, QString, QString)));
-	}
 	m_selfInfo = m_xmppClient->getSelfInfo();
+	m_selfPicPath.clear();
+	m_otherPicPath.clear();
 
 	QString desPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
 		+ DATA_ROOT_PATH + AVATAR_PATH;
@@ -70,6 +64,14 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 		{
 			m_otherPicPath = QString(desPath) + info.fileName();
 		}
+	}
+	if (m_selfPicPath.isEmpty())
+	{
+		m_selfPicPath = ":/SoftTerminal/images/account.png";
+	}
+	if (m_otherPicPath.isEmpty())
+	{
+		m_otherPicPath = ":/SoftTerminal/images/account.png";
 	}
 
 	clearChatDetail();
@@ -99,13 +101,11 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 		ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
 	}
 	ui.lwChatRecordList->scrollToBottom();
-
-	m_selfInfo = m_xmppClient->getSelfInfo();
 }
 
 void STChatDetail::updateSelfPic(QString picPath)
 {
-	m_userInfo.photoPath = picPath;
+	m_selfInfo.photoPath = picPath;
 	QList<STChatRecordItem*>::Iterator it;
 	for (it = m_recordItemList.begin(); it != m_recordItemList.end(); it++)
 	{
@@ -128,6 +128,7 @@ void STChatDetail::on_pbSendMessage_clicked()
 	RecordItem item;
 	item.time = QTime::currentTime().toString();
 	item.from = MessageFrom::Self;
+	item.jid = m_selfInfo.jid;
 	item.type = MessageType::MT_Text;
 	item.content = myMessage;
 	item.pic = m_selfPicPath;
@@ -279,24 +280,8 @@ void STChatDetail::onCancelScreenshot()
 	m_main->showNormal();
 }
 
-void STChatDetail::updateOthersMessage(QString jid, QString msg)
+void STChatDetail::updateOthersMessage(RecordItem item)
 {
-	if (m_userInfo.jid != jid.append("@localhost"))
-	{
-		return;
-	}
-
-	RecordItem item;
-	item.time = QTime::currentTime().toString();
-	item.from = MessageFrom::Other;
-	item.type = MessageType::MT_Text;
-	item.content = msg;
-	item.pic = m_otherPicPath;
-
-	// 写文件
-	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
-	recordManager->writeRecordItem(item);
-
 	// 更新聊天记录界面
 	STChatRecordItem* chatDetailItem = new STChatRecordItem(item);
 	m_recordItemList.append(chatDetailItem);
@@ -306,38 +291,6 @@ void STChatDetail::updateOthersMessage(QString jid, QString msg)
 	ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
 	pItem->setSizeHint(QSize(ui.lwChatRecordList->width() - 5, itemSize.height() + 56));
 	ui.lwChatRecordList->scrollToBottom();
-	Q_EMIT updateOthersMessage(jid);
-}
-
-void STChatDetail::updateGroupMessage(QString jid, QString user, QString msg)
-{
-	if (m_userInfo.jid != jid)
-	{
-		return;
-	}
-
-	RecordItem item;
-	item.time = QTime::currentTime().toString();
-	item.from = MessageFrom::Other;
-	item.jid = user;
-	item.type = MessageType::MT_Text;
-	item.content = msg;
-	item.pic = m_otherPicPath;
-
-	// 写文件
-	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
-	recordManager->writeRecordItem(item, true);
-
-	// 更新聊天记录界面
-	STChatRecordItem* chatDetailItem = new STChatRecordItem(item);
-	m_recordItemList.append(chatDetailItem);
-	QSize itemSize = chatDetailItem->getItemSize();
-	QListWidgetItem* pItem = new QListWidgetItem();
-	ui.lwChatRecordList->addItem(pItem);
-	ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
-	pItem->setSizeHint(QSize(ui.lwChatRecordList->width() - 5, itemSize.height() + 56));
-	ui.lwChatRecordList->scrollToBottom();
-	Q_EMIT updateOthersMessage(jid);
 }
 
 bool STChatDetail::eventFilter(QObject *obj, QEvent *e)

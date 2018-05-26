@@ -113,12 +113,6 @@
     <ClCompile Include="GeneratedFiles\Release\moc_stmain.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_stmenu.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_stmenu.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_stnetworkclient.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
@@ -210,9 +204,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\stmain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\stmenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\stnetworkclient.cpp">
@@ -469,9 +460,6 @@
     <CustomBuild Include="src\stmain.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\stmenu.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="src\stnetworkclient.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
@@ -566,6 +554,9 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="forms\STGroupMemberItem.ui">
+      <Filter>Form Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="forms\STChatDeleteMenu.ui">
       <Filter>Form Files</Filter>
     </CustomBuild>
   </ItemGroup>
@@ -715,6 +706,9 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_STGroupMemberItem.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_STChatDeleteMenu.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
