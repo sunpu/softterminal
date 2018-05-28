@@ -841,7 +841,7 @@ void XmppGroup::setGroupInfo(GroupInfo info)
 	m_room->setRoomConfig(form);
 	m_room->getRoomInfo();
 	//m_room->requestRoomConfig();
-	m_room->setRequestHistory(50, MUCRoom::HistoryMaxStanzas);
+	//m_room->setRequestHistory(50, MUCRoom::HistoryMaxStanzas);
 }
 
 void XmppGroup::sendMsg(QString msg)
@@ -859,11 +859,21 @@ void XmppGroup::handleMUCParticipantPresence(MUCRoom * /*room*/, const MUCRoomPa
 		printf("!!!!!!!!!!!!!!!! %s left the room\n", participant.nick->resource().c_str());
 	else
 		printf("Presence is %d of %s\n", presence.presence(), participant.nick->resource().c_str());*/
+	if (presence.presence() == Presence::Available || presence.presence() == Presence::Chat
+		|| presence.presence() == Presence::Away || presence.presence() == Presence::DND)
+	{
+		m_onlines.append(participant.nick->resource().c_str());
+	}
+	else
+	{
+		m_onlines.removeOne(participant.nick->resource().c_str());
+	}
+	Q_EMIT refreshOnlineSignal();
 }
 
 void XmppGroup::handleMUCMessage(MUCRoom* /*room*/, const Message& msg, bool priv)
 {
-	if (m_client->getSelfInfo().jid.startsWith(msg.from().resource().c_str()))
+	if (m_client->getSelfInfo().jid == QString(msg.from().resource().c_str()).append("@localhost"))
 	{
 		return;
 	}

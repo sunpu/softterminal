@@ -20,6 +20,7 @@ STChatDetail::STChatDetail(XmppClient* client, QWidget *parent)
 	m_emotion = new STEmotion(this);
 	connect(m_emotion, SIGNAL(chooseEmotion(int)), this, SLOT(onChooseEmotion(int)));
 	m_emotion->hide();
+	m_group = NULL;
 }
 
 STChatDetail::~STChatDetail()
@@ -41,8 +42,19 @@ void STChatDetail::clearChatDetail()
 
 void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 {
+	if (m_group)
+	{
+		disconnect(m_group, SIGNAL(refreshOnlineSignal()), this, SLOT(refreshOnlineSlot()));
+	}
 	m_userInfo = userInfo;
 	m_group = group;
+	ui.widStatus->setVisible(false);
+	if (m_group)
+	{
+		connect(m_group, SIGNAL(refreshOnlineSignal()), this, SLOT(refreshOnlineSlot()));
+		refreshOnlineSlot();
+		ui.widStatus->setVisible(true);
+	}
 	m_selfInfo = m_xmppClient->getSelfInfo();
 	m_selfPicPath.clear();
 	m_otherPicPath.clear();
@@ -101,6 +113,59 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 		ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
 	}
 	ui.lwChatRecordList->scrollToBottom();
+}
+
+void STChatDetail::refreshOnlineSlot()
+{
+	ui.lwStatus->clear();
+
+	STContactItem* contactItem;
+	QListWidgetItem* item;
+
+	QString owner = m_group->getOwner();
+	QList<QString> offlines = m_group->getMembers();
+	QList<QString> onlines = m_group->getOnlines();
+
+	QString num = QStringLiteral("  群组成员: %1/%2").arg(
+		QString::number(onlines.size()), QString::number(offlines.size() + 1));
+	ui.lblNum->setText(num);
+
+	contactItem = new STContactItem(true, false, false, true);
+	bool offline = !onlines.contains(owner.split("@localhost")[0]);
+	contactItem->setUserInfo(m_group->getUserInfo(owner), offline);
+	item = new QListWidgetItem();
+	ui.lwStatus->addItem(item);
+	ui.lwStatus->setItemWidget(item, contactItem);
+
+	QList<QString>::Iterator it;
+	QString jid;
+	for (it = onlines.begin(); it != onlines.end(); it++)
+	{
+		jid = it->append("@localhost");
+		if (owner == jid)
+		{
+			continue;
+		}
+		if (offlines.contains(jid))
+		{
+			offlines.removeOne(jid);
+
+			contactItem = new STContactItem(true, false, false);
+			contactItem->setUserInfo(m_group->getUserInfo(jid));
+			item = new QListWidgetItem();
+			ui.lwStatus->addItem(item);
+			ui.lwStatus->setItemWidget(item, contactItem);
+		}
+	}
+
+	for (it = offlines.begin(); it != offlines.end(); it++)
+	{
+		contactItem = new STContactItem(true, false, false);
+		contactItem->setUserInfo(m_group->getUserInfo(*it), true);
+		item = new QListWidgetItem();
+		ui.lwStatus->addItem(item);
+		ui.lwStatus->setItemWidget(item, contactItem);
+	}
 }
 
 void STChatDetail::updateSelfPic(QString picPath)

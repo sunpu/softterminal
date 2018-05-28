@@ -195,6 +195,7 @@ namespace tahiti
 		void remove();
 		QString getOwner() { return m_owner; };
 		QList<QString> getMembers() { return m_members; };
+		QList<QString> getOnlines() { return m_onlines; };
 		void setMembers(QList<QString> members);
 		void setGroupInfo(GroupInfo info);
 		void sendMsg(QString msg);
@@ -204,6 +205,7 @@ namespace tahiti
 		void joinGroupResultSignal(bool result);
 		void createGroupResultSignal(QString id);
 		void showGroupMessage(QString jid, QString user, QString msg);
+		void refreshOnlineSignal();
 		private Q_SLOTS:
 		void onContactFoundResult(int result, QVariant dataVar);
 	private:
@@ -225,6 +227,7 @@ namespace tahiti
 		MUCRoom* m_room;
 		QString m_owner;
 		QList<QString> m_members;
+		QList<QString> m_onlines;
 		GroupInfo m_info;
 		XmppClient* m_client;
 		QMap<QString, UserInfo> m_membersInfoMap;

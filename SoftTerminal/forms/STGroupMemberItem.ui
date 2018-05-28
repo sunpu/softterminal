@@ -156,7 +156,7 @@
          </size>
         </property>
         <property name="styleSheet">
-         <string notr="true">border-image: url(:/SoftTerminal/images/lesson_focus.png);</string>
+         <string notr="true">border-image: url(:/SoftTerminal/images/admin.png);</string>
         </property>
         <property name="text">
          <string/>

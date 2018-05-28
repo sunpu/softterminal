@@ -549,19 +549,32 @@ void STMain::updateGroupMessage(QString jid, QString user, QString msg)
 {
 	createChat(jid);
 
+	XmppGroup* group;
+	UserInfo userInfo;
 	STChatItem* chatItem;
 	QList<STChatItem*>::Iterator it;
 	for (it = m_chatItemList.begin(); it != m_chatItemList.end(); it++)
 	{
 		if ((*it)->getUserInfo().jid == jid)
 		{
+			group = (XmppGroup*)sender();
+			userInfo = group->getUserInfo(user.append("@localhost"));
+			if (userInfo.jid.isEmpty())
+			{
+				return;
+			}
 			RecordItem item;
 			item.time = QTime::currentTime().toString();
 			item.from = MessageFrom::Other;
-			item.jid = user;//
+			item.jid = userInfo.userName;
 			item.type = MessageType::MT_Text;
 			item.content = msg;
-			item.pic = (*it)->getUserInfo().photoPath;//
+			QString path = userInfo.photoPath;
+			if (path.size() == 0)
+			{
+				path = ":/SoftTerminal/images/account.png";
+			}
+			item.pic = path;
 
 			if (m_currentChatJid != jid)
 			{
@@ -752,8 +765,6 @@ void STMain::createChat(QString jid)
 			chatItem->setChatInfo(*friendIt);
 			m_chatItemList.push_front(chatItem);
 
-			//m_chatDetail
-
 			item = new QListWidgetItem();
 			ui.lwChatList->insertItem(0, item);
 			ui.lwChatList->setItemWidget(item, chatItem);
@@ -775,8 +786,6 @@ void STMain::createChat(QString jid)
 			chatItem = new STChatItem();
 			chatItem->setChatInfo(groupInfo, *groupIt);
 			m_chatItemList.push_front(chatItem);
-
-			//m_chatDetail
 
 			item = new QListWidgetItem();
 			ui.lwChatList->insertItem(0, item);

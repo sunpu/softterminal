@@ -15,6 +15,7 @@
 #include "stemotion.h"
 #include "ui_STScreenshotOption.h"
 #include "stwhiteboard.h"
+#include "stcontactitem.h"
 
 using namespace tahiti;
 
@@ -44,6 +45,7 @@ namespace tahiti
 		void onChooseEmotion(int index);
 		void onFinishScreenshot(QString path);
 		void onCancelScreenshot();
+		void refreshOnlineSlot();
 	private:
 		void openScreenshot();
 	Q_SIGNALS:

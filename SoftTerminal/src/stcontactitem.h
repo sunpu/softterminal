@@ -14,9 +14,10 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STContactItem(bool littleMode = false, bool showAddBtn = false, bool showDeleteBtn = false, QWidget* parent = 0);
+		STContactItem(bool littleMode = false, bool showAddBtn = false,
+			bool showDeleteBtn = false, bool showAdmin = false, QWidget* parent = 0);
 		~STContactItem();
-		void setUserInfo(UserInfo userInfo);
+		void setUserInfo(UserInfo userInfo, bool offline = false);
 		UserInfo getUserInfo();
 		public Q_SLOTS:
 		void on_pbAdd_clicked();
