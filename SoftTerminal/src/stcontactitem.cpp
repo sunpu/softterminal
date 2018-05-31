@@ -42,7 +42,7 @@ void STContactItem::setUserInfo(UserInfo userInfo, bool offline)
 	}
 
 	QString path = userInfo.photoPath;
-	if (path.size() == 0)
+	if (!QFile::exists(path))
 	{
 		path = ":/SoftTerminal/images/account.png";
 	}

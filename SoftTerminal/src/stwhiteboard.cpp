@@ -658,8 +658,8 @@ void STWhiteBoard::sendLocalCamera()
 	options.audio.push_back(audio_params);
 
 	unordered_map<string, string> attributes;
-	string jid = m_jid.toStdString();
-	string name = m_name.toStdString();
+	string jid = m_jid.toUtf8().constData();
+	string name = m_name.toUtf8().constData();
 	attributes.insert(unordered_map<string, string>::value_type("jid", jid));
 	attributes.insert(unordered_map<string, string>::value_type("name", name));
 	m_local_camera_stream->Attributes(attributes);

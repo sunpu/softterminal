@@ -352,7 +352,7 @@ void STNetworkClient::processMessage(QString message)
 	}
 	else
 	{
-		printf("error data\n%s", message.toStdString().c_str());
+		printf("error data\n%s", message.toUtf8().constData());
 	}
 }
 

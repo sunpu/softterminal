@@ -27,19 +27,12 @@ bool STRecordManager::isRecordExist()
 
 void STRecordManager::writeRecordItem(RecordItem item)
 {
-	if (!item.jid.isEmpty())
-	{
-		m_recordFile->open(QIODevice::WriteOnly);
-	}
-	else
-	{
-		m_recordFile->open(QIODevice::WriteOnly | QIODevice::Append);
-	}
+	m_recordFile->open(QIODevice::WriteOnly | QIODevice::Append);
 
 	if (item.time.size() > 0)
 	{
 		QDataStream out(m_recordFile);
-		out << item.time << (qint32)item.from << item.jid
+		out << item.time << (qint32)item.from << item.jid << item.pic
 			<< (qint32)item.type << item.content;
 	}
 	m_recordFile->close();
@@ -57,7 +50,7 @@ QList<RecordItem> STRecordManager::getRecordItemList()
 		qint32 from;
 		qint32 type;
 		readDataStream >> recordItem.time >> from >> recordItem.jid
-			>> type >> recordItem.content;
+			>> recordItem.pic >> type >> recordItem.content;
 		recordItem.from = (MessageFrom)from;
 		recordItem.type = (MessageType)type;
 		list.append(recordItem);

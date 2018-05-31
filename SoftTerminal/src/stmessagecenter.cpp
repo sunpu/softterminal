@@ -109,7 +109,7 @@ void STMessageItem::onContactFoundResult(int result, QVariant dataVar)
 		ui.lblMessage->setText(QStringLiteral("您好，我是") + userName);
 
 		QString path = userInfo.photoPath;
-		if (path.size() == 0)
+		if (!QFile::exists(path))
 		{
 			path = ":/SoftTerminal/images/account.png";
 		}

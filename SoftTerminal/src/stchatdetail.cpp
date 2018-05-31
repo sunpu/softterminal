@@ -11,6 +11,7 @@ STChatDetail::STChatDetail(XmppClient* client, QWidget *parent)
 	ui.spChatDetail->setStretchFactor(1, 1);
 
 	ui.teChatWrite->installEventFilter(this);
+	ui.lwChatRecordList->installEventFilter(this);
 
 	m_option = new STScreenshotOption(this);
 	connect(m_option, SIGNAL(screenshot()), this, SLOT(onScreenshot()));
@@ -21,6 +22,16 @@ STChatDetail::STChatDetail(XmppClient* client, QWidget *parent)
 	connect(m_emotion, SIGNAL(chooseEmotion(int)), this, SLOT(onChooseEmotion(int)));
 	m_emotion->hide();
 	m_group = NULL;
+
+	m_scrollbar = ui.lwChatRecordList->verticalScrollBar();
+	connect(m_scrollbar, SIGNAL(valueChanged(int)), this, SLOT(onSliderChanged(int)));
+
+	m_scrollNum = 0;
+
+	m_movie = new QMovie(":/SoftTerminal/images/load_small.gif");
+	ui.lblLoad->setMovie(m_movie);
+	ui.lblLoad->setVisible(false);
+	connect(this, SIGNAL(showMoreRecordSignal()), this, SLOT(showMoreRecord()));
 }
 
 STChatDetail::~STChatDetail()
@@ -38,6 +49,9 @@ void STChatDetail::clearChatDetail()
 	ui.lwChatRecordList->clear();
 	ui.teChatWrite->clear();
 	m_recordItemList.clear();
+	m_recordList.clear();
+	ui.pbLoadMore->setVisible(false);
+	ui.widLoadMore->setVisible(true);
 }
 
 void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
@@ -56,63 +70,67 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 		ui.widStatus->setVisible(true);
 	}
 	m_selfInfo = m_xmppClient->getSelfInfo();
-	m_selfPicPath.clear();
-	m_otherPicPath.clear();
-
-	QString desPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-		+ DATA_ROOT_PATH + AVATAR_PATH;
-	QDir dir;
-	dir.setPath(desPath);
-	QDirIterator iter(dir, QDirIterator::Subdirectories);
-	while (iter.hasNext())
-	{
-		iter.next();
-		QFileInfo info = iter.fileInfo();
-		if (info.isFile() && info.fileName().startsWith(m_selfInfo.jid))
-		{
-			m_selfPicPath = QString(desPath) + info.fileName();
-		}
-		if (info.isFile() && info.fileName().startsWith(userInfo.jid))
-		{
-			m_otherPicPath = QString(desPath) + info.fileName();
-		}
-	}
-	if (m_selfPicPath.isEmpty())
-	{
-		m_selfPicPath = ":/SoftTerminal/images/account.png";
-	}
-	if (m_otherPicPath.isEmpty())
-	{
-		m_otherPicPath = ":/SoftTerminal/images/account.png";
-	}
 
 	clearChatDetail();
 
 	STRecordManager* recordManager = new STRecordManager(userInfo.jid);
-	QList<RecordItem> list = recordManager->getRecordItemList();
+	m_recordList = recordManager->getRecordItemList();
 
+	showMoreRecord();
+
+	ui.lwChatRecordList->scrollToBottom();
+}
+
+void STChatDetail::on_pbLoadMore_clicked()
+{
+	ui.pbLoadMore->setVisible(false);
+	ui.lblLoad->setVisible(true);
+	m_movie->start();
+	pthread_create(&m_tidLoad, NULL, loadProc, this);
+}
+
+void* STChatDetail::loadProc(void* args)
+{
+	QThread::sleep(1);
+	STChatDetail* chatDetail = (STChatDetail*)args;
+	chatDetail->loadMoreRecord();
+	return NULL;
+}
+
+void STChatDetail::loadMoreRecord()
+{
+	Q_EMIT showMoreRecordSignal();
+}
+
+void STChatDetail::showMoreRecord()
+{
+	int unshowNum = 0;
+	int itemCount = m_recordList.size();
+	RecordItem item;
 	QSize itemSize;
-	QList<RecordItem>::Iterator it;
-	for (it = list.begin(); it != list.end(); it++)
+	STChatRecordItem* chatDetailItem;
+	QListWidgetItem* pItem;
+	for (size_t i = 0; i < 12; i++)
 	{
-		if (it->from == MessageFrom::Self)
+		if (m_recordList.isEmpty())
 		{
-			it->pic = m_selfPicPath;
+			ui.pbLoadMore->setVisible(false);
+			break;
 		}
-		else if (it->from == MessageFrom::Other)
-		{
-			it->pic = m_otherPicPath;
-		}
-		STChatRecordItem* chatDetailItem = new STChatRecordItem(*it);
+		item = m_recordList.takeLast();
+
+		chatDetailItem = new STChatRecordItem(item);
 		m_recordItemList.append(chatDetailItem);
 		itemSize = chatDetailItem->getItemSize();
-		QListWidgetItem* pItem = new QListWidgetItem();
-		//pItem->setSizeHint(itemSize);
-		pItem->setSizeHint(QSize(ui.lwChatRecordList->width(), itemSize.height() + 56));
-		ui.lwChatRecordList->addItem(pItem);
+		pItem = new QListWidgetItem();
+		pItem->setSizeHint(QSize(0, itemSize.height() + 56));
+		ui.lwChatRecordList->insertItem(0, pItem);
 		ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
+		unshowNum++;
 	}
-	ui.lwChatRecordList->scrollToBottom();
+	m_scrollbar->setSliderPosition(unshowNum);
+	ui.lblLoad->setVisible(false);
+	m_movie->stop();
 }
 
 void STChatDetail::refreshOnlineSlot()
@@ -168,6 +186,22 @@ void STChatDetail::refreshOnlineSlot()
 	}
 }
 
+void STChatDetail::onSliderChanged(int pos)
+{
+	if (pos == 0 && !m_recordList.isEmpty())
+	{
+		ui.pbLoadMore->setVisible(true);
+	}
+	else if (m_recordList.isEmpty())
+	{
+		ui.widLoadMore->setVisible(false);
+	}
+	else
+	{
+		ui.pbLoadMore->setVisible(false);
+	}
+}
+
 void STChatDetail::updateSelfPic(QString picPath)
 {
 	m_selfInfo.photoPath = picPath;
@@ -191,12 +225,12 @@ void STChatDetail::on_pbSendMessage_clicked()
 	}
 
 	RecordItem item;
-	item.time = QTime::currentTime().toString();
+	item.time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
 	item.from = MessageFrom::Self;
 	item.jid = m_selfInfo.jid;
 	item.type = MessageType::MT_Text;
 	item.content = myMessage;
-	item.pic = m_selfPicPath;
+	item.pic = m_selfInfo.photoPath;
 
 	// 写文件
 	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
@@ -211,7 +245,8 @@ void STChatDetail::on_pbSendMessage_clicked()
 	ui.lwChatRecordList->addItem(pItem);
 
 	ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
-	ui.lwChatRecordList->scrollToBottom();
+
+	m_scrollbar->setSliderPosition(m_scrollbar->maximum());
 
 	// 清空输入框
 	ui.teChatWrite->clear();
@@ -278,7 +313,8 @@ void STChatDetail::on_pbLesson_clicked()
 	ui.lwChatRecordList->addItem(pItem);
 
 	ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
-	ui.lwChatRecordList->scrollToBottom();
+
+	m_scrollbar->setSliderPosition(m_scrollbar->maximum());
 
 	Q_EMIT changeChatListOrder(m_userInfo.jid);
 
@@ -355,7 +391,8 @@ void STChatDetail::updateOthersMessage(RecordItem item)
 	ui.lwChatRecordList->addItem(pItem);
 	ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
 	pItem->setSizeHint(QSize(ui.lwChatRecordList->width() - 5, itemSize.height() + 56));
-	ui.lwChatRecordList->scrollToBottom();
+
+	m_scrollbar->setSliderPosition(m_scrollbar->maximum());
 }
 
 bool STChatDetail::eventFilter(QObject *obj, QEvent *e)
@@ -375,9 +412,14 @@ bool STChatDetail::eventFilter(QObject *obj, QEvent *e)
 			return true;
 		}
 	}
-	else if (e->type() == QEvent::Resize)
+	else if (e->type() == QEvent::Wheel && ui.lwChatRecordList == obj)
 	{
-		ui.lwChatRecordList->scrollToBottom();
+		m_scrollNum++;
+		if (m_scrollbar->sliderPosition() == 0 && m_scrollNum > 5)
+		{
+			on_pbLoadMore_clicked();
+			m_scrollNum = 0;
+		}
 	}
 	return false;
 }

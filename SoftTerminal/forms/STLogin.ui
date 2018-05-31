@@ -265,14 +265,14 @@ QPushButton:hover:!pressed {
              <widget class="MaskLabel" name="lblUserPic">
               <property name="minimumSize">
                <size>
-                <width>100</width>
-                <height>100</height>
+                <width>80</width>
+                <height>80</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
-                <width>100</width>
-                <height>100</height>
+                <width>80</width>
+                <height>80</height>
                </size>
               </property>
               <property name="styleSheet">

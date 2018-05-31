@@ -30,7 +30,7 @@ void STPersonalInfo::initPersonalInfo()
 void STPersonalInfo::updatePersonalInfoData(UserInfo info)
 {
 	QString path = info.photoPath;
-	if (path.size() == 0)
+	if (!QFile::exists(path))
 	{
 		path = ":/SoftTerminal/images/account.png";
 	}

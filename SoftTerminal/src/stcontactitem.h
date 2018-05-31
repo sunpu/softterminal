@@ -2,6 +2,7 @@
 #define _STCONTACTITEM_H_
 
 #include <QWidget>
+#include <QFile>
 #include "ui_STContactItem.h"
 #include "stcommon.h"
 

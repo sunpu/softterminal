@@ -8,6 +8,7 @@ STChatRecordItem::STChatRecordItem(RecordItem item)
 
 	m_width = 0;
 	m_height = 0;
+	m_extraWidth = 0;
 	int width = 0;
 	int height = 0;
 	QStringList txtLines = item.content.split("\n");
@@ -17,11 +18,22 @@ STChatRecordItem::STChatRecordItem(RecordItem item)
 		txt.setTextFormat(Qt::PlainText);
 		width = ui.teMessageSelf->fontMetrics().width(txt.text());
 		height = ui.teMessageSelf->fontMetrics().height();
-		if (width > 200)
+		int lines = 0;
+		int leftTextWidth = 0;
+		if (width > 330)
 		{
-			int lines = width / 200 + 1;
+			m_extraWidth = 20;
+		}
+		if (width > 350)
+		{
+			lines = width / 350 + 1;
+			leftTextWidth = width % 350;
+			if (lines > 1 && leftTextWidth <= 20)
+			{
+				lines--;
+			}
 			height = lines * height;
-			width = 200;
+			width = 350;
 		}
 		if (width > m_width)
 		{
@@ -30,10 +42,25 @@ STChatRecordItem::STChatRecordItem(RecordItem item)
 		m_height += height;
 	}
 
-	ui.lblTime->setText(item.time);
+	QDateTime dateTime = QDateTime::fromString(item.time, "yyyy-MM-dd hh:mm:ss");
+	QString showTime;
+	if (dateTime.date() == QDate::currentDate())
+	{
+		QTime t = dateTime.time();
+		showTime = dateTime.time().toString("hh:mm:ss");
+	}
+	else if (dateTime.date().year() == QDate::currentDate().year())
+	{
+		showTime = dateTime.toString("M-dd hh:mm:ss");
+	}
+	else
+	{
+		showTime = dateTime.toString("yyyy-MM-dd hh:mm:ss");
+	}
+	ui.lblTime->setText(showTime);
 
 	QString path = item.pic;
-	if (path.size() == 0)
+	if (!QFile::exists(path))
 	{
 		path = ":/SoftTerminal/images/account.png";
 	}
@@ -43,8 +70,8 @@ STChatRecordItem::STChatRecordItem(RecordItem item)
 	if (item.from == MessageFrom::Self)
 	{
 		ui.lblChatRecordPicSelf->setPixmap(QPixmap::fromImage(*image).scaled(36, 36));
-		ui.teMessageSelf->setMaximumWidth(m_width + 22);
-		ui.teMessageSelf->setMaximumHeight(m_height + 22);
+		ui.teMessageSelf->setFixedWidth(m_width + 10 + m_extraWidth);
+		ui.teMessageSelf->setFixedHeight(m_height + 10);
 		ui.teMessageSelf->setText(item.content);
 
 		ui.lblChatRecordPicOther->setVisible(false);
@@ -61,8 +88,8 @@ STChatRecordItem::STChatRecordItem(RecordItem item)
 			m_height += 20;
 		}
 		ui.lblChatRecordPicOther->setPixmap(QPixmap::fromImage(*image).scaled(36, 36));
-		ui.teMessageOther->setMaximumWidth(m_width + 22);
-		ui.teMessageOther->setMaximumHeight(m_height + 22);
+		ui.teMessageOther->setFixedWidth(m_width + 10 + m_extraWidth);
+		ui.teMessageOther->setFixedHeight(m_height + 10);
 		ui.teMessageOther->setText(item.content);
 
 		ui.lblChatRecordPicOther->setVisible(true);

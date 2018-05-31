@@ -16,6 +16,8 @@
 #include "ui_STScreenshotOption.h"
 #include "stwhiteboard.h"
 #include "stcontactitem.h"
+#include "logger.h"
+#include "stload.h"
 
 using namespace tahiti;
 
@@ -33,12 +35,14 @@ namespace tahiti
 		void setChatDetail(UserInfo userInfo, XmppGroup* group = NULL);
 		UserInfo getUserInfo();
 		void updateSelfPic(QString picPath);
+		static void* loadProc(void* args);
 		public Q_SLOTS:
 		void on_pbSendMessage_clicked();
 		void on_pbEmotion_clicked();		
 		void on_pbScreenShot_clicked();
 		void on_pbScreenShotOption_clicked();
 		void on_pbLesson_clicked();
+		void on_pbLoadMore_clicked();
 		void updateOthersMessage(RecordItem item);
 		void onScreenshot();
 		void onScreenshotWithoutWindow();
@@ -46,11 +50,15 @@ namespace tahiti
 		void onFinishScreenshot(QString path);
 		void onCancelScreenshot();
 		void refreshOnlineSlot();
+		void onSliderChanged(int pos);
+		void showMoreRecord();
 	private:
 		void openScreenshot();
+		void loadMoreRecord();
 	Q_SIGNALS:
 		void changeChatListOrder(QString jid);
 		void updateOthersMessage(QString);
+		void showMoreRecordSignal();
 	protected:
 		bool eventFilter(QObject *obj, QEvent *e);
 
@@ -60,13 +68,16 @@ namespace tahiti
 		XmppClient* m_xmppClient;
 		UserInfo m_selfInfo;
 		QList<STChatRecordItem*> m_recordItemList;
-		QString m_selfPicPath;
-		QString m_otherPicPath;
 		STScreenshotOption* m_option;
 		STEmotion* m_emotion;
 		QWidget* m_main;
 		STWhiteBoard* m_whiteboard;
 		XmppGroup* m_group;
+		QList<RecordItem> m_recordList;
+		QScrollBar* m_scrollbar;
+		int m_scrollNum;
+		QMovie* m_movie;
+		pthread_t m_tidLoad;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

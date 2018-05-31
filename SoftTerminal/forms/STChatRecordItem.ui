@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>653</width>
-    <height>123</height>
+    <width>699</width>
+    <height>136</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -140,13 +140,13 @@
           <widget class="QWidget" name="widget_6" native="true">
            <property name="minimumSize">
             <size>
-             <width>207</width>
+             <width>0</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>207</width>
+             <width>16777215</width>
              <height>16777215</height>
             </size>
            </property>
@@ -176,7 +176,7 @@
               </property>
               <property name="maximumSize">
                <size>
-                <width>207</width>
+                <width>16777215</width>
                 <height>20</height>
                </size>
               </property>
@@ -198,7 +198,7 @@
              <widget class="QTextEdit" name="teMessageOther">
               <property name="maximumSize">
                <size>
-                <width>207</width>
+                <width>16777215</width>
                 <height>16777215</height>
                </size>
               </property>
@@ -213,12 +213,8 @@
               </property>
               <property name="styleSheet">
                <string notr="true">QTextEdit {
-	border-radius: 3px;
+	border-radius: 5px;
 	background-color: rgb(228, 232, 238);
-    border-top-width: 2px;
-    border-right-width: 5px;
-    border-bottom-width:2px;
-    border-left-width: 5px;
 	color: rgb(67, 69, 85);
 }</string>
               </property>
@@ -307,7 +303,7 @@ p, li { white-space: pre-wrap; }
           <widget class="QTextEdit" name="teMessageSelf">
            <property name="maximumSize">
             <size>
-             <width>207</width>
+             <width>16777215</width>
              <height>16777215</height>
             </size>
            </property>
@@ -322,14 +318,16 @@ p, li { white-space: pre-wrap; }
            </property>
            <property name="styleSheet">
             <string notr="true">QTextEdit {
-	border-radius: 3px;
+	border-radius: 5px;
 	background-color: rgb(48, 186, 120);
-    border-top-width: 2px;
-    border-right-width: 2px;
-    border-bottom-width:2px;
-    border-left-width: 2px;
 	color: rgb(255, 255, 255);
 }</string>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>1</number>

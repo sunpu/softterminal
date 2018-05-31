@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QStaticText>
+#include <QDateTime>
+#include <QFile>
 #include "ui_STChatRecordItem.h"
 #include "stcommon.h"
 
@@ -24,6 +26,7 @@ namespace tahiti
 		Ui::STChatRecordItemClass ui;
 		int m_width;
 		int m_height;
+		int m_extraWidth;
 	};
 }
 #endif

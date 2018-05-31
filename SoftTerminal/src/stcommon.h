@@ -75,6 +75,21 @@ namespace tahiti
 		QString content;
 	} RecordItem;
 
+	typedef struct groupMsg
+	{
+		QString jid;
+		QString user;
+		QString msg;
+		QString time;
+	} GroupMsg;
+
+	typedef struct personMsg
+	{
+		QString jid;
+		QString msg;
+		QString time;
+	} PersonMsg;
+
 	enum ActionType
 	{
 		AT_NONE,

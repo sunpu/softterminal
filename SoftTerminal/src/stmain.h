@@ -129,7 +129,7 @@ namespace tahiti
 		void switchChatItem(QString jid);
 		void switchChatDetail(QString jid);
 
-		void createChat(QString jid);
+		STRecordManager* createChat(QString jid);
 		void deleteChat(QString jid);
 
 		void setPageIndex(int index);
@@ -150,8 +150,8 @@ namespace tahiti
 		void showMessageWarn();
 		void refreshContact();
 		void refreshGroup(QString id);
-		void updateOthersMessage(QString jid, QString msg);
-		void updateGroupMessage(QString jid, QString user, QString msg);
+		void updateOthersMessage(QString jid, QString msg, QString time);
+		void updateGroupMessage(QString jid, QString user, QString msg, QString time);
 		void deleteChatSlot(QString id);
 	private:
 		Ui::STMainClass ui;

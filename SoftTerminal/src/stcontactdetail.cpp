@@ -36,7 +36,7 @@ void STContactDetail::setContactDetail(UserInfo userInfo)
 	ui.lblDescription->setText(userInfo.description);
 
 	QString path = userInfo.photoPath;
-	if (path.size() == 0)
+	if (!QFile::exists(path))
 	{
 		path = ":/SoftTerminal/images/account.png";
 	}

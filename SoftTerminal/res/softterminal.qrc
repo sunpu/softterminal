@@ -133,5 +133,6 @@
         <file>images/right_arrow.png</file>
         <file>images/group_icon.png</file>
         <file>images/admin.png</file>
+        <file>images/load_small.gif</file>
     </qresource>
 </RCC>

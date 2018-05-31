@@ -58,9 +58,9 @@ void XmppRegister::checkAccount(QString user, QString passwd)
 void XmppRegister::removeAccount(QString user, QString passwd)
 {
 	QString jidTmp = user + "@" + m_xmppServerIP;
-	JID jid(jidTmp.toStdString());
+	JID jid(jidTmp.toUtf8().constData());
 
-	m_registClient = new Client(jid, passwd.toStdString(), m_xmppServerPort);
+	m_registClient = new Client(jid, passwd.toUtf8().constData(), m_xmppServerPort);
 	m_registClient->disableRoster();
 	m_registClient->registerConnectionListener(this);
 

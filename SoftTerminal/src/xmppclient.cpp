@@ -171,14 +171,10 @@ void* XmppClient::loadOfflineMsgProc(void* args)
 void XmppClient::processOfflineMsg()
 {
 	m_isWorking = true;
-	QMap<QString, QList<QString>>::Iterator it;
-	QList<QString>::Iterator iter;
-	for (it = m_offlineMsgMap.begin(); it != m_offlineMsgMap.end(); it++)
+	QList<PersonMsg>::Iterator it;
+	for (it = m_offlineMsgList.begin(); it != m_offlineMsgList.end(); it++)
 	{
-		for (iter = it.value().begin(); iter != it.value().end(); iter++)
-		{
-			Q_EMIT showMessage(it.key(), *iter);
-		}
+		Q_EMIT showMessage(it->jid, it->msg, it->time);
 	}
 }
 
@@ -383,7 +379,7 @@ void XmppClient::handleVCard(const JID& jid, const VCard *v)
 	{
 		path = path + ".png";
 	}
-	string photoContent;
+	/*string photoContent;
 	photoContent = m_current_vcard->photo().binval;
 	if (photoContent.size() != 0)
 	{
@@ -391,16 +387,13 @@ void XmppClient::handleVCard(const JID& jid, const VCard *v)
 		file.open(QIODevice::WriteOnly);
 		file.write(photoContent.c_str(), photoContent.size());
 		file.close();
-	}
+	}*/
 
 	// 返回用户资料
 	UserInfo userInfo;
 	userInfo.jid = jid.full().c_str();
 	userInfo.userName = m_current_vcard->nickname().c_str();
-	if (photoContent.size() != 0)
-	{
-		userInfo.photoPath = path;
-	}
+	userInfo.photoPath = path;
 	if (m_current_vcard->telephone().size() > 0)
 	{
 		userInfo.telephone = m_current_vcard->telephone().front().number.c_str();
@@ -418,10 +411,7 @@ void XmppClient::handleVCard(const JID& jid, const VCard *v)
 	if (m_selfInfo.jid == jid.full().c_str())
 	{
 		m_self_vcard = new VCard(*v);
-		if (photoContent.size() != 0)
-		{
-			m_selfInfo.photoPath = path;
-		}
+		m_selfInfo.photoPath = path;
 		if (m_self_vcard->nickname().size() == 0)
 		{
 			m_selfInfo.userName = m_selfInfo.jid;
@@ -448,10 +438,7 @@ void XmppClient::handleVCard(const JID& jid, const VCard *v)
 	{
 		if (it->jid == jid.full().c_str())
 		{
-			if (photoContent.size() != 0)
-			{
-				it->photoPath = path;
-			}
+			it->photoPath = path;
 			if (m_current_vcard->nickname().size() == 0)
 			{
 				it->userName = it->jid;
@@ -508,7 +495,7 @@ void XmppClient::modifySelfPic(QString picFile)
 	if (QFile::exists(picFile))
 	{
 		string photoData;
-		string type = fileType.toStdString();
+		string type = fileType.toUtf8().constData();
 
 		QFile file(picFile);
 		file.open(QIODevice::ReadOnly);
@@ -520,6 +507,7 @@ void XmppClient::modifySelfPic(QString picFile)
 		m_vManager->storeVCard(vcard, this);
 
 		m_selfInfo.photoPath = picFile;
+		file.close();
 	}
 }
 
@@ -567,24 +555,30 @@ void XmppClient::handleMessage(const Message& msg, MessageSession* session)
 
 	if (msg.subtype() == Message::Chat && msg.body().size() != 0)
 	{
+		printf("%s said: '%s' (history: %s)\n", msg.from().resource().c_str(), msg.body().c_str(),
+			msg.when() ? "yes" : "no");
 		TAHITI_INFO("type:" << msg.subtype() << ", message:" << msg.body().c_str());
 		QString jid = msg.from().username().c_str();
 		QString message = msg.body().c_str();
+		QString time;
+		if (msg.when())
+		{
+			time = QDateTime::fromString(msg.when()->stamp().c_str(), Qt::ISODate).toString("yyyy-MM-dd hh:mm:ss");
+		}
+		else
+		{
+			time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+		}
 		if (!m_isWorking)
 		{
-			if (m_offlineMsgMap.contains(jid))
-			{
-				m_offlineMsgMap[jid].append(message);
-			}
-			else
-			{
-				QList<QString> msgList;
-				msgList.append(message);
-				m_offlineMsgMap.insert(jid, msgList);
-			}
+			PersonMsg personMsg;
+			personMsg.jid = jid;
+			personMsg.time = time;
+			personMsg.msg = message;
+			m_offlineMsgList.append(personMsg);
 			return;
 		}
-		Q_EMIT showMessage(jid, message);
+		Q_EMIT showMessage(jid, message, time);
 	}
 }
 
@@ -784,17 +778,42 @@ XmppGroup::XmppGroup(XmppClient* client, QString nick) : m_client(client)
 	m_room->getRoomInfo();
 	//m_room->getRoomItems();
 	//m_room->requestRoomConfig();
+	m_isWorking = false;
+
+	pthread_create(&m_tidLoadOfflineMsg, NULL, loadOfflineMsgProc, this);
 }
 
 XmppGroup::~XmppGroup()
 {
 	m_room->leave();
 	delete m_room;
+	m_isWorking = false;
 }
 
 void XmppGroup::remove()
 {
 	m_room->destroy();
+	m_isWorking = false;
+}
+
+
+void* XmppGroup::loadOfflineMsgProc(void* args)
+{
+	TAHITI_INFO("loadOfflineMsgProc...");
+	QThread::sleep(5);
+	XmppGroup* group = (XmppGroup*)args;
+	group->processOfflineMsg();
+	return NULL;
+}
+
+void XmppGroup::processOfflineMsg()
+{
+	m_isWorking = true;
+	QList<GroupMsg>::Iterator it;
+	for (it = m_offlineMsgList.begin(); it != m_offlineMsgList.end(); it++)
+	{
+		Q_EMIT showGroupMessage(it->jid, it->user, it->msg, it->time);
+	}
 }
 
 void XmppGroup::setMembers(QList<QString> members)
@@ -880,11 +899,32 @@ void XmppGroup::handleMUCMessage(MUCRoom* /*room*/, const Message& msg, bool pri
 
 	if (msg.subtype() == Message::Groupchat && msg.body().size() != 0)
 	{
+		QString time;
+		if (msg.when())
+		{
+			time = QDateTime::fromString(msg.when()->stamp().c_str(), Qt::ISODate).toString("yyyy-MM-dd hh:mm:ss");
+		}
+		else
+		{
+			time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+		}
+		printf("%s said: '%s' (time: %s)\n", msg.from().resource().c_str(),
+			msg.body().c_str(), time.toUtf8().constData()
+);
+		
+		if (!m_isWorking)
+		{
+			GroupMsg groupMsg;
+			groupMsg.jid = msg.from().username().c_str();
+			groupMsg.user = msg.from().resource().c_str();
+			groupMsg.msg = msg.body().c_str();
+			groupMsg.time = time;
+			m_offlineMsgList.append(groupMsg);
+			return;
+		}
 		TAHITI_INFO("user:" << msg.from().resource().c_str() << ", message:" << msg.body().c_str());
-		Q_EMIT showGroupMessage(msg.from().username().c_str(), msg.from().resource().c_str(), msg.body().c_str());
+		Q_EMIT showGroupMessage(msg.from().username().c_str(), msg.from().resource().c_str(), msg.body().c_str(), time);
 	}
-	printf("%s said: '%s' (history: %s, private: %s)\n", msg.from().resource().c_str(), msg.body().c_str(),
-		msg.when() ? "yes" : "no", priv ? "yes" : "no");
 }
 
 void XmppGroup::handleMUCSubject(MUCRoom * /*room*/, const std::string& nick, const std::string& subject)

@@ -70,7 +70,7 @@ void STLogin::initLoginData()
 		picFilePath = ":/SoftTerminal/images/account.png";
 	}
 	QImage* image = new QImage(picFilePath);
-	ui.lblUserPic->setPixmap(QPixmap::fromImage(*image).scaled(100, 100));
+	ui.lblUserPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
 
 	if (ui.leUserName->text().size() == 0)
 	{
@@ -115,7 +115,7 @@ void STLogin::onUserNameChanged()
 		picFilePath = ":/SoftTerminal/images/account.png";
 	}
 	QImage* image = new QImage(picFilePath);
-	ui.lblUserPic->setPixmap(QPixmap::fromImage(*image).scaled(100, 100));
+	ui.lblUserPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
 	
 }
 

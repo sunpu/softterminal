@@ -22,7 +22,7 @@ void STChatItem::setChatInfo(UserInfo userInfo, XmppGroup* group)
 	ui.lblChatName->setText(userInfo.userName);
 
 	QString path = userInfo.photoPath;
-	if (path.size() == 0)
+	if (!QFile::exists(path))
 	{
 		path = ":/SoftTerminal/images/account.png";
 	}
@@ -34,7 +34,24 @@ void STChatItem::setChatInfo(UserInfo userInfo, XmppGroup* group)
 
 	QString time = recordItem.time;
 	QString content = recordItem.content;
-	ui.lblTime->setText(time);
+
+	QDateTime dateTime = QDateTime::fromString(time, "yyyy-MM-dd hh:mm:ss");
+	QString showTime;
+	if (dateTime.date() == QDate::currentDate())
+	{
+		QTime t = dateTime.time();
+		showTime = dateTime.time().toString("hh:mm:ss");
+	}
+	else if (dateTime.date().year() == QDate::currentDate().year())
+	{
+		showTime = dateTime.date().toString("M-dd");
+	}
+	else
+	{
+		showTime = dateTime.time().toString("yyyy-MM-dd");
+	}
+	ui.lblTime->setText(showTime);
+
 	if (m_group)
 	{
 		QString name = m_group->getUserInfo(recordItem.jid).userName;
@@ -57,7 +74,20 @@ void STChatItem::updateOthersMessage(RecordItem item)
 
 	QString time = item.time;
 	QString content = item.content;
-	ui.lblTime->setText(time);
+
+	QDateTime dateTime = QDateTime::fromString(time, "yyyy-MM-dd hh:mm:ss");
+	QString showTime;
+	if (dateTime.date() == QDate::currentDate())
+	{
+		QTime t = dateTime.time();
+		showTime = dateTime.time().toString("hh:mm:ss");
+	}
+	else
+	{
+		showTime = dateTime.date().toString("M-dd");
+	}
+	ui.lblTime->setText(showTime);
+
 	if (m_group)
 	{
 		QString name = m_group->getUserInfo(item.jid).userName;

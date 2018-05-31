@@ -19,10 +19,10 @@ STGroupMemberItem::STGroupMemberItem(UserInfo userInfo, bool isOwner)
 		ui.lblName->setText(userInfo.userName);
 	}
 
-	QString path = ":/SoftTerminal/images/account.png";
-	if (!userInfo.photoPath.isEmpty())
+	QString path = userInfo.photoPath;
+	if (!QFile::exists(path))
 	{
-		path = userInfo.photoPath;
+		path = ":/SoftTerminal/images/account.png";
 	}
 	QImage* image = new QImage(path);
 	ui.lblPic->setPixmap(QPixmap::fromImage(*image).scaled(60, 60));

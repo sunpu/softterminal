@@ -99,15 +99,15 @@ namespace tahiti
 		QList<XmppGroup*> getGroups() { return m_mucGroupList; };
 		void createGroup(GroupInfo info, QList<QString> members);
 		void removeGroup(QString id);
+		void processOfflineMsg();
 		private Q_SLOTS:
 		void ackSubscriptionRequest(QString jid, bool ack);
 		void joinGroupResultSlot(bool result);
 		void createGroupResultSlot(QString id);
-		void processOfflineMsg();
 	Q_SIGNALS:
 		void loginResult(bool result);
 		void contactFoundResult(int result, QVariant dataVar);
-		void showMessage(QString jid, QString msg);
+		void showMessage(QString jid, QString msg, QString time);
 		void subscriptionRequest(QString jid);
 		void refreshContactSignal();
 		void joinGroupResultSignal(bool result);
@@ -183,7 +183,7 @@ namespace tahiti
 		MessageSession* m_sess;
 		QList<XmppGroup*> m_mucGroupList;
 		bool m_isWorking;
-		QMap<QString, QList<QString>> m_offlineMsgMap;
+		QList<PersonMsg> m_offlineMsgList;
 	};
 
 	class XmppGroup : public QObject, MUCRoomHandler, MUCRoomConfigHandler
@@ -192,6 +192,7 @@ namespace tahiti
 	public:
 		XmppGroup(XmppClient* client, QString nick);
 		virtual ~XmppGroup();
+		static void* loadOfflineMsgProc(void* args);
 		void remove();
 		QString getOwner() { return m_owner; };
 		QList<QString> getMembers() { return m_members; };
@@ -201,10 +202,11 @@ namespace tahiti
 		void sendMsg(QString msg);
 		GroupInfo getGroupInfo() { return m_info; };
 		UserInfo getUserInfo(QString jid) { return m_membersInfoMap[jid]; };
+		void processOfflineMsg();
 	Q_SIGNALS:
 		void joinGroupResultSignal(bool result);
 		void createGroupResultSignal(QString id);
-		void showGroupMessage(QString jid, QString user, QString msg);
+		void showGroupMessage(QString jid, QString user, QString msg, QString time);
 		void refreshOnlineSignal();
 		private Q_SLOTS:
 		void onContactFoundResult(int result, QVariant dataVar);
@@ -231,6 +233,9 @@ namespace tahiti
 		GroupInfo m_info;
 		XmppClient* m_client;
 		QMap<QString, UserInfo> m_membersInfoMap;
+		pthread_t m_tidLoadOfflineMsg;
+		bool m_isWorking;
+		QList<GroupMsg> m_offlineMsgList;
 	};
 }
 #endif

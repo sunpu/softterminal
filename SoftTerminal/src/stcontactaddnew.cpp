@@ -72,7 +72,7 @@ void STContactAddNew::onContactFoundResult(int result, QVariant dataVar)
 		ui.lblName->setText(userInfo.userName);
 
 		QString path = userInfo.photoPath;
-		if (path.size() == 0)
+		if (!QFile::exists(path))
 		{
 			path = ":/SoftTerminal/images/account.png";
 		}

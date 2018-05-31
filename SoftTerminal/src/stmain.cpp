@@ -213,7 +213,8 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	m_confirm = new STConfirm(this);
 	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
 
-	connect(m_xmppClient, SIGNAL(showMessage(QString, QString)), this, SLOT(updateOthersMessage(QString, QString)));
+	connect(m_xmppClient, SIGNAL(showMessage(QString, QString, QString)),
+		this, SLOT(updateOthersMessage(QString, QString, QString)));
 	connect(m_xmppClient, SIGNAL(subscriptionRequest(QString)), this, SLOT(showMessageWarn()));
 	connect(m_xmppClient, SIGNAL(refreshContactSignal()), this, SLOT(refreshContact()));
 
@@ -450,8 +451,8 @@ void STMain::initGroupData()
 	QList<XmppGroup*>::const_iterator it;
 	for (it = groupList.constBegin(); it != groupList.constEnd(); it++)
 	{
-		connect(*it, SIGNAL(showGroupMessage(QString, QString, QString)),
-			this, SLOT(updateGroupMessage(QString, QString, QString)));
+		connect(*it, SIGNAL(showGroupMessage(QString, QString, QString, QString)),
+			this, SLOT(updateGroupMessage(QString, QString, QString, QString)));
 		groupItem = new STGroupItem(*it);
 		m_groupItemList.push_back(groupItem);
 	}
@@ -511,7 +512,7 @@ void STMain::deleteChatSlot(QString id)
 	deleteChat(id);
 }
 
-void STMain::updateOthersMessage(QString jid, QString msg)
+void STMain::updateOthersMessage(QString jid, QString msg, QString time)
 {
 	jid = jid.append("@localhost");
 
@@ -524,7 +525,7 @@ void STMain::updateOthersMessage(QString jid, QString msg)
 		if ((*it)->getUserInfo().jid == jid)
 		{
 			RecordItem item;
-			item.time = QTime::currentTime().toString();
+			item.time = time;
 			item.from = MessageFrom::Other;
 			item.jid = "";
 			item.type = MessageType::MT_Text;
@@ -545,9 +546,14 @@ void STMain::updateOthersMessage(QString jid, QString msg)
 	}
 }
 
-void STMain::updateGroupMessage(QString jid, QString user, QString msg)
+void STMain::updateGroupMessage(QString jid, QString user, QString msg, QString time)
 {
-	createChat(jid);
+	STRecordManager* record = createChat(jid);
+	RecordItem item = record->getLastestRecordItem();
+	if (!item.time.isEmpty() && time < item.time)
+	{
+		return;
+	}
 
 	XmppGroup* group;
 	UserInfo userInfo;
@@ -564,17 +570,12 @@ void STMain::updateGroupMessage(QString jid, QString user, QString msg)
 				return;
 			}
 			RecordItem item;
-			item.time = QTime::currentTime().toString();
-			item.from = MessageFrom::Other;
+			item.time = time;
+ 			item.from = MessageFrom::Other;
 			item.jid = userInfo.userName;
 			item.type = MessageType::MT_Text;
 			item.content = msg;
-			QString path = userInfo.photoPath;
-			if (path.size() == 0)
-			{
-				path = ":/SoftTerminal/images/account.png";
-			}
-			item.pic = path;
+			item.pic = userInfo.photoPath;
 
 			if (m_currentChatJid != jid)
 			{
@@ -733,7 +734,7 @@ void STMain::deleteFriend(QString jid)
 	m_xmppClient->unsubscribeOther(jid);
 }
 
-void STMain::createChat(QString jid)
+STRecordManager* STMain::createChat(QString jid)
 {
 	// 文件不存在，创建文件
 	STRecordManager* recordManager = new STRecordManager(jid);
@@ -748,7 +749,7 @@ void STMain::createChat(QString jid)
 	{
 		if ((*it)->getUserInfo().jid == jid)
 		{
-			return;
+			return recordManager;
 		}
 	}
 
@@ -793,6 +794,7 @@ void STMain::createChat(QString jid)
 			break;
 		}
 	}
+	return recordManager;
 }
 
 void STMain::deleteChat(QString jid)
