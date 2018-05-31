@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QDirIterator>
 #include "stcommon.h"
+#include "stconfig.h"
 
 using namespace tahiti;
 

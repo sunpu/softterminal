@@ -271,8 +271,9 @@ STMain::~STMain()
 void STMain::initChatData()
 {
 	// 获得所有的聊天记录文件
+	QString user = STConfig::getConfig("/xmpp/user");
 	QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-		+ DATA_ROOT_PATH + RECORD_PATH;
+		+ DATA_ROOT_PATH + RECORD_PATH + user;
 	QDir dir(path);
 	QStringList nameFilters;
 	nameFilters << "*.dat";

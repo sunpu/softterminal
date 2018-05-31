@@ -12,6 +12,7 @@ namespace tahiti
 #define AVATAR_PATH "avatar/"
 #define TMP_PATH "tmp/"
 #define LOG_PATH "log/"
+#define PATH_SPLIT "/"
 
 #define CONFIG_FILE_NAME "softterminal.ini"
 #define LOG_FILE_NAME "softterminal.log"

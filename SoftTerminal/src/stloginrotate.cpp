@@ -164,7 +164,8 @@ void STLogin::handleLoginResult(bool result)
 		bool autoLogin = ui.cbAutoLogin->isChecked();
 		STConfig::setConfig("/config/autoLogin", autoLogin ? "true" : "false");
 
-		STConfig::setConfig("/xmpp/user", ui.leUserName->text());
+		QString user = ui.leUserName->text();
+		STConfig::setConfig("/xmpp/user", user);
 		if (rememberPasswd)
 		{
 			STConfig::setConfig("/xmpp/passwd", ui.lePasswd->text());
@@ -172,6 +173,15 @@ void STLogin::handleLoginResult(bool result)
 		else
 		{
 			STConfig::setConfig("/xmpp/passwd", "");
+		}
+
+		// 创建个人聊天记录目录
+		QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+			+ DATA_ROOT_PATH + RECORD_PATH + user;
+		QDir* dir = new QDir;
+		if (!dir->exists(path))
+		{
+			dir->mkpath(path);
 		}
 
 		// 查询用户花名册

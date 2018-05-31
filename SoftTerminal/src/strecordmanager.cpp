@@ -4,8 +4,9 @@ using namespace tahiti;
 
 STRecordManager::STRecordManager(QString otherJid)
 {
+	QString user = STConfig::getConfig("/xmpp/user");
 	QString path = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-		+ DATA_ROOT_PATH + RECORD_PATH + otherJid + RECORD_FILE_TYPE;
+		+ DATA_ROOT_PATH + RECORD_PATH + user + PATH_SPLIT + otherJid + RECORD_FILE_TYPE;
 	m_recordFilePath = path;
 	m_recordFile = new QFile(path);
 }
