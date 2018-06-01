@@ -415,7 +415,7 @@ bool STChatDetail::eventFilter(QObject *obj, QEvent *e)
 	else if (e->type() == QEvent::Wheel && ui.lwChatRecordList == obj)
 	{
 		m_scrollNum++;
-		if (m_scrollbar->sliderPosition() == 0 && m_scrollNum > 5)
+		if (m_scrollbar->sliderPosition() == 0 && m_scrollNum > 5 && m_scrollbar->isVisible())
 		{
 			on_pbLoadMore_clicked();
 			m_scrollNum = 0;
