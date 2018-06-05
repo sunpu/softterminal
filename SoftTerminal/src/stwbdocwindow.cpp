@@ -3,8 +3,8 @@
 
 using namespace tahiti;
 
-STWBDocWindow::STWBDocWindow(STNetworkClient* network, QString path, int index, QWidget * parent)
-	: m_network(network), m_path(path), m_index(index), QDialog(parent)
+STWBDocWindow::STWBDocWindow(QString path, int index, QWidget * parent)
+	: m_path(path), m_index(index), QDialog(parent)
 {
 	ui.setupUi(this);
 	//setWindowFlags(Qt::FramelessWindowHint);
@@ -39,7 +39,7 @@ STWBDocWindow::STWBDocWindow(STNetworkClient* network, QString path, int index, 
 	setMaximumSize(QSize(640, 410));
 
 	QVBoxLayout* layout = (QVBoxLayout*)ui.widDoc->layout();
-	m_view = new STWBView(m_network, true);
+	m_view = new STWBView(true);
 	layout->addWidget(m_view);
 	m_view->installEventFilter(this);
 
@@ -63,16 +63,16 @@ STWBDocWindow::STWBDocWindow(STNetworkClient* network, QString path, int index, 
 		m_needUnzip = true;
 		downloadPath = downloadPath + ".zip";
 	}
-	m_downloadFile = new QFile(downloadPath);
-	m_downloadFile->open(QIODevice::WriteOnly | QIODevice::Append);
+	m_downloadPath = downloadPath;
 
 	int x = 50 * (m_index + 1);
 	int y = 35 * (m_index + 1);
 	move(QPoint(x, y));
 	m_normalRect = this->geometry();
 
-	QString server = STConfig::getConfig("/xmpp/server");
-	connectServer(server, "10002");
+	m_downloadClient = new STFileClient();
+	connect(m_downloadClient, SIGNAL(onDownloadFinished()), this, SLOT(onDownloadFinished()));
+	m_downloadClient->downloadFile(m_path, m_downloadPath);
 }
 
 STWBDocWindow::~STWBDocWindow()
@@ -80,64 +80,25 @@ STWBDocWindow::~STWBDocWindow()
 
 }
 
-void STWBDocWindow::connectServer(QString ip, QString port)
+void STWBDocWindow::onDownloadFinished()
 {
-	m_tcpSocket = new QTcpSocket(this); // 申请堆空间有TCP发送和接受操作
-	m_tcpIp = ip;
-	m_tcpPort = port;
-	m_tcpSocket->connectToHost(m_tcpIp, m_tcpPort.toInt()); // 连接主机
-	connect(m_tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this,
-		SLOT(displayError(QAbstractSocket::SocketError))); // 错误连接
-	connect(m_tcpSocket, SIGNAL(connected()), this, SLOT(download()));  //当连接成功时，就开始传送文件
-	connect(m_tcpSocket, SIGNAL(readyRead()), this, SLOT(readMessage())); // 读取信息的连接
-}
-
-void STWBDocWindow::disconnectServer()
-{
-	disconnect(m_tcpSocket);
-	m_tcpSocket->disconnect();
-}
-
-void STWBDocWindow::download()
-{
-	bytesReceived = 0;
-	m_tcpSocket->write("#*#download#" + m_path.toUtf8() + "@%@");
-}
-
-void STWBDocWindow::readMessage()
-{
-	if (m_downloadFile)
+	if (m_needUnzip)
 	{
-		bytesReceived += m_tcpSocket->bytesAvailable();
-		QByteArray data = m_tcpSocket->readAll();
-		// printf("%lld %d\n", bytesReceived, data.size());
-		if (data.endsWith("#*#finish@%@"))
-		{
-			data = data.replace("#*#finish@%@", "");
-			m_downloadFile->write(data, data.size());
-			m_downloadFile->close();
-			if (m_needUnzip)
-			{
-				unzip();
-			}
-			loadFile();
-		}
-		else
-		{
-			m_downloadFile->write(data, data.size());
-		}
-		data.resize(0);
+		unzip();
 	}
+	loadFile();
 }
 
 void STWBDocWindow::unzip()
 {
 	// unzip
-	JlCompress::extractDir(m_downloadFile, m_docWindowPath);
+	JlCompress::extractDir(m_downloadPath, m_docWindowPath);
 
-	// delete
-	m_downloadFile->remove();
-	m_downloadFile = NULL;
+	QFile file(m_downloadPath);
+	if (file.exists())
+	{
+		file.remove();
+	}
 }
 
 void STWBDocWindow::loadFile()
@@ -255,11 +216,6 @@ void STWBDocWindow::on_pbNext_clicked()
 	ui.lblPage->setText(QString("%1 / %2").arg(QString::number(m_currentPage), QString::number(m_totalPage)));
 	QString pngName = QString("%1-%2.png").arg(m_shortName, QString::number(m_currentPage - 1));
 	showBefittingPic(pngName);
-}
-
-void STWBDocWindow::displayError(QAbstractSocket::SocketError e)
-{
-	printf("error:%d", e);
 }
 
 void STWBDocWindow::mousePressEvent(QMouseEvent* event)

@@ -12,15 +12,12 @@ STWBCloudFileView::STWBCloudFileView(QWidget * parent) : QWidget(parent)
 	ui.twFileManager->horizontalHeaderItem(1)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 	ui.twFileManager->horizontalHeaderItem(2)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 
-	QString server = STConfig::getConfig("/xmpp/server");
-	m_network = new STNetworkClient;
-	m_network->connectServer(server, "10001");
-	connect(m_network, SIGNAL(processCloudFileMessage(QString)), this, SLOT(processMessage(QString)));
+	m_messageClient = new STMessageClient;
+	connect(m_messageClient, SIGNAL(cloudFileMessageSignal(QString)), this, SLOT(processMessage(QString)));
 }
 
 STWBCloudFileView::~STWBCloudFileView()
 {
-	m_network->disconnectServer();
 }
 
 void STWBCloudFileView::processMessage(QString msg)
@@ -84,7 +81,7 @@ void STWBCloudFileView::refreshCurrentPageTable()
 	}
 
 	QString msg = QString("{\"type\":\"file\",\"action\":\"list\",\"data\":{\"path\":\"%1\"}}").arg(path);
-	m_network->sendMessage(msg);
+	m_messageClient->sendMessage(msg);
 }
 
 void STWBCloudFileView::makeCurrentPageTable(QString data)

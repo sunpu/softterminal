@@ -402,7 +402,23 @@ QPushButton:hover:pressed{
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pbLesson">
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>557</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pbCreateCourse">
+            <property name="toolTip">
+             <string>创建课程</string>
+            </property>
             <property name="styleSheet">
              <string notr="true">
 
@@ -424,34 +440,25 @@ QPushButton:hover:pressed{
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+           <widget class="QPushButton" name="pbJoinCourse">
+            <property name="styleSheet">
+             <string notr="true">
+
+QPushButton {
+	border-image: url(:/SoftTerminal/images/join_lesson.png);
+	width: 20;
+	height: 20;
+}
+QPushButton:hover:!pressed {
+	border-image: url(:/SoftTerminal/images/join_lesson_focus.png);
+}
+QPushButton:hover:pressed{
+	border-image: url(:/SoftTerminal/images/join_lesson_focus.png);
+}</string>
             </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>557</width>
-              <height>20</height>
-             </size>
+            <property name="text">
+             <string/>
             </property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QWidget" name="widget_7" native="true">
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
-            </layout>
            </widget>
           </item>
          </layout>
@@ -729,7 +736,6 @@ QListWidget::Item{height:30px;padding-top:0px; padding-bottom:0px;}</string>
   <tabstop>pbEmotion</tabstop>
   <tabstop>pbScreenShot</tabstop>
   <tabstop>pbScreenShotOption</tabstop>
-  <tabstop>pbLesson</tabstop>
  </tabstops>
  <resources>
   <include location="../res/softterminal.qrc"/>

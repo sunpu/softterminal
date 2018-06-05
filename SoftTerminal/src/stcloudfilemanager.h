@@ -19,7 +19,8 @@
 #include <Winuser.h>
 #include "stcommon.h"
 #include "stconfig.h"
-#include "stnetworkclient.h"
+#include "stmessageclient.h"
+#include "stfileclient.h"
 #include "ui_STCloudFileManager.h"
 #include "ui_STCloudSupport.h"
 #include "ui_STCloudUploadFile.h"
@@ -61,7 +62,7 @@ namespace tahiti
 		void resizeHeaders();
 		void refreshCurrentPageTable();
 		void makeCurrentPageTable(QString data);
-		void callCloudFolderView(QString data);
+		void callCloudFolderView();
 		void getCheckList();
 		//QJsonArray getCurrentQJsonArray(QJsonArray itemArray);
 	private:
@@ -70,43 +71,10 @@ namespace tahiti
 		QList<QString> m_folderList;
 		QList<QPushButton*> m_folderBtnList;
 		QMap<QPushButton*, FileInfo> m_folderBtnInfo;
-		STNetworkClient* m_network;
+		STMessageClient* m_messageClient;
 		QString m_action;
 		QList<QString> m_checkedList;
 		STCloudSupport* m_support;
-	};
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	class STCloudUploadClient : public QObject
-	{
-		Q_OBJECT
-
-	public:
-		STCloudUploadClient(QObject * parent = 0);
-		~STCloudUploadClient();
-		void uploadFile(QString destPath, QString file);
-	private:
-		void displayError(QAbstractSocket::SocketError);
-		void connectServer(QString ip, QString port);
-		void disconnectServer();
-		private Q_SLOTS :
-		void sendFileInfo();  //传送文件头信息
-		void uploadFileData(qint64);  //传送文件内容
-	Q_SIGNALS:
-		void onUploadProcess(int percent);
-		void onUploadFinished();
-	private:
-		QTcpSocket* m_tcpSocket;//直接建立TCP套接字类
-		QString m_tcpIp;//存储IP地址
-		QString m_tcpPort;//存储端口地址
-		QByteArray m_outBlock;  //分次传  
-		qint64 m_loadSize;  //每次发送数据的大小  
-		qint64 m_byteToWrite;  //剩余数据大小  
-		qint64 m_totalSize;  //文件总大小  
-		QFile* m_localFile;
-		QString m_destPath;
-		QString m_file;
-		bool m_startUploadFileData;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +120,7 @@ namespace tahiti
 		Ui::STCloudUploadFileClass ui;
 		bool m_isPressed;
 		QPoint m_startMovePos;
-		STCloudUploadClient* m_uploadClient;
+		STFileClient* m_uploadClient;
 		QString m_path;
 	};
 
@@ -187,7 +155,7 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STCloudFolderView(QString action, QString folders, QWidget * parent = 0);
+		STCloudFolderView(QString action, QWidget * parent = 0);
 		~STCloudFolderView();
 		public Q_SLOTS:
 		void on_pbOK_clicked();
@@ -197,17 +165,18 @@ namespace tahiti
 		virtual void mouseMoveEvent(QMouseEvent* event);
 		virtual void mousePressEvent(QMouseEvent* event);
 		virtual void mouseReleaseEvent(QMouseEvent* event);
+		private Q_SLOTS:
+		void processMessage(QString);
 	Q_SIGNALS:
 		void confirmOK(QString, QString);
 	private:
-		void initFolderTree();
+		void initFolderTree(QString msg);
 		void makeFolderSubTree(QStandardItem* item, QJsonArray arr, QString parentPath);
 	private:
 		Ui::STCloudFolderViewClass ui;
 		bool m_isPressed;
 		QPoint m_startMovePos;
 		QString m_action;
-		QString m_folders;
 	};
 }
 #endif

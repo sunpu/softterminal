@@ -13,8 +13,8 @@
 #include "JlCompress.h"
 #include "ui_STWBDocWindow.h"
 #include "stwbview.h"
-#include "stnetworkclient.h"
 #include "stconfig.h"
+#include "stfileclient.h"
 
 namespace tahiti
 {
@@ -23,7 +23,7 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STWBDocWindow(STNetworkClient* network, QString path, int index, QWidget * parent = 0);
+		STWBDocWindow(QString path, int index, QWidget * parent = 0);
 		~STWBDocWindow();
 		int getDocWindowIndex() { return m_index; }
 		bool isMaximum() { return m_isMaximum; }
@@ -48,38 +48,29 @@ namespace tahiti
 		virtual void mouseReleaseEvent(QMouseEvent* event);
 		bool eventFilter(QObject *obj, QEvent *e);
 	private:
-		void connectServer(QString ip, QString port);
-		void disconnectServer();
 		void unzip();
+		void loadFile();
 		bool deleteDirectory(QString path);
 		void showBefittingPic(QString picName);
 		private Q_SLOTS:
-		void download();
-		void readMessage();
-		void displayError(QAbstractSocket::SocketError);
-		void loadFile();
+		void onDownloadFinished();
 	private:
 		Ui::STWBDocWindowClass ui;
 		bool m_isPressed;
 		QPoint m_startMovePos;
-		STNetworkClient* m_network;
 		STWBView* m_view;
 		int m_index;
 		QString m_path;
-		QTcpSocket* m_tcpSocket;//直接建立TCP套接字类
-		QString m_tcpIp;//存储IP地址
-		QString m_tcpPort;//存储端口地址
-		QString m_bigData;
 		QString m_docWindowPath;
-		QFile* m_downloadFile;
+		QString m_downloadPath;
 		bool m_needUnzip;
-		qint64 bytesReceived;
 		int m_currentPage;
 		int m_totalPage;
 		QString m_shortName;
 		QString m_pngName;
 		QRect m_normalRect;
 		bool m_isMaximum;
+		STFileClient* m_downloadClient;
 	};
 }
 #endif

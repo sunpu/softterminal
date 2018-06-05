@@ -113,12 +113,6 @@
     <ClCompile Include="GeneratedFiles\Release\moc_stmain.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_stnetworkclient.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_stnetworkclient.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_stpersonalinfo.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
@@ -204,9 +198,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\stmain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\stnetworkclient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\stpersonalinfo.cpp">
@@ -344,6 +335,24 @@
     <ClCompile Include="GeneratedFiles\Release\moc_stgroupdetail.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="src\stmessageclient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_stmessageclient.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_stmessageclient.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="src\stfileclient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_stfileclient.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_stfileclient.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="forms\STChatDetail.ui">
@@ -460,9 +469,6 @@
     <CustomBuild Include="src\stmain.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\stnetworkclient.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="src\stpersonalinfo.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
@@ -558,6 +564,12 @@
     </CustomBuild>
     <CustomBuild Include="forms\STChatDeleteMenu.ui">
       <Filter>Form Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\stmessageclient.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\stfileclient.h">
+      <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

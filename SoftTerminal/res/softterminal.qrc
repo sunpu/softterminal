@@ -134,5 +134,7 @@
         <file>images/group_icon.png</file>
         <file>images/admin.png</file>
         <file>images/load_small.gif</file>
+        <file>images/join_lesson.png</file>
+        <file>images/join_lesson_focus.png</file>
     </qresource>
 </RCC>

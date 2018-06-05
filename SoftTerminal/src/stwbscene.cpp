@@ -2,8 +2,7 @@
 
 using namespace tahiti;
 
-STWBScene::STWBScene(STNetworkClient* network)
-	: m_network(network)
+STWBScene::STWBScene()
 {
 	m_isDrawing = false;
 
@@ -12,7 +11,12 @@ STWBScene::STWBScene(STNetworkClient* network)
 	m_textItem = NULL;
 	m_last_textItem = NULL;
 
-	m_itemID_index = 0;
+	m_messageClient = new STMessageClient;
+}
+
+void STWBScene::setCourseID(QString courseID)
+{
+	m_courseID = courseID;
 }
 
 void STWBScene::setMode(ActionType type)
@@ -61,9 +65,10 @@ void STWBScene::drawTo(PathItemData *dt, const QPoint &to)
 
 void STWBScene::onPenDown(QPoint pt, int id)
 {
+	QString uuid = QUuid::createUuid().toString().remove("{").remove("}").remove("-");
 	m_pathItemData = new PathItemData;
 	m_pathItemData->prePoint = pt;//scene point;
-	m_pathItemData->pathItem = new STWBPathItem(m_itemID_index++);
+	m_pathItemData->pathItem = new STWBPathItem(uuid);
 	m_pathItemData->pathItem->addPoint(pt);
 
 	drawStart(m_pathItemData);
@@ -96,7 +101,7 @@ void STWBScene::onPenUp(int id)
 	QGraphicsScene::addItem(m_pathItemData->pathItem);
 	m_itemMap[m_pathItemData->pathItem->itemID()] = m_pathItemData->pathItem;
 
-	m_network->drawPenItem(m_pen_color, m_pen_thickness,
+	drawPenItem(m_pen_color, m_pen_thickness,
 		m_pathItemData->pathItem->points(), m_pathItemData->pathItem->itemID());
 }
 
@@ -111,79 +116,6 @@ void STWBScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 	}
 	else if (m_type == ActionType::AT_Text)
 	{
-		/*QGraphicsPixmapItem* pixmapitem = new QGraphicsPixmapItem();
-		pixmapitem->setFlag(QGraphicsItem::ItemIsMovable, true);
-		pixmapitem->setFlag(QGraphicsItem::ItemIsSelectable, true);
-		QImage* image = new QImage(":/PaintLearn/Resources/4.png");
-		pixmapitem->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
-		pixmapitem->setPos(event->scenePos().toPoint());
-		pixmapitem->setSelected(true);
-		pixmapitem->setFocus();
-		QGraphicsScene::addItem(pixmapitem);*/
-
-
-		// 创建 widget
-		/*QLabel *pPixmapLabel = new QLabel();
-		QLineEdit *pAccountLineEdit = new QLineEdit();
-		QLineEdit *pPasswdLineEdit = new QLineEdit();
-		QCheckBox *pRememberCheckBox = new QCheckBox();
-		QCheckBox *pAutoLoginCheckBox = new QCheckBox();
-		QPushButton *pLoginButton = new QPushButton();
-		QPushButton *pRegisterButton = new QPushButton();
-		QPushButton *pForgotButton = new QPushButton();
-
-		pPixmapLabel->setStyleSheet("border-image: url(:/Images/logo); min-width:90px; min-height:90px; border-radius:45px; background:transparent;");
-		pAccountLineEdit->setPlaceholderText(QStringLiteral("QQ号码/手机/邮箱"));
-		pPasswdLineEdit->setPlaceholderText(QStringLiteral("密码"));
-		pPasswdLineEdit->setEchoMode(QLineEdit::Password);
-		pRememberCheckBox->setText(QStringLiteral("记住密码"));
-		pAutoLoginCheckBox->setText(QStringLiteral("自动登录"));
-		pLoginButton->setText(QStringLiteral("登录"));
-		pRegisterButton->setText(QStringLiteral("注册账号"));
-		pForgotButton->setText(QStringLiteral("找回密码"));
-
-		pLoginButton->setFixedHeight(30);
-		pAccountLineEdit->setFixedWidth(180);
-
-		// 添加 widget
-		QGraphicsScene *pScene = new QGraphicsScene();
-		QGraphicsProxyWidget *pPixmapWidget = pScene->addWidget(pPixmapLabel);
-		QGraphicsProxyWidget *pAccountWidget = pScene->addWidget(pAccountLineEdit);
-		QGraphicsProxyWidget *pPasswdWidget = pScene->addWidget(pPasswdLineEdit);
-		QGraphicsProxyWidget *pRememberWidget = pScene->addWidget(pRememberCheckBox);
-		QGraphicsProxyWidget *pAutoLoginWidget = pScene->addWidget(pAutoLoginCheckBox);
-		QGraphicsProxyWidget *pLoginWidget = pScene->addWidget(pLoginButton);
-		QGraphicsProxyWidget *pRegisterWidget = pScene->addWidget(pRegisterButton);
-		QGraphicsProxyWidget *pForgotWidget = pScene->addWidget(pForgotButton);
-
-		// 添加至网格布局中
-		QGraphicsGridLayout *pLayout = new QGraphicsGridLayout();
-		//QGraphicsLayoutItem* item = (QGraphicsLayoutItem*)pPixmapWidget;
-		pLayout->addItem(pPixmapWidget, 0, 0, 3, 1);
-		pLayout->addItem(pAccountWidget, 0, 1, 1, 2);
-		pLayout->addItem(pRegisterWidget, 0, 4);
-		pLayout->addItem(pPasswdWidget, 1, 1, 1, 2);
-		pLayout->addItem(pForgotWidget, 1, 4);
-		pLayout->addItem(pRememberWidget, 2, 1, 1, 1, Qt::AlignLeft | Qt::AlignVCenter);
-		pLayout->addItem(pAutoLoginWidget, 2, 2, 1, 1, Qt::AlignRight | Qt::AlignVCenter);
-		pLayout->addItem(pLoginWidget, 3, 1, 1, 2);
-		pLayout->setHorizontalSpacing(10);
-		pLayout->setVerticalSpacing(10);
-		pLayout->setContentsMargins(10, 10, 10, 10);
-
-		QGraphicsWidget *pWidget = new QGraphicsWidget();
-		pWidget->setFlag(QGraphicsItem::ItemIsMovable, true);
-		pWidget->setFlag(QGraphicsItem::ItemIsSelectable, true);
-		pWidget->setLayout(pLayout);
-		QGraphicsScene::addItem(pWidget);
-		return;*/
-
-
-
-
-
-
-
 		if (m_textItem != NULL)
 		{
 			m_last_textItem = m_textItem;
@@ -195,7 +127,8 @@ void STWBScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 				m_last_textItem = NULL;
 			}
 		}
-		m_textItem = new STWBTextItem(m_itemID_index++);
+		QString uuid = QUuid::createUuid().toString().remove("{").remove("}").remove("-");
+		m_textItem = new STWBTextItem(uuid);
 		m_textItem->setDefaultTextColor(m_text_color);
 		m_textItem->setPlainText(QString::fromLocal8Bit(""));
 		QFont font = m_textItem->font();
@@ -225,7 +158,7 @@ void STWBScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 		if (m_realtimePoints.size() == 10)
 		{
 			QVector<QPoint> tmpPoints = m_realtimePoints;
-			m_network->drawRealtimePenItem(m_pen_color, m_pen_thickness, tmpPoints);
+			drawRealtimePenItem(m_pen_color, m_pen_thickness, tmpPoints);
 			m_realtimePoints.clear();
 		}
 		m_realtimePoints.append(event->scenePos().toPoint());
@@ -238,16 +171,16 @@ void STWBScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 	if (m_isDrawing)
 	{
 		QVector<QPoint> tmpPoints = m_realtimePoints;
-		m_network->drawRealtimePenItem(m_pen_color, m_pen_thickness, tmpPoints);
+		drawRealtimePenItem(m_pen_color, m_pen_thickness, tmpPoints);
 		m_realtimePoints.clear();
 		m_isDrawing = false;
 		onPenUp();
 	}
 	if (m_type == ActionType::AT_Select)
 	{
-		QMap<int, QGraphicsItem*>::iterator it;
+		QMap<QString, QGraphicsItem*>::iterator it;
 		QGraphicsItem* item;
-		int itemID = 0;
+		QString itemID;
 		for (int i = 0; i < selectedItems().size(); i++)
 		{
 			item = selectedItems().at(i);
@@ -259,7 +192,7 @@ void STWBScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 					break;
 				}
 			}
-			m_network->moveItem(item->pos().toPoint(), itemID);
+			moveItem(item->pos().toPoint(), itemID);
 		}
 	}
 	QGraphicsScene::mouseReleaseEvent(event);
@@ -277,9 +210,9 @@ void STWBScene::keyPressEvent(QKeyEvent *event)
 	}
 }
 
-void STWBScene::drawLocalTextItem(QString content, QPoint pos, int itemID)
+void STWBScene::drawLocalTextItem(QString content, QPoint pos, QString itemID)
 {
-	m_network->drawTextItem(m_text_color, m_text_size, content, pos, itemID);
+	drawTextItem(m_text_color, m_text_size, content, pos, itemID);
 }
 
 void STWBScene::deleteSelectedItem()
@@ -287,8 +220,8 @@ void STWBScene::deleteSelectedItem()
 	// 移除所有选中的 items
 	int itemID = 0;
 	QGraphicsItem* item;
-	QMap<int, QGraphicsItem*>::iterator it;
-	QList<int> itemIDs;
+	QMap<QString, QGraphicsItem*>::iterator it;
+	QList<QString> itemIDs;
 	while (!selectedItems().isEmpty())
 	{
 		item = selectedItems().front();
@@ -302,7 +235,147 @@ void STWBScene::deleteSelectedItem()
 		}
 		removeItem(item);
 	}
-	m_network->deleteItems(itemIDs);
+	deleteItems(itemIDs);
+}
+
+void STWBScene::drawRealtimePenItem(QString penColor, int penThickness, QVector<QPoint> points)
+{
+	// {"type":"wbrealtime","courseID":"111","data":{"action":"pen","color":"#000000","thickness":12,"points":[12,23,12,34]}}
+	QJsonObject complexJson;
+	complexJson.insert("type", "wbrealtime");
+	complexJson.insert("courseID", m_courseID);
+
+	QJsonObject dataJson;
+	dataJson.insert("action", "pen");
+	dataJson.insert("color", penColor);
+	dataJson.insert("thickness", penThickness);
+
+	QJsonArray pointsArray;
+	for (int i = 0, j = 0; i < points.size(); i++, j += 2)
+	{
+		pointsArray.insert(j, points[i].x());
+		pointsArray.insert(j + 1, points[i].y());
+	}
+	dataJson.insert("points", pointsArray);
+
+	complexJson.insert("data", dataJson);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+
+	m_messageClient->sendMessage(complexJsonStr);
+}
+
+void STWBScene::drawPenItem(QString penColor, int penThickness, QVector<QPoint> points, QString itemID)
+{
+	// {"type":"wbitem","subtype":"add","courseID":"111","data":{"action":"pen","color":"#000000","thickness":12,"points":[12,23,12,34]},"id":"uuid"}
+	QJsonObject complexJson;
+	complexJson.insert("type", "wbitem");
+	complexJson.insert("subtype", "add");
+	complexJson.insert("courseID", m_courseID);
+	complexJson.insert("id", itemID);
+
+	QJsonObject dataJson;
+	dataJson.insert("action", "pen");
+	dataJson.insert("color", penColor);
+	dataJson.insert("thickness", penThickness);
+
+	QJsonArray pointsArray;
+	for (int i = 0, j = 0; i < points.size(); i++, j += 2)
+	{
+		pointsArray.insert(j, points[i].x());
+		pointsArray.insert(j + 1, points[i].y());
+	}
+	dataJson.insert("points", pointsArray);
+
+	complexJson.insert("data", dataJson);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+
+	m_messageClient->sendMessage(complexJsonStr);
+}
+
+void STWBScene::drawTextItem(QString textColor, int textSize,
+	QString content, QPoint position, QString itemID)
+{
+	// {"type":"wbitem","subtype":"add","courseID":"111","data":{"action":"text","color":"#000000","size":12,"content":"aaa","pos":[12,23]},"id":"uuid"}
+	QJsonObject complexJson;
+	complexJson.insert("type", "wbitem");
+	complexJson.insert("subtype", "add");
+	complexJson.insert("courseID", m_courseID);
+	complexJson.insert("id", itemID);
+
+	QJsonObject dataJson;
+	dataJson.insert("action", "text");
+	dataJson.insert("color", textColor);
+	dataJson.insert("size", textSize);
+	dataJson.insert("content", content);
+
+	QJsonArray pointsArray;
+	pointsArray.insert(0, position.x());
+	pointsArray.insert(1, position.y());
+	dataJson.insert("pos", pointsArray);
+
+	complexJson.insert("data", dataJson);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+
+	m_messageClient->sendMessage(complexJsonStr);
+}
+
+void STWBScene::moveItem(QPoint position, QString itemID)
+{
+	// {"type":"wbitem","subtype":"move","courseID":"111","data":{"pos":[2,3]},"id":"uuid"}
+	QJsonObject complexJson;
+	complexJson.insert("type", "wbitem");
+	complexJson.insert("subtype", "move");
+	complexJson.insert("courseID", m_courseID);
+	complexJson.insert("id", itemID);
+
+	QJsonObject dataJson;
+	QJsonArray posArray;
+	posArray.insert(0, position.x());
+	posArray.insert(1, position.y());
+	dataJson.insert("pos", posArray);
+	complexJson.insert("data", dataJson);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+
+	m_messageClient->sendMessage(complexJsonStr);
+}
+
+void STWBScene::deleteItems(QList<QString> itemIDs)
+{
+	// {"type":"wbitem","subtype":"del","courseID":"111","ids":["uuid1","uuid2","uuid3"]}
+	QJsonObject complexJson;
+	complexJson.insert("type", "wbitem");
+	complexJson.insert("subtype", "del");
+	complexJson.insert("courseID", m_courseID);
+
+	QJsonArray itemIDArray;
+	for (int i = 0; i < itemIDs.size(); i++)
+	{
+		itemIDArray.insert(i, itemIDs[i]);
+	}
+	complexJson.insert("ids", itemIDArray);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+
+	m_messageClient->sendMessage(complexJsonStr);
 }
 
 void STWBScene::clearStatus()
@@ -343,10 +416,9 @@ void STWBScene::drawRemoteRealtimePen(QString color, int thickness, QVector<QPoi
 	}
 }
 
-void STWBScene::drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, int itemID)
+void STWBScene::drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, QString itemID)
 {
-	m_itemID_index = itemID;
-	m_remotePathItem = new STWBPathItem(m_itemID_index++);
+	m_remotePathItem = new STWBPathItem(itemID);
 	m_remotePathItem->setColor(color);
 	m_remotePathItem->setThickness(thickness);
 	for (int i = 0; i < points.size(); i++)
@@ -370,7 +442,7 @@ void STWBScene::drawRemotePenItem(QString color, int thickness, QVector<QPoint> 
 	}
 }
 
-void STWBScene::drawRemoteTextItem(QString color, int size, QString content, QPoint pos, int itemID)
+void STWBScene::drawRemoteTextItem(QString color, int size, QString content, QPoint pos, QString itemID)
 {
 	if (m_itemMap.contains(itemID))
 	{
@@ -378,8 +450,7 @@ void STWBScene::drawRemoteTextItem(QString color, int size, QString content, QPo
 	}
 	else
 	{
-		m_itemID_index = itemID;
-		m_remoteTextItem = new STWBTextItem(m_itemID_index++);
+		m_remoteTextItem = new STWBTextItem(itemID);
 		QGraphicsScene::addItem(m_remoteTextItem);
 		m_itemMap[itemID] = m_remoteTextItem;
 	}
@@ -391,12 +462,12 @@ void STWBScene::drawRemoteTextItem(QString color, int size, QString content, QPo
 	m_remoteTextItem->setPos(pos);
 }
 
-void STWBScene::moveRemoteItems(QPoint pos, int itemID)
+void STWBScene::moveRemoteItem(QPoint pos, QString itemID)
 {
 	m_itemMap[itemID]->setPos(pos);
 }
 
-void STWBScene::deleteRemoteItems(QList<int> itemIDs)
+void STWBScene::deleteRemoteItems(QList<QString> itemIDs)
 {
 	for (int i = 0; i < itemIDs.size(); i++)
 	{

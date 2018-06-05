@@ -14,9 +14,13 @@
 #include <QLineEdit>
 #include <QCheckBox>
 #include <QPushButton>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QUuid>
 #include "stwbpathitem.h"
 #include "stwbtextitem.h"
-#include "stnetworkclient.h"
+#include "stmessageclient.h"
 
 namespace tahiti
 {
@@ -36,8 +40,8 @@ namespace tahiti
 	class STWBScene : public QGraphicsScene
 	{
 	public:
-		STWBScene(STNetworkClient* network);
-
+		STWBScene();
+		void setCourseID(QString courseID);
 		void setMode(ActionType type);
 		void setPenColor(QString color);
 		void setPenThickness(int w);
@@ -49,11 +53,17 @@ namespace tahiti
 		void deleteSelectedItem();
 		void clearStatus();
 		void drawRemoteRealtimePen(QString color, int thickness, QVector<QPoint> points);
-		void drawLocalTextItem(QString content, QPoint pos, int itemID);
-		void drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, int itemID);
-		void drawRemoteTextItem(QString color, int size, QString content, QPoint pos, int itemID);
-		void moveRemoteItems(QPoint pos, int itemID);
-		void deleteRemoteItems(QList<int> itemIDs);
+		void drawLocalTextItem(QString content, QPoint pos, QString itemID);
+		void drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, QString itemID);
+		void drawRemoteTextItem(QString color, int size, QString content, QPoint pos, QString itemID);
+		void moveRemoteItem(QPoint pos, QString itemID);
+		void deleteRemoteItems(QList<QString> itemIDs);
+	private:
+		void drawRealtimePenItem(QString penColor, int penThickness, QVector<QPoint> points);
+		void drawPenItem(QString penColor, int penThickness, QVector<QPoint> points, QString itemID);
+		void drawTextItem(QString textColor, int textSize, QString content, QPoint position, QString itemID);
+		void moveItem(QPoint position, QString itemID);
+		void deleteItems(QList<QString> itemIDs);
 	protected:
 		void mousePressEvent(QGraphicsSceneMouseEvent* event);
 		void mouseMoveEvent(QGraphicsSceneMouseEvent* event);
@@ -73,13 +83,13 @@ namespace tahiti
 		PathItemData* m_pathItemData;
 		STWBTextItem* m_textItem;
 		STWBTextItem* m_last_textItem;
-		STNetworkClient* m_network;
-		int m_itemID_index;
 		PathItemData* m_realtimePathItemData;
 		STWBPathItem* m_remotePathItem;
 		STWBTextItem* m_remoteTextItem;
-		QMap<int, QGraphicsItem*> m_itemMap;
+		QMap<QString, QGraphicsItem*> m_itemMap;
 		QVector<QPoint> m_realtimePoints;
+		STMessageClient* m_messageClient;
+		QString m_courseID;
 	};
 }
 #endif

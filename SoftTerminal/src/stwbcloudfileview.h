@@ -6,9 +6,12 @@
 #include <QHeaderView>
 #include <QFileInfo>
 #include <QMouseEvent>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonParseError>
 #include "stcommon.h"
 #include "stconfig.h"
-#include "stnetworkclient.h"
+#include "stmessageclient.h"
 #include "ui_STWBCloudFileView.h"
 
 namespace tahiti
@@ -48,7 +51,7 @@ namespace tahiti
 		QList<QString> m_folderList;
 		QList<QPushButton*> m_folderBtnList;
 		QMap<QPushButton*, FileInfo> m_folderBtnInfo;
-		STNetworkClient* m_network;
+		STMessageClient* m_messageClient;
 		QString m_action;
 	};
 }

@@ -6,8 +6,7 @@
 
 using namespace tahiti;
 
-STWBView::STWBView(STNetworkClient* network, bool subWin)
-	: m_network(network)
+STWBView::STWBView(bool subWin)
 {
 	setInteractive(true);
 	//setOptimizationFlag(QGraphicsView::IndirectPainting);
@@ -28,7 +27,7 @@ STWBView::STWBView(STNetworkClient* network, bool subWin)
 	}
 
 	//init scene
-	m_scene = new STWBScene(network);
+	m_scene = new STWBScene;
 	setScene(m_scene);
 	setSceneRect(-50, -50, 100, 100);
 	//resize(600, 600);
@@ -37,6 +36,12 @@ STWBView::STWBView(STNetworkClient* network, bool subWin)
 STWBView::~STWBView()
 {
 
+}
+
+void STWBView::setCourseID(QString courseID)
+{
+	m_courseID = courseID;
+	m_scene->setCourseID(m_courseID);
 }
 
 void STWBView::setBackground(QPixmap image, QSize size)
@@ -97,22 +102,22 @@ void STWBView::drawRemoteRealtimePen(QString color, int thickness, QVector<QPoin
 	m_scene->drawRemoteRealtimePen(color, thickness, points);
 }
 
-void STWBView::drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, int itemID)
+void STWBView::drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, QString itemID)
 {
 	m_scene->drawRemotePenItem(color, thickness, points, itemID);
 }
 
-void STWBView::drawRemoteTextItem(QString color, int size, QString content, QPoint pos, int itemID)
+void STWBView::drawRemoteTextItem(QString color, int size, QString content, QPoint pos, QString itemID)
 {
 	m_scene->drawRemoteTextItem(color, size, content, pos, itemID);
 }
 
-void STWBView::moveRemoteItems(QPoint pos, int itemID)
+void STWBView::moveRemoteItem(QPoint pos, QString itemID)
 {
-	m_scene->moveRemoteItems(pos, itemID);
+	m_scene->moveRemoteItem(pos, itemID);
 }
 
-void STWBView::deleteRemoteItems(QList<int> itemIDs)
+void STWBView::deleteRemoteItems(QList<QString> itemIDs)
 {
 	m_scene->deleteRemoteItems(itemIDs);
 }

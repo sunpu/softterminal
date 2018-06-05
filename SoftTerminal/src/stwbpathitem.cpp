@@ -5,7 +5,7 @@
 
 using namespace tahiti;
 
-STWBPathItem::STWBPathItem(int itemID)
+STWBPathItem::STWBPathItem(QString itemID)
 	:m_itemID(itemID)
 {
 	setFlag(QGraphicsItem::ItemIsMovable, true);

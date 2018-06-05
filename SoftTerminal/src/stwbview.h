@@ -5,7 +5,6 @@
 #include <QtOpenGL>
 #include <QGraphicsView>
 #include "stcommon.h"
-#include "stnetworkclient.h"
 
 namespace tahiti
 {
@@ -15,9 +14,10 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STWBView(STNetworkClient* network, bool subWin = false);
+		STWBView(bool subWin = false);
 		~STWBView();
 
+		void setCourseID(QString courseID);
 		STWBScene* getScene() { return m_scene; }
 		void setScene(STWBScene* scene);
 		void setMode(ActionType type);
@@ -28,16 +28,16 @@ namespace tahiti
 		void deleteSelectedItem();
 		void clearSelection();
 		void drawRemoteRealtimePen(QString color, int thickness, QVector<QPoint> points);
-		void drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, int itemID);
-		void drawRemoteTextItem(QString color, int size, QString content, QPoint pos, int itemID);
-		void moveRemoteItems(QPoint pos, int itemID);
-		void deleteRemoteItems(QList<int> itemIDs);
+		void drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, QString itemID);
+		void drawRemoteTextItem(QString color, int size, QString content, QPoint pos, QString itemID);
+		void moveRemoteItem(QPoint pos, QString itemID);
+		void deleteRemoteItems(QList<QString> itemIDs);
 		void setBackground(QPixmap image, QSize size);
 	protected:
 		void resizeEvent(QResizeEvent* event);
 	private:
 		STWBScene* m_scene;
-		STNetworkClient* m_network;
+		QString m_courseID;
 	};
 }
 #endif

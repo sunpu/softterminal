@@ -63,12 +63,8 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 	m_userInfo = userInfo;
 	m_group = group;
 	ui.widStatus->setVisible(false);
-	if (m_group)
-	{
-		connect(m_group, SIGNAL(refreshOnlineSignal()), this, SLOT(refreshOnlineSlot()));
-		refreshOnlineSlot();
-		ui.widStatus->setVisible(true);
-	}
+	ui.pbCreateCourse->setVisible(false);
+	ui.pbJoinCourse->setVisible(false);
 	m_selfInfo = m_xmppClient->getSelfInfo();
 
 	clearChatDetail();
@@ -79,6 +75,35 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 	showMoreRecord();
 
 	ui.lwChatRecordList->scrollToBottom();
+
+	if (m_group)
+	{
+		connect(m_group, SIGNAL(refreshOnlineSignal()), this, SLOT(refreshOnlineSlot()));
+		refreshOnlineSlot();
+		ui.widStatus->setVisible(true);
+
+		m_whiteboard = new STWhiteBoard(m_selfInfo.jid, m_selfInfo.userName);
+		connect(m_main, SIGNAL(closeMain()), m_whiteboard, SLOT(on_pbClose_clicked()));
+		connect(m_whiteboard, SIGNAL(deleteCourseSignal()), this, SLOT(deleteCourseSlot()));
+
+		if (m_whiteboard->queryCourse(m_userInfo.jid).size() != 0)
+		{
+			ui.pbJoinCourse->setVisible(true);
+		}
+		else if (m_selfInfo.jid == m_group->getOwner())
+		{
+			ui.pbCreateCourse->setVisible(true);
+		}
+	}
+}
+
+void STChatDetail::deleteCourseSlot()
+{
+	ui.pbJoinCourse->setVisible(false);
+	if (m_selfInfo.jid == m_group->getOwner())
+	{
+		ui.pbCreateCourse->setVisible(true);
+	}
 }
 
 void STChatDetail::on_pbLoadMore_clicked()
@@ -286,12 +311,14 @@ void STChatDetail::on_pbScreenShotOption_clicked()
 	m_option->show();
 }
 
-void STChatDetail::on_pbLesson_clicked()
+void STChatDetail::on_pbCreateCourse_clicked()
 {
-	m_whiteboard = new STWhiteBoard(m_selfInfo.jid, m_selfInfo.userName);
-
-	connect(m_main, SIGNAL(closeMain()), m_whiteboard, SLOT(on_pbClose_clicked()));
-	m_whiteboard->show();
+	// 创建课程
+	m_whiteboard->createCourse(m_userInfo.jid);
+	m_whiteboard->joinCourse(m_userInfo.jid);
+	ui.pbCreateCourse->setVisible(false);
+	ui.pbJoinCourse->setVisible(true);
+	//m_whiteboard->show();
 
 	/*RecordItem item;
 	item.time = QTime::currentTime().toString();
@@ -320,6 +347,11 @@ void STChatDetail::on_pbLesson_clicked()
 
 	// 发送消息给远端
 	m_xmppClient->sendMsg(m_userInfo.jid, myMessage);*/
+}
+
+void STChatDetail::on_pbJoinCourse_clicked()
+{
+	m_whiteboard->joinCourse(m_userInfo.jid);
 }
 
 void STChatDetail::openScreenshot()

@@ -5,7 +5,7 @@
 
 using namespace tahiti;
 
-STWBTextItem::STWBTextItem(int itemID)
+STWBTextItem::STWBTextItem(QString itemID)
 	: m_itemID(itemID)
 {
 	setFlags(QGraphicsItem::ItemIsMovable |

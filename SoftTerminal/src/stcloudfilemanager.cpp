@@ -14,15 +14,12 @@ STCloudFileManager::STCloudFileManager(QWidget * parent) : QWidget(parent)
 	ui.twFileManager->horizontalHeaderItem(1)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 	ui.twFileManager->horizontalHeaderItem(2)->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
 
-	QString server = STConfig::getConfig("/xmpp/server");
-	m_network = new STNetworkClient;
-	m_network->connectServer(server, "10001");
-	connect(m_network, SIGNAL(processCloudFileMessage(QString)), this, SLOT(processMessage(QString)));
+	m_messageClient = new STMessageClient;
+	connect(m_messageClient, SIGNAL(cloudFileMessageSignal(QString)), this, SLOT(processMessage(QString)));
 }
 
 STCloudFileManager::~STCloudFileManager()
 {
-	m_network->disconnectServer();
 }
 
 void STCloudFileManager::processMessage(QString msg)
@@ -32,10 +29,6 @@ void STCloudFileManager::processMessage(QString msg)
 	if (type == "file_list")
 	{
 		makeCurrentPageTable(msg);
-	}
-	else if (type == "folder_list")
-	{
-		callCloudFolderView(msg);
 	}
 }
 
@@ -90,7 +83,7 @@ void STCloudFileManager::refreshCurrentPageTable()
 	}
 
 	QString msg = QString("{\"type\":\"file\",\"action\":\"list\",\"data\":{\"path\":\"%1\"}}").arg(path);
-	m_network->sendMessage(msg);
+	m_messageClient->sendMessage(msg);
 }
 
 void STCloudFileManager::makeCurrentPageTable(QString data)
@@ -344,7 +337,7 @@ void STCloudFileManager::handleNewFile(QString name)
 	}
 	QString msg = QString("{\"type\":\"file\",\"action\":\"new\","
 		"\"data\":{\"path\":\"%1\",\"name\":\"%2\"}}").arg(path, name);
-	m_network->sendMessage(msg);
+	m_messageClient->sendMessage(msg);
 }
 
 void STCloudFileManager::on_pbCopy_clicked()
@@ -355,8 +348,7 @@ void STCloudFileManager::on_pbCopy_clicked()
 		return;
 	}
 	m_action = "copy";
-	QString msg = QString("{\"type\":\"folder\",\"action\":\"list\"}");
-	m_network->sendMessage(msg);
+	callCloudFolderView();
 }
 
 void STCloudFileManager::on_pbMove_clicked()
@@ -367,13 +359,12 @@ void STCloudFileManager::on_pbMove_clicked()
 		return;
 	}
 	m_action = "move";
-	QString msg = QString("{\"type\":\"folder\",\"action\":\"list\"}");
-	m_network->sendMessage(msg);
+	callCloudFolderView();
 }
 
-void STCloudFileManager::callCloudFolderView(QString data)
+void STCloudFileManager::callCloudFolderView()
 {
-	STCloudFolderView* folderView = new STCloudFolderView(m_action, data, this);
+	STCloudFolderView* folderView = new STCloudFolderView(m_action, this);
 	connect(folderView, SIGNAL(confirmOK(QString, QString)), this, SLOT(handleFolderView(QString, QString)));
 	int parentX = mapToGlobal(pos()).x();
 	int parentY = mapToGlobal(pos()).y();
@@ -420,7 +411,7 @@ void STCloudFileManager::handleFolderView(QString action, QString destPath)
 	{
 		msg = QString("{\"type\":\"file\",\"action\":\"%1\","
 			"\"data\":{\"path\":\"%2\",\"name\":\"%3\",\"destPath\":\"%4\"}}").arg(action, path, m_checkedList.at(i), destPath);
-		m_network->sendMessage(msg);
+		m_messageClient->sendMessage(msg);
 	}
 }
 
@@ -441,7 +432,7 @@ void STCloudFileManager::on_pbDel_clicked()
 	{
 		msg = QString("{\"type\":\"file\",\"action\":\"del\","
 			"\"data\":{\"path\":\"%1\",\"name\":\"%2\"}}").arg(path, m_checkedList.at(i));
-		m_network->sendMessage(msg);
+		m_messageClient->sendMessage(msg);
 	}
 }
 
@@ -455,100 +446,6 @@ void STCloudFileManager::on_pbSupport_clicked()
 	m_support->move(QPoint(parentX + (parentWidth - m_support->width() + 20),
 		parentY + 50));
 	m_support->show();
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-STCloudUploadClient::STCloudUploadClient(QObject * parent) : QObject(parent)
-{
-	m_tcpSocket = NULL;
-}
-
-STCloudUploadClient::~STCloudUploadClient()
-{
-
-}
-
-void STCloudUploadClient::connectServer(QString ip, QString port)
-{
-	delete(m_tcpSocket);
-	m_tcpSocket = NULL;
-	m_tcpSocket = new QTcpSocket(this); // 申请堆空间有TCP发送和接受操作
-	m_tcpIp = ip;
-	m_tcpPort = port;
-	m_tcpSocket->connectToHost(m_tcpIp, m_tcpPort.toInt()); // 连接主机
-	connect(m_tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this,
-		SLOT(displayError(QAbstractSocket::SocketError))); // 错误连接
-	connect(m_tcpSocket, SIGNAL(connected()), this, SLOT(sendFileInfo()));  //当连接成功时，就开始传送文件  
-	connect(m_tcpSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(uploadFileData(qint64)));
-}
-
-void STCloudUploadClient::disconnectServer()
-{
-	disconnect(m_tcpSocket);
-	m_tcpSocket->disconnect();
-}
-
-void STCloudUploadClient::displayError(QAbstractSocket::SocketError e)
-{
-	printf("error:%d", e);
-}
-
-void STCloudUploadClient::uploadFile(QString destPath, QString file)
-{
-	m_destPath = destPath;
-	m_file = file;
-
-	m_loadSize = 0;
-	m_byteToWrite = 0;
-	m_totalSize = 0;
-	m_startUploadFileData = false;
-	m_outBlock.clear();
-
-	m_localFile = new QFile(m_file);
-	m_localFile->open(QFile::ReadOnly);
-
-	m_byteToWrite = m_localFile->size();  //剩余数据的大小  
-	m_totalSize = m_localFile->size();
-
-	m_loadSize = 512 * 1024;  //每次发送数据的大小  
-
-	QString server = STConfig::getConfig("/xmpp/server");
-	connectServer(server, "10002");
-}
-
-void STCloudUploadClient::sendFileInfo()
-{
-	QString destFilePath = m_destPath + "/" + m_file.right(m_file.size() - m_file.lastIndexOf('/') - 1);
-	m_tcpSocket->write("#*#" + destFilePath.toUtf8() + "@%@");
-}
-
-void STCloudUploadClient::uploadFileData(qint64 numBytes)  //开始发送文件内容
-{
-	if (m_byteToWrite == 0)
-	{
-		disconnectServer();
-		return;
-	}
-	if (!m_startUploadFileData)
-	{
-		numBytes = 0;
-		m_startUploadFileData = true;
-	}
-	m_byteToWrite -= numBytes;  //剩余数据大小
-	m_outBlock = m_localFile->read(qMin(m_byteToWrite, m_loadSize));
-	m_tcpSocket->write(m_outBlock);
-
-	if (m_byteToWrite == 0)
-	{
-		m_tcpSocket->write("#*#finish@%@");
-		//发送完毕
-		Q_EMIT onUploadFinished();
-	}
-	else
-	{
-		int percent = (m_totalSize - m_byteToWrite) * 100 / m_totalSize;
-		Q_EMIT onUploadProcess(percent);
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -591,7 +488,7 @@ STCloudUploadFile::STCloudUploadFile(QString path, QWidget * parent) : QDialog(p
 
 	ui.swUpload->setCurrentIndex(0);
 
-	m_uploadClient = new STCloudUploadClient();
+	m_uploadClient = new STFileClient();
 	connect(m_uploadClient, SIGNAL(onUploadFinished()), this, SLOT(onUploadFinished()));
 	connect(m_uploadClient, SIGNAL(onUploadProcess(int)), this, SLOT(onUploadProcess(int)));
 }
@@ -737,8 +634,8 @@ void STCloudNewFolder::mouseReleaseEvent(QMouseEvent* event)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-STCloudFolderView::STCloudFolderView(QString action, QString folders, QWidget * parent)
-	: QDialog(parent), m_action(action), m_folders(folders)
+STCloudFolderView::STCloudFolderView(QString action, QWidget * parent)
+	: QDialog(parent), m_action(action)
 {
 	ui.setupUi(this);
 	//setWindowModality(Qt::ApplicationModal);
@@ -751,7 +648,11 @@ STCloudFolderView::STCloudFolderView(QString action, QString folders, QWidget * 
 	{
 		ui.lblTitle->setText(QStringLiteral("所选内容移动到"));
 	}
-	initFolderTree();
+
+	STMessageClient* m_messageClient = new STMessageClient;
+	connect(m_messageClient, SIGNAL(cloudFileMessageSignal(QString)), this, SLOT(processMessage(QString)));
+	QString msg = QString("{\"type\":\"folder\",\"action\":\"list\"}");
+	m_messageClient->sendMessage(msg);
 }
 
 STCloudFolderView::~STCloudFolderView()
@@ -759,9 +660,19 @@ STCloudFolderView::~STCloudFolderView()
 
 }
 
-void STCloudFolderView::initFolderTree()
+void STCloudFolderView::processMessage(QString msg)
 {
-	m_folders = "[{\"name\": \"aaa\", \"child\": [{\"name\": \"fff\", \"child\": [{\"name\": \"sdfasfd\", \"child\": []}]}, {\"name\": \"ddd\", \"child\": []}]}, {\"name\": \"ccc\", \"child\": [{\"name\": \"bbb\", \"child\": []}]}]";
+	QString type = msg.split(":")[0];
+	msg.remove(0, type.size() + 1);
+	if (type == "folder_list")
+	{
+		initFolderTree(msg);
+	}
+}
+
+void STCloudFolderView::initFolderTree(QString msg)
+{
+	//m_folders = "[{\"name\": \"aaa\", \"child\": [{\"name\": \"fff\", \"child\": [{\"name\": \"sdfasfd\", \"child\": []}]}, {\"name\": \"ddd\", \"child\": []}]}, {\"name\": \"ccc\", \"child\": [{\"name\": \"bbb\", \"child\": []}]}]";
 
 	QStandardItemModel* model;
 	model = new QStandardItemModel(0, 1);
@@ -771,7 +682,7 @@ void STCloudFolderView::initFolderTree()
 
 	QJsonArray files;
 	QJsonParseError complexJsonError;
-	QJsonDocument doucment = QJsonDocument::fromJson(m_folders.toLatin1(), &complexJsonError);
+	QJsonDocument doucment = QJsonDocument::fromJson(msg.toLatin1(), &complexJsonError);
 	if (complexJsonError.error == QJsonParseError::NoError && doucment.isArray())
 	{
 		files = doucment.array();

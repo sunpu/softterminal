@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 		dir->mkpath(rootPath + LOG_PATH);
 	}
 
-	XmppClient* xmpp_client = new XmppClient();
+	XmppClient* xmppClient = new XmppClient();
 
 	QString logPath = rootPath + LOG_PATH + LOG_FILE_NAME;
 	if (!STLogger::instance().open_log(reinterpret_cast<const wchar_t *>(logPath.utf16())))
@@ -43,10 +43,18 @@ int main(int argc, char *argv[])
 		return false;
 	}
 	QApplication a(argc, argv);
-	STLoginRotate loginRotateWindow(xmpp_client);
-	loginRotateWindow.show();
 
-	//STWhiteBoard* m_whiteboard = new STWhiteBoard("sunix", "Sunix");
+	/*STLoginRotate loginRotateWindow(xmppClient);
+	loginRotateWindow.show();*/
+
+	STWhiteBoard* m_whiteboard = new STWhiteBoard("sunix", "Sunix");
+	QString courseID = m_whiteboard->queryCourse("aaaaaaaaaaaaaaa");
+	//m_whiteboard->createCourse("aaaaaaaaaaaaaaa");
+	m_whiteboard->joinCourse("aaaaaaaaaaaaaaa");
 	//m_whiteboard->show();
+
+	/*STMain* m_mainWindow = new STMain(xmppClient);
+	m_mainWindow->show();*/
+
 	return a.exec();
 }

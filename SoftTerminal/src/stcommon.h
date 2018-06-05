@@ -22,6 +22,11 @@ namespace tahiti
 #define SHADOW_WIDTH 10
 #define MAX_STREAM_NUM 6
 
+#define ST_MESSAGE_SERVER "ST_MESSAGE_SERVER"
+#define BROKER_PORT 5555
+#define PUBLISHER_PORT 5556
+#define FILE_SERVER_PORT 10001
+
 	enum ResizeRegion
 	{
 		Default,

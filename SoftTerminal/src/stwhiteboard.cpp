@@ -57,23 +57,12 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
 	qRegisterMetaType<QPoint>("QPoint");
 	qRegisterMetaType<QList<int>>("QList<int>");
 
-	m_network = new STNetworkClient();
-	connect(m_network, SIGNAL(onConnect()), this, SLOT(connectNetworkServer()));
-	connect(m_network, SIGNAL(drawRemoteRealtimePen(QString, int, QVector<QPoint>)),
-		this, SLOT(drawRemoteRealtimePen(QString, int, QVector<QPoint>)));
-	connect(m_network, SIGNAL(drawRemotePenItem(QString, int, QVector<QPoint>, int)),
-		this, SLOT(drawRemotePenItem(QString, int, QVector<QPoint>, int)));
-	connect(m_network, SIGNAL(drawRemoteTextItem(QString, int, QString, QPoint, int)),
-		this, SLOT(drawRemoteTextItem(QString, int, QString, QPoint, int)));
-	connect(m_network, SIGNAL(moveRemoteItems(QPoint, int)), this, SLOT(moveRemoteItems(QPoint, int)));
-	connect(m_network, SIGNAL(deleteRemoteItems(QList<int>)), this, SLOT(deleteRemoteItems(QList<int>)));
-	connect(m_network, SIGNAL(editableAuthority()), this, SLOT(editableAuthority()));	
-
-	QString server = STConfig::getConfig("/xmpp/server");
-	m_network->connectServer(server, "10001");
+	m_messageClient = new STMessageClient;
+	connect(m_messageClient, SIGNAL(whiteBoardMessageSignal(QString)),
+		this, SLOT(whiteBoardMessageSlot(QString)));
 
 	QVBoxLayout* layout = (QVBoxLayout*)ui.widPaint->layout();
-	m_view = new STWBView(m_network);
+	m_view = new STWBView;
 	layout->addWidget(m_view);
 	m_view->installEventFilter(this);
 	QStackedLayout* stackLayout = new QStackedLayout;
@@ -241,7 +230,6 @@ void STWhiteBoard::resizeMaximumDocWindow()
 
 void STWhiteBoard::on_pbClose_clicked()
 {
-	m_network->disconnectServer();
 	logout();
 	m_docWindows.clear();
 	close();
@@ -695,13 +683,6 @@ void STWhiteBoard::stopSendLocalCamera()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-void STWhiteBoard::connectNetworkServer()
-{
-	m_network->createClient("teacher");
-	m_network->createCourse("course-1");
-	m_network->joinCourse("course-1");
-}
-
 void STWhiteBoard::hideStylePanels()
 {
 	m_penStylePanel->hide();
@@ -744,7 +725,7 @@ void STWhiteBoard::deleteAction()
 
 void STWhiteBoard::openCloudFile(QString path)
 {
-	STWBDocWindow* docWindow = new STWBDocWindow(m_network, path, m_docWindowIndex++, m_view);
+	STWBDocWindow* docWindow = new STWBDocWindow(path, m_docWindowIndex++, m_view);
 	connect(docWindow, SIGNAL(closeCloudFile(int)), this, SLOT(closeCloudFile(int)));
 	connect(this, SIGNAL(setPenThicknessSignal(int)), docWindow, SLOT(setPenThickness(int)));
 	connect(this, SIGNAL(setPenColorSignal(QString)), docWindow, SLOT(setPenColor(QString)));
@@ -895,26 +876,26 @@ void STWhiteBoard::drawRemoteRealtimePen(QString color, int thickness, QVector<Q
 	m_view->drawRemoteRealtimePen(color, thickness, points);
 }
 
-void STWhiteBoard::drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, int itemID)
+void STWhiteBoard::drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, QString itemID)
 {
 	setPenColor(color);
 	setPenThickness(thickness);
 	m_view->drawRemotePenItem(color, thickness, points, itemID);
 }
 
-void STWhiteBoard::drawRemoteTextItem(QString color, int size, QString content, QPoint pos, int itemID)
+void STWhiteBoard::drawRemoteTextItem(QString color, int size, QString content, QPoint pos, QString itemID)
 {
 	setTextColor(color);
 	setTextSize(size);
 	m_view->drawRemoteTextItem(color, size, content, pos, itemID);
 }
 
-void STWhiteBoard::moveRemoteItems(QPoint pos, int itemID)
+void STWhiteBoard::moveRemoteItems(QPoint pos, QString itemID)
 {
-	m_view->moveRemoteItems(pos, itemID);
+	m_view->moveRemoteItem(pos, itemID);
 }
 
-void STWhiteBoard::deleteRemoteItems(QList<int> itemIDs)
+void STWhiteBoard::deleteRemoteItems(QList<QString> itemIDs)
 {
 	m_view->deleteRemoteItems(itemIDs);
 }
@@ -933,6 +914,362 @@ void STWhiteBoard::editableAuthority(QString editable)
 		m_penStylePanel->hide();
 		m_textStylePanel->hide();
 		m_vtoolbar->hide();
+	}
+}
+
+void STWhiteBoard::createCourse(QString courseID)
+{
+	// {"type":"course","action":"new","courseID":"111","admin":"st1@localhost"}
+	QJsonObject complexJson;
+	complexJson.insert("type", "course");
+	complexJson.insert("action", "new");
+	complexJson.insert("courseID", courseID);
+	complexJson.insert("admin", m_jid);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+
+	m_messageClient->sendMessage(complexJsonStr);
+}
+
+QString STWhiteBoard::queryCourse(QString courseID)
+{
+	// {"type":"course","action":"query","courseID":"111"}
+	QJsonObject complexJson;
+	complexJson.insert("type", "course");
+	complexJson.insert("action", "query");
+	complexJson.insert("courseID", courseID);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+
+	return m_messageClient->sendMessage(complexJsonStr);
+}
+
+void STWhiteBoard::joinCourse(QString courseID)
+{
+	// {"type":"course","action":"join","courseID":"111"}
+	QJsonObject complexJson;
+	complexJson.insert("type", "course");
+	complexJson.insert("action", "join");
+	complexJson.insert("courseID", courseID);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+	m_messageClient->subscribeMessage(courseID);
+	QThread::sleep(1);
+
+
+	m_messageClient->sendMessage(complexJsonStr);
+
+	m_view->setCourseID(courseID);
+}
+
+void STWhiteBoard::deleteCourse(QString courseID)
+{
+	// {"type":"course","action":"del","courseID":"111"}
+	QJsonObject complexJson;
+	complexJson.insert("type", "course");
+	complexJson.insert("action", "del");
+	complexJson.insert("courseID", courseID);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+
+	m_messageClient->sendMessage(complexJsonStr);
+
+	Q_EMIT deleteCourseSignal();
+}
+
+void STWhiteBoard::setClientAuthority(QString editable)
+{
+	// {"type":"setClientAuthority","data":{"editable":"True/False"}}
+	QJsonObject complexJson;
+	complexJson.insert("type", "setClientAuthority");
+
+	QJsonObject dataJson;
+	dataJson.insert("editable", editable);
+
+	complexJson.insert("data", dataJson);
+
+	QJsonDocument complexDocument;
+	complexDocument.setObject(complexJson);
+	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
+	QString complexJsonStr(complexByteArray);
+
+	m_messageClient->sendMessage(complexJsonStr);
+}
+
+void STWhiteBoard::whiteBoardMessageSlot(QString message)
+{
+	QJsonParseError complexJsonError;
+	QJsonDocument complexParseDoucment = QJsonDocument::fromJson(message.toLatin1(), &complexJsonError);
+	if (complexJsonError.error == QJsonParseError::NoError && complexParseDoucment.isObject())
+	{
+		QJsonObject jsonObject = complexParseDoucment.object();
+		QJsonValue value;
+
+		QString type;
+		QString subtype;
+		QJsonObject dataObject;
+		QString itemID;
+		QList<QString> itemIDs;
+		// 先获得通用字段
+		if (jsonObject.contains("type"))
+		{
+			value = jsonObject.take("type");
+			if (value.isString())
+			{
+				type = value.toString();
+			}
+		}
+		if (jsonObject.contains("subtype"))
+		{
+			value = jsonObject.take("subtype");
+			if (value.isString())
+			{
+				subtype = value.toString();
+			}
+		}
+		if (jsonObject.contains("data"))
+		{
+			value = jsonObject.take("data");
+			if (value.isObject())
+			{
+				dataObject = value.toObject();
+			}
+		}
+		if (jsonObject.contains("id"))
+		{
+			value = jsonObject.take("id");
+			if (value.isString())
+			{
+				itemID = value.toString();
+			}
+		}
+		if (jsonObject.contains("ids"))
+		{
+			value = jsonObject.take("ids");
+			if (value.isArray())
+			{
+				QJsonArray itemArray = value.toArray();
+				for (int i = 0; i < itemArray.size(); i++)
+				{
+					if (itemArray.at(i).isString())
+					{
+						itemIDs.append(itemArray.at(i).toString());
+					}
+				}
+			}
+		}
+		// 根据分支处理
+		if (type == "setClientAuthority")
+		{
+			QString editable;
+			if (dataObject.contains("editable"))
+			{
+				value = dataObject.take("editable");
+				if (value.isString())
+				{
+					editable = value.toString();
+					editableAuthority(editable);
+				}
+			}
+		}
+		else if (type == "wbrealtime")
+		{
+			QString action;
+			if (dataObject.contains("action"))
+			{
+				value = dataObject.take("action");
+				if (value.isString())
+				{
+					action = value.toString();
+					if (action == "pen")
+					{
+						QString color;
+						int thickness;
+						QVector<QPoint> pointsList;
+						if (dataObject.contains("color"))
+						{
+							value = dataObject.take("color");
+							if (value.isString())
+							{
+								color = value.toString();
+							}
+						}
+						if (dataObject.contains("thickness"))
+						{
+							value = dataObject.take("thickness");
+							if (value.isDouble())
+							{
+								thickness = value.toDouble();
+							}
+						}
+						if (dataObject.contains("points"))
+						{
+							value = dataObject.take("points");
+							if (value.isArray())
+							{
+								QJsonArray points = value.toArray();
+								for (int i = 0; i < points.size(); i += 2)
+								{
+									if (points.at(i).isDouble() && points.at(i + 1).isDouble())
+									{
+										pointsList.append(QPoint(points.at(i).toDouble(),
+											points.at(i + 1).toDouble()));
+									}
+								}
+							}
+						}
+						drawRemoteRealtimePen(color, thickness, pointsList);
+					}
+				}
+			}
+		}
+		else if (type == "wbitem")
+		{
+			if (subtype == "add")
+			{
+				QString action;
+				if (dataObject.contains("action"))
+				{
+					value = dataObject.take("action");
+					if (value.isString())
+					{
+						action = value.toString();
+					}
+				}
+
+				if (action == "pen")
+				{
+					QString color;
+					int thickness;
+					QVector<QPoint> pointsList;
+					if (dataObject.contains("color"))
+					{
+						value = dataObject.take("color");
+						if (value.isString())
+						{
+							color = value.toString();
+						}
+					}
+					if (dataObject.contains("thickness"))
+					{
+						value = dataObject.take("thickness");
+						if (value.isDouble())
+						{
+							thickness = value.toDouble();
+						}
+					}
+					if (dataObject.contains("points"))
+					{
+						value = dataObject.take("points");
+						if (value.isArray())
+						{
+							QJsonArray points = value.toArray();
+							for (int i = 0; i < points.size(); i += 2)
+							{
+								if (points.at(i).isDouble() && points.at(i + 1).isDouble())
+								{
+									pointsList.append(QPoint(points.at(i).toDouble(),
+										points.at(i + 1).toDouble()));
+								}
+							}
+						}
+					}
+					drawRemotePenItem(color, thickness, pointsList, itemID);
+				}
+				else if (action == "text")
+				{
+					QString color;
+					int size;
+					QString content;
+					int x;
+					int y;
+					if (dataObject.contains("color"))
+					{
+						value = dataObject.take("color");
+						if (value.isString())
+						{
+							color = value.toString();
+						}
+					}
+					if (dataObject.contains("size"))
+					{
+						value = dataObject.take("size");
+						if (value.isDouble())
+						{
+							size = value.toDouble();
+						}
+					}
+					if (dataObject.contains("content"))
+					{
+						value = dataObject.take("content");
+						if (value.isString())
+						{
+							content = value.toString();
+						}
+					}
+					if (dataObject.contains("pos"))
+					{
+						value = dataObject.take("pos");
+						if (value.isArray())
+						{
+							QJsonArray posArray = value.toArray();
+							if (posArray.at(0).isDouble())
+							{
+								x = posArray.at(0).toDouble();
+							}
+							if (posArray.at(1).isDouble())
+							{
+								y = posArray.at(1).toDouble();
+							}
+						}
+					}
+					drawRemoteTextItem(color, size, content, QPoint(x, y), itemID);
+				}
+
+			}
+			else if (subtype == "del")
+			{
+				deleteRemoteItems(itemIDs);
+			}
+			else if (subtype == "move")
+			{
+				int x = 0;
+				int y = 0;
+				if (dataObject.contains("pos"))
+				{
+					value = dataObject.take("pos");
+					if (value.isArray())
+					{
+						QJsonArray posArray = value.toArray();
+						if (posArray.at(0).isDouble())
+						{
+							x = posArray.at(0).toDouble();
+						}
+						if (posArray.at(1).isDouble())
+						{
+							y = posArray.at(1).toDouble();
+						}
+					}
+				}
+				moveRemoteItems(QPoint(x, y), itemID);
+			}
+		}
+	}
+	else
+	{
+		printf("error data\n%s", message.toUtf8().constData());
 	}
 }
 

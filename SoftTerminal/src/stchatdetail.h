@@ -41,7 +41,8 @@ namespace tahiti
 		void on_pbEmotion_clicked();		
 		void on_pbScreenShot_clicked();
 		void on_pbScreenShotOption_clicked();
-		void on_pbLesson_clicked();
+		void on_pbCreateCourse_clicked();
+		void on_pbJoinCourse_clicked();
 		void on_pbLoadMore_clicked();
 		void updateOthersMessage(RecordItem item);
 		void onScreenshot();
@@ -52,6 +53,7 @@ namespace tahiti
 		void refreshOnlineSlot();
 		void onSliderChanged(int pos);
 		void showMoreRecord();
+		void deleteCourseSlot();
 	private:
 		void openScreenshot();
 		void loadMoreRecord();

@@ -10,7 +10,7 @@
 #include "ui_STWhiteBoard.h"
 #include "stwbview.h"
 #include "stwbvtoolbar.h"
-#include "stnetworkclient.h"
+#include "stmessageclient.h"
 #include "stwbdocwindow.h"
 #include "stwbvideoitem.h"
 #include "logger.h"
@@ -65,6 +65,10 @@ namespace tahiti
 	public:
 		STWhiteBoard(QString jid, QString name, QWidget *parent = 0);
 		~STWhiteBoard();
+		void createCourse(QString courseID);
+		void deleteCourse(QString courseID);
+		QString queryCourse(QString courseID);
+		void joinCourse(QString courseID);
 	Q_SIGNALS:
 		void newStreamSignal(QString id, int width, int height);
 		void attachRenderSignal(QString id, std::shared_ptr<RemoteStream> stream);
@@ -79,6 +83,7 @@ namespace tahiti
 		void unshowLocalCameraSignal();
 		void muteResultSignal(bool result, QString);
 		void unmuteResultSignal(bool result, QString);
+		void deleteCourseSignal();
 		private Q_SLOTS:
 		void setPenThickness(int thickness);
 		void setPenColor(QString color);
@@ -89,13 +94,7 @@ namespace tahiti
 		void hideStylePanels();
 		void showPenStylePanel();
 		void showTextStylePanel();
-		void connectNetworkServer();
-		void drawRemoteRealtimePen(QString color, int thickness, QVector<QPoint> points);
-		void drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, int itemID);
-		void drawRemoteTextItem(QString color, int size, QString content, QPoint pos, int itemID);
-		void moveRemoteItems(QPoint pos, int itemID);
-		void deleteRemoteItems(QList<int> itemIDs);
-		void editableAuthority(QString editable);
+		void whiteBoardMessageSlot(QString message);
 		void newStreamSlot(QString id, int width, int height);
 		void attachRenderSlot(QString id, std::shared_ptr<RemoteStream> stream);
 		void detachRenderSlot(QString id);
@@ -133,13 +132,20 @@ namespace tahiti
 		void sendLocalCamera();
 		void stopSendLocalCamera();
 		void resizeMaximumDocWindow();
+		void setClientAuthority(QString editable);
+		void drawRemoteRealtimePen(QString color, int thickness, QVector<QPoint> points);
+		void drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, QString itemID);
+		void drawRemoteTextItem(QString color, int size, QString content, QPoint pos, QString itemID);
+		void moveRemoteItems(QPoint pos, QString itemID);
+		void deleteRemoteItems(QList<QString> itemIDs);
+		void editableAuthority(QString editable);
 	private:
 		Ui::STWhiteBoardClass ui;
 		STWBView* m_view;
 		STWBVToolbar* m_vtoolbar;
 		STWBPenStylePanel* m_penStylePanel;
 		STWBTextStylePanel* m_textStylePanel;
-		STNetworkClient* m_network;
+		STMessageClient* m_messageClient;
 		bool m_isPressed;
 		QPoint m_startMovePos;
 		int m_screen_width, m_screen_height;
