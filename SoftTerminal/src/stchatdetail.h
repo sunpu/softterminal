@@ -29,7 +29,7 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STChatDetail(XmppClient* client, QWidget *parent = 0);
+		STChatDetail(XmppClient* client, STWhiteBoard* whiteboard, QWidget *parent = 0);
 		~STChatDetail();
 		void clearChatDetail();
 		void setChatDetail(UserInfo userInfo, XmppGroup* group = NULL);

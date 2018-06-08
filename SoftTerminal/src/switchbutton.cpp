@@ -43,6 +43,14 @@ SwitchButton::~SwitchButton()
 
 }
 
+void SwitchButton::reset()
+{
+	if (checked)
+	{
+		mousePressEvent(NULL);
+	}
+}
+
 void SwitchButton::mousePressEvent(QMouseEvent *)
 {
 	checked = !checked;

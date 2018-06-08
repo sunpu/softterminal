@@ -228,7 +228,11 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	initContactAddNew();
 	initGroupAddNew();
 
-	m_chatDetail = new STChatDetail(m_xmppClient, this);
+	m_whiteboard = new STWhiteBoard(m_xmppClient);
+	connect(this, SIGNAL(closeMain()), m_whiteboard, SLOT(on_pbClose_clicked()));
+	m_whiteboard->hide();
+
+	m_chatDetail = new STChatDetail(m_xmppClient, m_whiteboard, this);
 	ui.widChatDetail->layout()->addWidget(m_chatDetail);
 	connect(m_chatDetail, SIGNAL(changeChatListOrder(QString)), this, SLOT(reorderChatList(QString)));
 

@@ -19,7 +19,7 @@ public:
 
 	SwitchButton(QWidget *parent = 0);
 	~SwitchButton();
-
+	void reset();
 protected:
 	void mousePressEvent(QMouseEvent *);
 	void resizeEvent(QResizeEvent *);

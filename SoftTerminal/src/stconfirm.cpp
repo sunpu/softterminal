@@ -2,11 +2,21 @@
 
 using namespace tahiti;
 
-STConfirm::STConfirm(QWidget * parent) : QDialog(parent)
+STConfirm::STConfirm(bool alert, QWidget * parent) : QDialog(parent)
 {
 	ui.setupUi(this);
 	//setWindowModality(Qt::ApplicationModal);
 	setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+
+	if (alert)
+	{
+		ui.pbOK->setVisible(false);
+		ui.pbCancel->setVisible(false);
+	}
+	else
+	{
+		ui.pbConfirm->setVisible(false);
+	}
 }
 
 STConfirm::~STConfirm()
@@ -22,6 +32,11 @@ void STConfirm::setText(QString text)
 void STConfirm::on_pbOK_clicked()
 {
 	Q_EMIT confirmOK();
+	close();
+}
+
+void STConfirm::on_pbConfirm_clicked()
+{
 	close();
 }
 

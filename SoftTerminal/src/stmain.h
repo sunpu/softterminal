@@ -187,6 +187,7 @@ namespace tahiti
 		int m_currentPageIndex;
 		QPushButton* m_clearBtn;
 		QString m_currentChatJid;
+		STWhiteBoard* m_whiteboard;
 	};
 }
 #endif

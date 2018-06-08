@@ -477,6 +477,18 @@ void STWBVToolbar::init()
 	ui.widSelect->setStyleSheet("");
 	ui.widPen->setStyleSheet("");
 	ui.widText->setStyleSheet("");
+
+	m_showCloudFileView = false;
+	ui.widCloud->setStyleSheet("");
+	ui.pbCloud->setStyleSheet("border-image: url(:/SoftTerminal/images/cloud.png);");
+
+	m_showInviteFriend = false;
+	ui.widInvite->setStyleSheet("");
+	ui.pbInvite->setStyleSheet("border-image: url(:/SoftTerminal/images/invite.png);");
+
+	m_showRoster = false;
+	ui.widRoster->setStyleSheet("");
+	ui.pbRoster->setStyleSheet("border-image: url(:/SoftTerminal/images/roster.png);");
 }
 
 bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)

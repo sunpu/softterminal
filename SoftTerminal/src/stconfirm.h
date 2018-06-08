@@ -12,13 +12,14 @@ namespace tahiti
 		Q_OBJECT
 
 	public:
-		STConfirm(QWidget * parent = 0);
+		STConfirm(bool alert = false, QWidget * parent = 0);
 		~STConfirm();
 		void setText(QString text);
 		public Q_SLOTS:
 		void on_pbOK_clicked();
 		void on_pbCancel_clicked();
 		void on_pbClose_clicked();
+		void on_pbConfirm_clicked();
 	protected:
 		virtual void mouseMoveEvent(QMouseEvent* event);
 		virtual void mousePressEvent(QMouseEvent* event);

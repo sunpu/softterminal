@@ -2,8 +2,8 @@
 
 using namespace tahiti;
 
-STWhiteBoard::STWhiteBoard(QString jid, QString name, XmppClient* client, QWidget *parent)
-	: m_jid(jid), m_name(name), m_xmppClient(client), QWidget(parent)
+STWhiteBoard::STWhiteBoard(XmppClient* client, QWidget *parent)
+	: m_xmppClient(client), QWidget(parent)
 {
 	ui.setupUi(this);
 
@@ -12,14 +12,6 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, XmppClient* client, QWidge
 	m_messageClient = new STMessageClient;
 	connect(m_messageClient, SIGNAL(whiteBoardMessageSignal(QString)),
 		this, SLOT(whiteBoardMessageSlot(QString)));
-}
-
-STWhiteBoard::~STWhiteBoard()
-{
-}
-
-void STWhiteBoard::init()
-{
 
 	connect(this, SIGNAL(newStreamSignal(QString, int, int)), this, SLOT(newStreamSlot(QString, int, int)));
 	connect(this, SIGNAL(showLocalCameraSignal()), this, SLOT(showLocalCamera()));
@@ -57,8 +49,6 @@ void STWhiteBoard::init()
 		m_big_videoItems[i]->setVisible(false);
 		gridLayout->addWidget(m_big_videoItems[i], i / 3, i % 3);
 	}
-
-	m_localCameraRenderID = -1;
 
 	// 白板相关
 	qRegisterMetaType<QVector<QPoint>>("QVector<QPoint>");
@@ -110,12 +100,6 @@ void STWhiteBoard::init()
 	connect(m_vtoolbar, SIGNAL(closeRosterSignal()), this, SLOT(closeRoster()));
 	connect(m_vtoolbar, SIGNAL(deleteCourseSignal()), this, SLOT(deleteCourse()));
 
-	m_penStylePanel->init();
-	m_textStylePanel->init();
-	m_vtoolbar->init();
-
-	m_docWindowIndex = 0;
-
 	m_cloud_file_view = new STWBCloudFileView(this);
 	connect(m_cloud_file_view, SIGNAL(closeCloudFileView()), m_vtoolbar, SLOT(closeCloudFileView()));
 	connect(m_cloud_file_view, SIGNAL(openCloudFileSignal(QString)), this, SLOT(openCloudFile(QString)));
@@ -129,15 +113,38 @@ void STWhiteBoard::init()
 	connect(m_roster, SIGNAL(closeRoster()), m_vtoolbar, SLOT(closeRoster()));
 	m_roster->hide();
 
+	ui.widTitle->installEventFilter(this);
+}
+
+STWhiteBoard::~STWhiteBoard()
+{
+}
+
+void STWhiteBoard::init(QString jid, QString name)
+{
+	m_jid = jid;
+	m_name = name;
+
 	// 页面初始化
+	SwitchButton* button = (SwitchButton*)ui.widSwitch;
+	button->reset();
+
+	m_localCameraRenderID = -1;
+
+	m_penStylePanel->init();
+	m_textStylePanel->init();
+	m_vtoolbar->init();
+
+	m_docWindowIndex = 0;
+
 	ui.pbNormal->setVisible(false);
 	m_raiseHandPanel->hide();
 	m_vtoolbar->hide();
 	m_currentIndex = 1;
 	ui.swMain->setCurrentIndex(m_currentIndex);
-	ui.widTitle->installEventFilter(this);
 
 	on_pbMaximum_clicked();
+
 	// 视频相关
 	initConferenceClient();
 	login();
@@ -261,6 +268,10 @@ void STWhiteBoard::resizeMaximumDocWindow()
 
 void STWhiteBoard::on_pbClose_clicked()
 {
+	m_cloud_file_view->hide();
+	m_inviteFriend->hide();
+	m_roster->hide();
+
 	logout();
 	m_docWindows.clear();
 	close();
@@ -837,8 +848,16 @@ void STWhiteBoard::closeRoster()
 
 void STWhiteBoard::deleteCourse()
 {
-	deleteCourse(m_courseID);
-	on_pbClose_clicked();
+	STConfirm* m_confirm = new STConfirm(this);
+	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(deleteCourseSlot()));
+	m_confirm->setText(QStringLiteral("您是否确定结束本次课程？"));
+	int parentX = geometry().x();
+	int parentY = geometry().y();
+	int parentWidth = geometry().width();
+	int parentHeight = geometry().height();
+	m_confirm->move(QPoint(parentX + (parentWidth - m_confirm->width()) / 2,
+		parentY + (parentHeight - m_confirm->height()) / 2));
+	m_confirm->exec();
 }
 
 void STWhiteBoard::setPenThickness(int thickness)
@@ -1060,13 +1079,13 @@ void STWhiteBoard::joinCourse(QString courseID)
 	m_courseID = courseID;
 }
 
-void STWhiteBoard::deleteCourse(QString courseID)
+void STWhiteBoard::deleteCourseSlot()
 {
 	// {"type":"course","action":"del","courseID":"111"}
 	QJsonObject complexJson;
 	complexJson.insert("type", "course");
 	complexJson.insert("action", "del");
-	complexJson.insert("courseID", courseID);
+	complexJson.insert("courseID", m_courseID);
 
 	QJsonDocument complexDocument;
 	complexDocument.setObject(complexJson);
@@ -1076,6 +1095,7 @@ void STWhiteBoard::deleteCourse(QString courseID)
 	m_messageClient->sendMessage(complexJsonStr);
 
 	Q_EMIT deleteCourseSignal();
+	on_pbClose_clicked();
 }
 
 void STWhiteBoard::setClientAuthority(QString editable)

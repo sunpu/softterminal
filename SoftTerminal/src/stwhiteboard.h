@@ -16,10 +16,12 @@
 #include "stwbcloudfileview.h"
 #include "stwbinvitefriend.h"
 #include "stwbroster.h"
+#include "stconfirm.h"
 #include "logger.h"
 #include "stconfig.h"
 #include "token.h"
 #include "xmppclient.h"
+#include "switchbutton.h"
 #include "ics/base/deviceutils.h"
 #include "ics/base/stream.h"
 #include "ics/conference/conferenceclient.h"
@@ -67,11 +69,10 @@ namespace tahiti
 	{
 		Q_OBJECT
 	public:
-		STWhiteBoard(QString jid, QString name, XmppClient* client, QWidget *parent = 0);
+		STWhiteBoard(XmppClient* client, QWidget *parent = 0);
 		~STWhiteBoard();
-		void init();
+		void init(QString jid, QString name);
 		void createCourse(QString courseID);
-		void deleteCourse(QString courseID);
 		QString queryCourse(QString courseID);
 		void joinCourse(QString courseID);
 	Q_SIGNALS:
@@ -118,6 +119,7 @@ namespace tahiti
 		void openRoster();
 		void closeRoster();
 		void deleteCourse();
+		void deleteCourseSlot();
 		public Q_SLOTS:
 		void on_pbMinimum_clicked();
 		void on_pbMaximum_clicked();

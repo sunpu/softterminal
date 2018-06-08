@@ -2,8 +2,8 @@
 
 using namespace tahiti;
 
-STChatDetail::STChatDetail(XmppClient* client, QWidget *parent)
-	: QWidget(parent), m_xmppClient(client), m_main(parent)
+STChatDetail::STChatDetail(XmppClient* client, STWhiteBoard* whiteboard, QWidget *parent)
+	: QWidget(parent), m_xmppClient(client), m_whiteboard(whiteboard), m_main(parent)
 {
 	ui.setupUi(this);
 
@@ -32,6 +32,8 @@ STChatDetail::STChatDetail(XmppClient* client, QWidget *parent)
 	ui.lblLoad->setMovie(m_movie);
 	ui.lblLoad->setVisible(false);
 	connect(this, SIGNAL(showMoreRecordSignal()), this, SLOT(showMoreRecord()));
+
+	connect(m_whiteboard, SIGNAL(deleteCourseSignal()), this, SLOT(deleteCourseSlot()));
 }
 
 STChatDetail::~STChatDetail()
@@ -81,11 +83,6 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 		connect(m_group, SIGNAL(refreshOnlineSignal()), this, SLOT(refreshOnlineSlot()));
 		refreshOnlineSlot();
 		ui.widStatus->setVisible(true);
-
-		m_whiteboard = new STWhiteBoard(m_selfInfo.jid, m_selfInfo.userName, m_xmppClient);
-		connect(m_main, SIGNAL(closeMain()), m_whiteboard, SLOT(on_pbClose_clicked()));
-		connect(m_whiteboard, SIGNAL(deleteCourseSignal()), this, SLOT(deleteCourseSlot()));
-		m_whiteboard->hide();
 
 		if (m_whiteboard->queryCourse(m_userInfo.jid).size() != 0)
 		{
@@ -316,11 +313,9 @@ void STChatDetail::on_pbCreateCourse_clicked()
 {
 	ui.pbCreateCourse->setVisible(false);
 	ui.pbJoinCourse->setVisible(true);
-	m_whiteboard->init();
-	m_whiteboard->show();
 	// 创建课程
 	m_whiteboard->createCourse(m_userInfo.jid);
-	m_whiteboard->joinCourse(m_userInfo.jid);
+	on_pbJoinCourse_clicked();
 
 	/*RecordItem item;
 	item.time = QTime::currentTime().toString();
@@ -355,9 +350,22 @@ void STChatDetail::on_pbJoinCourse_clicked()
 {
 	if (m_whiteboard->isHidden())
 	{
-		m_whiteboard->init();
+		m_whiteboard->init(m_selfInfo.jid, m_selfInfo.userName);
 		m_whiteboard->show();
 		m_whiteboard->joinCourse(m_userInfo.jid);
+	}
+	else
+	{
+		STConfirm* m_confirm = new STConfirm(this);
+		connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(deleteCourseSlot()));
+		m_confirm->setText(QStringLiteral("请先关闭已打开的课程。"));
+		int parentX = geometry().x();
+		int parentY = geometry().y();
+		int parentWidth = geometry().width();
+		int parentHeight = geometry().height();
+		m_confirm->move(QPoint(parentX + (parentWidth - m_confirm->width()) / 2,
+			parentY + (parentHeight - m_confirm->height()) / 2));
+		m_confirm->exec();
 	}
 }
 
