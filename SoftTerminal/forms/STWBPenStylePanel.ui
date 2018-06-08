@@ -33,19 +33,9 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QWidget" name="widget_3" native="true">
-     <property name="maximumSize">
-      <size>
-       <width>5</width>
-       <height>16777215</height>
-      </size>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QWidget" name="widMain" native="true">
      <property name="styleSheet">
-      <string notr="true">QWidget#widMain{background-color:rgba(61,63,68,0.7);border-radius:8px;}</string>
+      <string notr="true">QWidget#widMain{background-color:rgb(61,63,68);border-radius:8px;}</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
@@ -144,8 +134,20 @@
       </item>
       <item>
        <widget class="Line" name="line">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>1</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>1</height>
+         </size>
+        </property>
         <property name="styleSheet">
-         <string notr="true">background-color: rgb(255, 255, 255);</string>
+         <string notr="true">background-color: rgb(145, 146, 155);</string>
         </property>
         <property name="frameShadow">
          <enum>QFrame::Sunken</enum>
@@ -384,6 +386,16 @@ border-radius:2px;</string>
        </widget>
       </item>
      </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="widSplit" native="true">
+     <property name="maximumSize">
+      <size>
+       <width>5</width>
+       <height>16777215</height>
+      </size>
+     </property>
     </widget>
    </item>
   </layout>

@@ -82,7 +82,7 @@ namespace tahiti
 		pthread_t m_tidLoad;
 	};
 
-	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ------------------------ STScreenshotOption ------------------------
 	class STScreenshotOption : public QWidget
 	{
 		Q_OBJECT

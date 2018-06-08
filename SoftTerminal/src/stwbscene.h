@@ -69,8 +69,8 @@ namespace tahiti
 		void mouseMoveEvent(QGraphicsSceneMouseEvent* event);
 		void mouseReleaseEvent(QGraphicsSceneMouseEvent* event);
 		void keyPressEvent(QKeyEvent* event);
-		void drawStart(PathItemData* dt);
-		void drawTo(PathItemData* dt, const QPoint& to);
+		void drawStart(PathItemData* dt, QString color, int thickness);
+		void drawTo(PathItemData* dt, const QPoint& to, QString color, int thickness);
 	private:
 		void removeEmptyTextItem();
 	private:

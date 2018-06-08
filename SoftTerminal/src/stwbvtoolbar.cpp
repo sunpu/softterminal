@@ -2,6 +2,36 @@
 
 using namespace tahiti;
 
+// ------------------------ STWBRaiseHandPanel ------------------------
+STWBRaiseHandPanel::STWBRaiseHandPanel(QWidget * parent) : QDialog(parent)
+{
+	ui.setupUi(this);
+	setWindowFlags(Qt::SubWindow);
+	m_isRaised = false;
+}
+
+STWBRaiseHandPanel::~STWBRaiseHandPanel()
+{
+
+}
+
+void STWBRaiseHandPanel::on_pbRaiseHand_clicked()
+{
+	m_isRaised = !m_isRaised;
+	if (m_isRaised)
+	{
+		ui.pbRaiseHand->setStyleSheet("border-image: url(:/SoftTerminal/images/hand_on.png);");
+	}
+	else
+	{
+		ui.pbRaiseHand->setStyleSheet("QPushButton{border-radius: 3px;color: rgb(255, 255, 255);"
+			"border-image: url(:/SoftTerminal/images/hand.png);}"
+			"QPushButton:hover:pressed{border-image: url(:/SoftTerminal/images/hand.png);}"
+			"QPushButton:hover:!pressed{border-image: url(:/SoftTerminal/images/hand_focus.png);}");
+	}
+	Q_EMIT raiseHandSignal(m_isRaised);
+}
+
 // ------------------------ STWBPenStylePanel ------------------------
 STWBPenStylePanel::STWBPenStylePanel(QWidget * parent) : QDialog(parent)
 {
@@ -148,7 +178,6 @@ STWBTextStylePanel::STWBTextStylePanel(QWidget * parent) : QDialog(parent)
 	ui.lblBlue->installEventFilter(this);
 	ui.lblPurple->installEventFilter(this);
 	ui.lblPink->installEventFilter(this);
-
 }
 
 STWBTextStylePanel::~STWBTextStylePanel()
@@ -271,13 +300,15 @@ STWBVToolbar::STWBVToolbar(QWidget * parent) : QDialog(parent)
 	ui.pbText->installEventFilter(this);
 	ui.pbCloud->installEventFilter(this);
 	ui.pbDelete->installEventFilter(this);
+	ui.pbInvite->installEventFilter(this);
+	ui.pbRoster->installEventFilter(this);
+	ui.pbDeleteCourse->installEventFilter(this);
 
 	m_currentSelect = 0;
 
-	m_cloud_file_view = new STWBCloudFileView;
-	QObject::connect(m_cloud_file_view, SIGNAL(closeCloudFileView()), this, SLOT(closeCloudFileView()));
-	QObject::connect(m_cloud_file_view, SIGNAL(openCloudFileSignal(QString)), this, SLOT(openCloudFile(QString)));
-	m_cloud_file_view->hide();
+	m_showCloudFileView = false;
+	m_showInviteFriend = false;
+	m_showRoster = false;
 }
 
 STWBVToolbar::~STWBVToolbar()
@@ -299,15 +330,19 @@ void STWBVToolbar::on_pbSelect_clicked()
 	if (m_currentSelect == 1)
 	{
 		ui.widSelect->setStyleSheet("");
+		ui.pbSelect->setStyleSheet("border-image: url(:/SoftTerminal/images/mouse.png);");
 		m_currentSelect = 0;
 	}
 	else
 	{
-		ui.widSelect->setStyleSheet("background-color:rgba(46,48,55,0.9);");
+		ui.widSelect->setStyleSheet("background-color:rgb(46,48,55);");
+		ui.pbSelect->setStyleSheet("border-image: url(:/SoftTerminal/images/mouse_focus.png);");
 		m_currentSelect = 1;
 	}
 	ui.widPen->setStyleSheet("");
 	ui.widText->setStyleSheet("");
+	ui.pbPen->setStyleSheet("border-image: url(:/SoftTerminal/images/pen.png);");
+	ui.pbText->setStyleSheet("border-image: url(:/SoftTerminal/images/text.png);");
 	Q_EMIT setActionMode(m_currentSelect);
 }
 
@@ -316,15 +351,19 @@ void STWBVToolbar::on_pbPen_clicked()
 	if (m_currentSelect == 2)
 	{
 		ui.widPen->setStyleSheet("");
+		ui.pbPen->setStyleSheet("border-image: url(:/SoftTerminal/images/pen.png);");
 		m_currentSelect = 0;
 	}
 	else
 	{
-		ui.widPen->setStyleSheet("background-color:rgba(46,48,55,0.9);");
+		ui.widPen->setStyleSheet("background-color:rgb(46,48,55);");
+		ui.pbPen->setStyleSheet("border-image: url(:/SoftTerminal/images/pen_focus.png);");
 		m_currentSelect = 2;
 	}
 	ui.widSelect->setStyleSheet("");
 	ui.widText->setStyleSheet("");
+	ui.pbSelect->setStyleSheet("border-image: url(:/SoftTerminal/images/mouse.png);");
+	ui.pbText->setStyleSheet("border-image: url(:/SoftTerminal/images/text.png);");
 	Q_EMIT setActionMode(m_currentSelect);
 }
 
@@ -333,29 +372,20 @@ void STWBVToolbar::on_pbText_clicked()
 	if (m_currentSelect == 3)
 	{
 		ui.widText->setStyleSheet("");
+		ui.pbText->setStyleSheet("border-image: url(:/SoftTerminal/images/text.png);");
 		m_currentSelect = 0;
 	}
 	else
 	{
-		ui.widText->setStyleSheet("background-color:rgba(46,48,55,0.9);");
+		ui.widText->setStyleSheet("background-color:rgb(46,48,55);");
+		ui.pbText->setStyleSheet("border-image: url(:/SoftTerminal/images/text_focus.png);");
 		m_currentSelect = 3;
 	}
 	ui.widSelect->setStyleSheet("");
 	ui.widPen->setStyleSheet("");
+	ui.pbSelect->setStyleSheet("border-image: url(:/SoftTerminal/images/mouse.png);");
+	ui.pbPen->setStyleSheet("border-image: url(:/SoftTerminal/images/pen.png);");
 	Q_EMIT setActionMode(m_currentSelect);
-}
-
-void STWBVToolbar::on_pbCloud_clicked()
-{
-	ui.widCloud->setStyleSheet("background-color:rgba(46,48,55,0.9);");
-	int x = (parentWidget()->geometry().width() - m_cloud_file_view->geometry().width()) / 2
-		+ parentWidget()->geometry().x();
-	int y = (parentWidget()->geometry().height() - m_cloud_file_view->geometry().height()) / 2
-		+ parentWidget()->geometry().y();
-	m_cloud_file_view->move(QPoint(x, y));
-	m_cloud_file_view->setWindowModality(Qt::ApplicationModal);
-	m_cloud_file_view->show();
-	m_cloud_file_view->initCloudFileView();
 }
 
 void STWBVToolbar::on_pbDelete_clicked()
@@ -363,15 +393,81 @@ void STWBVToolbar::on_pbDelete_clicked()
 	Q_EMIT deleteAction();
 }
 
-void STWBVToolbar::openCloudFile(QString path)
+void STWBVToolbar::on_pbCloud_clicked()
 {
-	Q_EMIT openCloudFileSignal(path);
+	if (m_showCloudFileView)
+	{
+		ui.widCloud->setStyleSheet("");
+		ui.pbCloud->setStyleSheet("border-image: url(:/SoftTerminal/images/cloud.png);");
+
+		Q_EMIT closeCloudFileViewSignal();
+	}
+	else
+	{
+		ui.widCloud->setStyleSheet("background-color:rgb(46,48,55);");
+		ui.pbCloud->setStyleSheet("border-image: url(:/SoftTerminal/images/cloud_on.png);");
+
+		Q_EMIT openCloudFileViewSignal();
+	}
+	m_showCloudFileView = !m_showCloudFileView;
+}
+
+void STWBVToolbar::on_pbInvite_clicked()
+{
+	if (m_showInviteFriend)
+	{
+		ui.widInvite->setStyleSheet("");
+		ui.pbInvite->setStyleSheet("border-image: url(:/SoftTerminal/images/invite.png);");
+
+		Q_EMIT closeInviteFriendSignal();
+	}
+	else
+	{
+		ui.widInvite->setStyleSheet("background-color:rgb(46,48,55);");
+		ui.pbInvite->setStyleSheet("border-image: url(:/SoftTerminal/images/invite_on.png);");
+
+		Q_EMIT openInviteFriendSignal();
+	}
+	m_showInviteFriend = !m_showInviteFriend;
+}
+
+void STWBVToolbar::on_pbRoster_clicked()
+{
+	if (m_showRoster)
+	{
+		ui.widRoster->setStyleSheet("");
+		ui.pbRoster->setStyleSheet("border-image: url(:/SoftTerminal/images/roster.png);");
+
+		Q_EMIT closeRosterSignal();
+	}
+	else
+	{
+		ui.widRoster->setStyleSheet("background-color:rgb(46,48,55);");
+		ui.pbRoster->setStyleSheet("border-image: url(:/SoftTerminal/images/roster_on.png);");
+
+		Q_EMIT openRosterSignal();
+	}
+	m_showRoster = !m_showRoster;
+}
+
+void STWBVToolbar::on_pbDeleteCourse_clicked()
+{
+	Q_EMIT deleteCourseSignal();
 }
 
 void STWBVToolbar::closeCloudFileView()
 {
-	ui.widCloud->setStyleSheet("");
-	m_cloud_file_view->hide();
+	on_pbCloud_clicked();
+}
+
+void STWBVToolbar::closeInviteFriend()
+{
+	on_pbInvite_clicked();
+}
+
+void STWBVToolbar::closeRoster()
+{
+	on_pbRoster_clicked();
 }
 
 void STWBVToolbar::init()
@@ -390,7 +486,7 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widSelect->setStyleSheet("background-color:rgba(46,48,55,0.9);");
+			ui.widSelect->setStyleSheet("background-color:rgb(46,48,55);");
 			Q_EMIT hideStylePanels();
 		}
 		else if (e->type() == QEvent::Leave && m_currentSelect != 1)
@@ -402,7 +498,7 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widPen->setStyleSheet("background-color:rgba(46,48,55,0.9);");
+			ui.widPen->setStyleSheet("background-color:rgb(46,48,55);");
 			Q_EMIT showPenStylePanel();
 		}
 		else if (e->type() == QEvent::Leave && m_currentSelect != 2)
@@ -414,7 +510,7 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widText->setStyleSheet("background-color:rgba(46,48,55,0.9);");
+			ui.widText->setStyleSheet("background-color:rgb(46,48,55);");
 			Q_EMIT showTextStylePanel();
 		}
 		else if (e->type() == QEvent::Leave && m_currentSelect != 3)
@@ -426,10 +522,10 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widCloud->setStyleSheet("background-color:rgba(46,48,55,0.9);");
+			ui.widCloud->setStyleSheet("background-color:rgb(46,48,55);");
 			Q_EMIT hideStylePanels();
 		}
-		else if (e->type() == QEvent::Leave && m_cloud_file_view->isHidden())
+		else if (e->type() == QEvent::Leave && !m_showCloudFileView)
 		{
 			ui.widCloud->setStyleSheet("");
 		}
@@ -438,7 +534,7 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 	{
 		if (e->type() == QEvent::Enter)
 		{
-			ui.widDelete->setStyleSheet("background-color:rgba(46,48,55,0.9);");
+			ui.widDelete->setStyleSheet("background-color:rgb(46,48,55);");
 			Q_EMIT hideStylePanels();
 		}
 		else if (e->type() == QEvent::Leave)
@@ -446,6 +542,53 @@ bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)
 			ui.widDelete->setStyleSheet("");
 		}
 	}
+	else if (watched == ui.pbInvite)
+	{
+		if (e->type() == QEvent::Enter)
+		{
+			ui.widInvite->setStyleSheet("background-color:rgb(46,48,55);");
+			Q_EMIT hideStylePanels();
+		}
+		else if (e->type() == QEvent::Leave && !m_showInviteFriend)
+		{
+			ui.widInvite->setStyleSheet("");
+		}
+	}
+	else if (watched == ui.pbRoster)
+	{
+		if (e->type() == QEvent::Enter)
+		{
+			ui.widRoster->setStyleSheet("background-color:rgb(46,48,55);");
+			Q_EMIT hideStylePanels();
+		}
+		else if (e->type() == QEvent::Leave && !m_showRoster)
+		{
+			ui.widRoster->setStyleSheet("");
+		}
+	}
+	else if (watched == ui.pbDeleteCourse)
+	{
+		if (e->type() == QEvent::Enter)
+		{
+			ui.widDeleteCourse->setStyleSheet("background-color:rgb(46,48,55);");
+			Q_EMIT hideStylePanels();
+		}
+		else if (e->type() == QEvent::Leave)
+		{
+			ui.widDeleteCourse->setStyleSheet("");
+		}
+	}
 
 	return QWidget::eventFilter(watched, e);
+}
+
+void STWBVToolbar::keyPressEvent(QKeyEvent *event)
+{
+	switch (event->key())
+	{
+	case Qt::Key_Escape:
+		break;
+	default:
+		QDialog::keyPressEvent(event);
+	}
 }

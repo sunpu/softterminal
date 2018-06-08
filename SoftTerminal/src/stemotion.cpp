@@ -24,7 +24,7 @@ void STEmotionItem::leaveEvent(QEvent* event)
 	return __super::leaveEvent(event);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STEmotion ------------------------
 STEmotion::STEmotion(QWidget * parent) : QWidget(parent)
 {
 	ui.setupUi(this);

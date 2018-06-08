@@ -82,9 +82,10 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 		refreshOnlineSlot();
 		ui.widStatus->setVisible(true);
 
-		m_whiteboard = new STWhiteBoard(m_selfInfo.jid, m_selfInfo.userName);
+		m_whiteboard = new STWhiteBoard(m_selfInfo.jid, m_selfInfo.userName, m_xmppClient);
 		connect(m_main, SIGNAL(closeMain()), m_whiteboard, SLOT(on_pbClose_clicked()));
 		connect(m_whiteboard, SIGNAL(deleteCourseSignal()), this, SLOT(deleteCourseSlot()));
+		m_whiteboard->hide();
 
 		if (m_whiteboard->queryCourse(m_userInfo.jid).size() != 0)
 		{
@@ -313,12 +314,13 @@ void STChatDetail::on_pbScreenShotOption_clicked()
 
 void STChatDetail::on_pbCreateCourse_clicked()
 {
+	ui.pbCreateCourse->setVisible(false);
+	ui.pbJoinCourse->setVisible(true);
+	m_whiteboard->init();
+	m_whiteboard->show();
 	// 创建课程
 	m_whiteboard->createCourse(m_userInfo.jid);
 	m_whiteboard->joinCourse(m_userInfo.jid);
-	ui.pbCreateCourse->setVisible(false);
-	ui.pbJoinCourse->setVisible(true);
-	//m_whiteboard->show();
 
 	/*RecordItem item;
 	item.time = QTime::currentTime().toString();
@@ -351,7 +353,12 @@ void STChatDetail::on_pbCreateCourse_clicked()
 
 void STChatDetail::on_pbJoinCourse_clicked()
 {
-	m_whiteboard->joinCourse(m_userInfo.jid);
+	if (m_whiteboard->isHidden())
+	{
+		m_whiteboard->init();
+		m_whiteboard->show();
+		m_whiteboard->joinCourse(m_userInfo.jid);
+	}
 }
 
 void STChatDetail::openScreenshot()
@@ -456,7 +463,7 @@ bool STChatDetail::eventFilter(QObject *obj, QEvent *e)
 	return false;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STScreenshotOption ------------------------
 STScreenshotOption::STScreenshotOption(QWidget * parent) : QWidget(parent)
 {
 	ui.setupUi(this);

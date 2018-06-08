@@ -62,7 +62,7 @@ void STMessageCenter::handleSubscriptionRequest(QString jid)
 	ui.widNewFriendMessage->layout()->addWidget(messageItem);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STMessageItem ------------------------
 STMessageItem::STMessageItem(XmppClient* client, QWidget * parent)
 	: m_xmppClient(client), QWidget(parent)
 {

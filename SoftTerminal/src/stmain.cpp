@@ -90,7 +90,7 @@ bool STMenu::event(QEvent* event)
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STChatDeleteMenu ------------------------
 STChatDeleteMenu::STChatDeleteMenu(QWidget * parent) : QWidget(parent)
 {
 	ui.setupUi(this);
@@ -160,7 +160,7 @@ bool STChatDeleteMenu::event(QEvent* event)
 	return QWidget::event(event);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STMain ------------------------
 STMain::STMain(XmppClient* client) : m_xmppClient(client)
 {
 

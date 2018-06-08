@@ -298,7 +298,7 @@ bool STLogin::eventFilter(QObject *obj, QEvent *e)
 	return false;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STRegist ------------------------
 /* 注册窗口 */
 STRegist::STRegist(QWidget* parent) : QWidget(parent)
 {
@@ -459,7 +459,7 @@ bool STRegist::eventFilter(QObject *obj, QEvent *e)
 	return false;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STServerConfig ------------------------
 /* 服务器配置窗口 */
 STServerConfig::STServerConfig(QWidget* parent) : QWidget(parent)
 {
@@ -571,7 +571,7 @@ bool STServerConfig::eventFilter(QObject *obj, QEvent *e)
 	return false;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STLoginRotate ------------------------
 /* 旋转窗口 */
 STLoginRotate::STLoginRotate(XmppClient* client)
 	: m_isRoratingWindow(false)

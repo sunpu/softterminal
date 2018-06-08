@@ -44,17 +44,14 @@ int main(int argc, char *argv[])
 	}
 	QApplication a(argc, argv);
 
-	/*STLoginRotate loginRotateWindow(xmppClient);
-	loginRotateWindow.show();*/
+	STLoginRotate loginRotateWindow(xmppClient);
+	loginRotateWindow.show();
 
-	STWhiteBoard* m_whiteboard = new STWhiteBoard("sunix", "Sunix");
+	/*STWhiteBoard* m_whiteboard = new STWhiteBoard("sunix", "Sunix", xmppClient);
 	QString courseID = m_whiteboard->queryCourse("aaaaaaaaaaaaaaa");
 	//m_whiteboard->createCourse("aaaaaaaaaaaaaaa");
 	m_whiteboard->joinCourse("aaaaaaaaaaaaaaa");
-	//m_whiteboard->show();
-
-	/*STMain* m_mainWindow = new STMain(xmppClient);
-	m_mainWindow->show();*/
+	//m_whiteboard->show();*/
 
 	return a.exec();
 }

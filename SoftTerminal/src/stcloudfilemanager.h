@@ -77,7 +77,7 @@ namespace tahiti
 		STCloudSupport* m_support;
 	};
 
-	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ------------------------ STCloudSupport ------------------------
 	class STCloudSupport : public QWidget
 	{
 		Q_OBJECT
@@ -92,7 +92,7 @@ namespace tahiti
 
 	};
 
-	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ------------------------ STCloudUploadFile ------------------------
 	class STCloudUploadFile : public QDialog
 	{
 		Q_OBJECT
@@ -124,7 +124,7 @@ namespace tahiti
 		QString m_path;
 	};
 
-	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ------------------------ STCloudNewFolder ------------------------
 	class STCloudNewFolder : public QDialog
 	{
 		Q_OBJECT
@@ -149,7 +149,7 @@ namespace tahiti
 
 	};
 
-	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ------------------------ STCloudFolderView ------------------------
 	class STCloudFolderView : public QDialog
 	{
 		Q_OBJECT

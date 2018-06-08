@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>STWBCloudFileViewClass</class>
- <widget class="QWidget" name="STWBCloudFileViewClass">
+ <widget class="QDialog" name="STWBCloudFileViewClass">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -178,7 +178,12 @@ QPushButton:hover:!pressed {
       </size>
      </property>
      <property name="styleSheet">
-      <string notr="true">background-color: rgb(62, 65, 74);</string>
+      <string notr="true">QWidget#widget_4
+{
+	background-color: rgb(62, 65, 74);
+	border-left:1px solid #484950;
+	border-right:1px solid #484950;
+}</string>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <property name="leftMargin">
@@ -260,13 +265,17 @@ QPushButton:hover:!pressed {
     font:10pt &quot;微软雅黑&quot;;  
 	color: #ffffff;
     border:0px;  
+
+	border-left:1px solid #484950;
+	border-right:1px solid #484950;
+	border-bottom:1px solid #484950;
 }  
   
 QHeaderView::section {
 	color: #ffffff;
     font:10pt &quot;微软雅黑&quot;;  
     text-align:center;  
-    height:40px;  
+    height:32px;  
     border:0px solid #494c54;  
     background-color: #494c54;
     border-left:1px solid rgb(62, 65, 74);  

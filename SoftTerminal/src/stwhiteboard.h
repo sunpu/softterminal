@@ -13,9 +13,13 @@
 #include "stmessageclient.h"
 #include "stwbdocwindow.h"
 #include "stwbvideoitem.h"
+#include "stwbcloudfileview.h"
+#include "stwbinvitefriend.h"
+#include "stwbroster.h"
 #include "logger.h"
 #include "stconfig.h"
 #include "token.h"
+#include "xmppclient.h"
 #include "ics/base/deviceutils.h"
 #include "ics/base/stream.h"
 #include "ics/conference/conferenceclient.h"
@@ -63,8 +67,9 @@ namespace tahiti
 	{
 		Q_OBJECT
 	public:
-		STWhiteBoard(QString jid, QString name, QWidget *parent = 0);
+		STWhiteBoard(QString jid, QString name, XmppClient* client, QWidget *parent = 0);
 		~STWhiteBoard();
+		void init();
 		void createCourse(QString courseID);
 		void deleteCourse(QString courseID);
 		QString queryCourse(QString courseID);
@@ -106,6 +111,13 @@ namespace tahiti
 		void mute(QString id);
 		void unmute(QString id);
 		void subscriptionEnd(QString id);
+		void openCloudFileView();
+		void closeCloudFileView();
+		void openInviteFriend();
+		void closeInviteFriend();
+		void openRoster();
+		void closeRoster();
+		void deleteCourse();
 		public Q_SLOTS:
 		void on_pbMinimum_clicked();
 		void on_pbMaximum_clicked();
@@ -142,6 +154,7 @@ namespace tahiti
 	private:
 		Ui::STWhiteBoardClass ui;
 		STWBView* m_view;
+		STWBRaiseHandPanel* m_raiseHandPanel;
 		STWBVToolbar* m_vtoolbar;
 		STWBPenStylePanel* m_penStylePanel;
 		STWBTextStylePanel* m_textStylePanel;
@@ -158,6 +171,9 @@ namespace tahiti
 		shared_ptr<LocalStream> m_local_camera_stream;
 		shared_ptr<LocalCameraStreamParameters> m_local_camera_stream_param;
 		QVector<STWBDocWindow*> m_docWindows;
+		STWBCloudFileView* m_cloud_file_view;
+		STWBInviteFriend* m_inviteFriend;
+		STWBRoster* m_roster;
 		int m_docWindowIndex;
 		int m_pen_thickness;
 		QString m_pen_color;
@@ -170,6 +186,8 @@ namespace tahiti
 		QString m_jid;
 		QString m_name;
 		std::shared_ptr<ConferencePublication> m_publication;
+		XmppClient* m_xmppClient;
+		QString m_courseID;
 	};
 }
 #endif

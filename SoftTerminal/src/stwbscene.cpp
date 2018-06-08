@@ -44,21 +44,21 @@ void STWBScene::setTextSize(int size)
 	m_text_size = size;
 }
 
-void STWBScene::drawStart(PathItemData *dt)
+void STWBScene::drawStart(PathItemData *dt, QString color, int thickness)
 {
-	double x = dt->prePoint.x() - (double(m_pen_thickness) / 2.f);
-	double y = dt->prePoint.y() - (double(m_pen_thickness) / 2.f);
+	double x = dt->prePoint.x() - (double(thickness) / 2.f);
+	double y = dt->prePoint.y() - (double(thickness) / 2.f);
 
-	QGraphicsEllipseItem* el = addEllipse(QRect(x, y, m_pen_thickness, m_pen_thickness),
-		QPen(QColor(m_pen_color), 1), QBrush(QColor(m_pen_color)));
+	QGraphicsEllipseItem* el = addEllipse(QRect(x, y, thickness, thickness),
+		QPen(QColor(color), 1), QBrush(QColor(color)));
 
 	dt->tempDrawingItem.push_back(el);
 }
 
-void STWBScene::drawTo(PathItemData *dt, const QPoint &to)
+void STWBScene::drawTo(PathItemData *dt, const QPoint &to, QString color, int thickness)
 {
 	QGraphicsLineItem* li = addLine(dt->prePoint.x(), dt->prePoint.y(), to.x(), to.y(),
-		QPen(QBrush(QColor(m_pen_color)), m_pen_thickness, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+		QPen(QBrush(QColor(color)), thickness, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 
 	dt->tempDrawingItem.push_back(li);
 }
@@ -71,7 +71,7 @@ void STWBScene::onPenDown(QPoint pt, int id)
 	m_pathItemData->pathItem = new STWBPathItem(uuid);
 	m_pathItemData->pathItem->addPoint(pt);
 
-	drawStart(m_pathItemData);
+	drawStart(m_pathItemData, m_pen_color, m_pen_thickness);
 }
 
 void STWBScene::onPenMove(QPoint pt, int id)
@@ -83,7 +83,7 @@ void STWBScene::onPenMove(QPoint pt, int id)
 		m_pathItemData->pathItem->addPoint(to);
 	}
 
-	drawTo(m_pathItemData, to);
+	drawTo(m_pathItemData, to, m_pen_color, m_pen_thickness);
 	m_pathItemData->prePoint = to;
 }
 
@@ -155,7 +155,7 @@ void STWBScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 	if (m_isDrawing)
 	{
 		onPenMove(event->scenePos().toPoint());
-		if (m_realtimePoints.size() == 10)
+		if (m_realtimePoints.size() == 5)
 		{
 			QVector<QPoint> tmpPoints = m_realtimePoints;
 			drawRealtimePenItem(m_pen_color, m_pen_thickness, tmpPoints);
@@ -333,6 +333,10 @@ void STWBScene::drawTextItem(QString textColor, int textSize,
 
 void STWBScene::moveItem(QPoint position, QString itemID)
 {
+	if (position.x() == 0 && position.y() == 0)
+	{
+		return;
+	}
 	// {"type":"wbitem","subtype":"move","courseID":"111","data":{"pos":[2,3]},"id":"uuid"}
 	QJsonObject complexJson;
 	complexJson.insert("type", "wbitem");
@@ -403,14 +407,14 @@ void STWBScene::drawRemoteRealtimePen(QString color, int thickness, QVector<QPoi
 	{
 		m_realtimePathItemData = new PathItemData;
 		m_realtimePathItemData->prePoint = points[0];
-		drawStart(m_realtimePathItemData);
+		drawStart(m_realtimePathItemData, color, thickness);
 		drawRemoteRealtimePen(color, thickness, points);
 	}
 	else
 	{
 		for (int i = 0; i < points.size(); i++)
 		{
-			drawTo(m_realtimePathItemData, points[i]);
+			drawTo(m_realtimePathItemData, points[i], color, thickness);
 			m_realtimePathItemData->prePoint = points[i];
 		}
 	}
@@ -418,16 +422,19 @@ void STWBScene::drawRemoteRealtimePen(QString color, int thickness, QVector<QPoi
 
 void STWBScene::drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, QString itemID)
 {
-	m_remotePathItem = new STWBPathItem(itemID);
-	m_remotePathItem->setColor(color);
-	m_remotePathItem->setThickness(thickness);
-	for (int i = 0; i < points.size(); i++)
+	if (!m_itemMap.contains(itemID))
 	{
-		m_remotePathItem->addPoint(points[i]);
+		m_remotePathItem = new STWBPathItem(itemID);
+		m_remotePathItem->setColor(color);
+		m_remotePathItem->setThickness(thickness);
+		for (int i = 0; i < points.size(); i++)
+		{
+			m_remotePathItem->addPoint(points[i]);
+		}
+		m_remotePathItem->render();
+		QGraphicsScene::addItem(m_remotePathItem);
+		m_itemMap[itemID] = m_remotePathItem;
 	}
-	m_remotePathItem->render();
-	QGraphicsScene::addItem(m_remotePathItem);
-	m_itemMap[itemID] = m_remotePathItem;
 
 	if (m_realtimePathItemData != NULL)
 	{

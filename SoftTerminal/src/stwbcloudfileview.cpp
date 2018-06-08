@@ -2,10 +2,10 @@
 
 using namespace tahiti;
 
-STWBCloudFileView::STWBCloudFileView(QWidget * parent) : QWidget(parent)
+STWBCloudFileView::STWBCloudFileView(QWidget * parent) : QDialog(parent)
 {
 	ui.setupUi(this);
-	setWindowFlags(windowFlags() | Qt::FramelessWindowHint | Qt::Popup);
+	setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
 
 	ui.twFileManager->setMouseTracking(true);
 	ui.twFileManager->horizontalHeaderItem(0)->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
@@ -301,6 +301,17 @@ void STWBCloudFileView::mouseMoveEvent(QMouseEvent* event)
 		QPoint pos = this->pos() + movePoint;
 		m_startMovePos = event->globalPos();
 		this->move(pos.x(), pos.y());
+	}
+}
+
+void STWBCloudFileView::keyPressEvent(QKeyEvent *event)
+{
+	switch (event->key())
+	{
+	case Qt::Key_Escape:
+		break;
+	default:
+		QDialog::keyPressEvent(event);
 	}
 }
 

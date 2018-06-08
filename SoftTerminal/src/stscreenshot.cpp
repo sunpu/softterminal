@@ -244,7 +244,7 @@ void STScreenshot::keyPressEvent(QKeyEvent *e)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ SSSizeShow ------------------------
 SSSizeShow::SSSizeShow(QWidget *parent) : QWidget(parent)
 {
 
@@ -285,7 +285,7 @@ void SSSizeShow::onSizeChange(int w, int h)
 	m_info = QString("%1 * %2").arg(w).arg(h);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ SSScreen ------------------------
 SSScreen::SSScreen(std::shared_ptr<QPixmap> originPainting, QPoint pos, SSToolbar* toolbar, QWidget *parent)
 	: QWidget(parent), m_direction(NONE), m_originPoint(pos), m_toolbar(toolbar),
 	m_isPressed(false), m_originPainting(originPainting)
@@ -621,7 +621,7 @@ void SSScreen::onMouseChange(int x, int y)
 	parentWidget()->update();
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ SSToolbar ------------------------
 SSToolbar::SSToolbar(QWidget *parent) :
 	QWidget(parent),
 	screen(NULL)

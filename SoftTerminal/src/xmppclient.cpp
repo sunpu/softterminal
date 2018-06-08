@@ -762,7 +762,7 @@ void XmppClient::removeGroup(QString id)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ XmppGroup ------------------------
 XmppGroup::XmppGroup(XmppClient* client, QString nick) : m_client(client)
 {
 	connect(m_client, SIGNAL(contactFoundResult(int, QVariant)), this, SLOT(onContactFoundResult(int, QVariant)));

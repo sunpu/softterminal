@@ -2,24 +2,32 @@
 
 using namespace tahiti;
 
-STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
-	: m_jid(jid), m_name(name), QWidget(parent)
+STWhiteBoard::STWhiteBoard(QString jid, QString name, XmppClient* client, QWidget *parent)
+	: m_jid(jid), m_name(name), m_xmppClient(client), QWidget(parent)
 {
 	ui.setupUi(this);
 
 	setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
 
-	// 视频相关
-	initConferenceClient();
-	login();
+	m_messageClient = new STMessageClient;
+	connect(m_messageClient, SIGNAL(whiteBoardMessageSignal(QString)),
+		this, SLOT(whiteBoardMessageSlot(QString)));
+}
 
-	QObject::connect(this, SIGNAL(newStreamSignal(QString, int, int)), this, SLOT(newStreamSlot(QString, int, int)));
-	QObject::connect(this, SIGNAL(showLocalCameraSignal()), this, SLOT(showLocalCamera()));
-	QObject::connect(this, SIGNAL(unshowLocalCameraSignal()), this, SLOT(unshowLocalCamera()));
+STWhiteBoard::~STWhiteBoard()
+{
+}
+
+void STWhiteBoard::init()
+{
+
+	connect(this, SIGNAL(newStreamSignal(QString, int, int)), this, SLOT(newStreamSlot(QString, int, int)));
+	connect(this, SIGNAL(showLocalCameraSignal()), this, SLOT(showLocalCamera()));
+	connect(this, SIGNAL(unshowLocalCameraSignal()), this, SLOT(unshowLocalCamera()));
 
 	qRegisterMetaType<std::shared_ptr<RemoteStream>>("std::shared_ptr<RemoteStream>");
-	QObject::connect(this, SIGNAL(attachRenderSignal(QString, std::shared_ptr<RemoteStream>)), this, SLOT(attachRenderSlot(QString, std::shared_ptr<RemoteStream>)));
-	QObject::connect(this, SIGNAL(detachRenderSignal(QString)), this, SLOT(detachRenderSlot(QString)));
+	connect(this, SIGNAL(attachRenderSignal(QString, std::shared_ptr<RemoteStream>)), this, SLOT(attachRenderSlot(QString, std::shared_ptr<RemoteStream>)));
+	connect(this, SIGNAL(detachRenderSignal(QString)), this, SLOT(detachRenderSlot(QString)));
 
 	QHBoxLayout* hboxLayout = (QHBoxLayout*)ui.widVideo->layout();
 	QGridLayout* gridLayout = (QGridLayout*)ui.widVideoBig->layout();
@@ -28,10 +36,10 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
 	for (size_t i = 0; i < MAX_STREAM_NUM; i++)
 	{
 		m_videoItems[i] = new STWBVideoItem(ui.widVideo);
-		QObject::connect(m_videoItems[i], SIGNAL(muteSignal(QString)), this, SLOT(mute(QString)));
-		QObject::connect(m_videoItems[i], SIGNAL(unmuteSignal(QString)), this, SLOT(unmute(QString)));
-		QObject::connect(this, SIGNAL(muteResultSignal(bool, QString)), m_videoItems[i], SLOT(onMuteResult(bool, QString)));
-		QObject::connect(this, SIGNAL(unmuteResultSignal(bool, QString)), m_videoItems[i], SLOT(onUnmuteResult(bool, QString)));
+		connect(m_videoItems[i], SIGNAL(muteSignal(QString)), this, SLOT(mute(QString)));
+		connect(m_videoItems[i], SIGNAL(unmuteSignal(QString)), this, SLOT(unmute(QString)));
+		connect(this, SIGNAL(muteResultSignal(bool, QString)), m_videoItems[i], SLOT(onMuteResult(bool, QString)));
+		connect(this, SIGNAL(unmuteResultSignal(bool, QString)), m_videoItems[i], SLOT(onUnmuteResult(bool, QString)));
 		m_videoItems[i]->setRenderSize(192, 108);
 		m_videoItems[i]->setBgImage(":/SoftTerminal/images/video_bg.png");
 		m_videoItems[i]->setObjectName(QString::number(i));
@@ -39,10 +47,10 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
 		hboxLayout->addWidget(m_videoItems[i]);
 
 		m_big_videoItems[i] = new STWBVideoItem(ui.widVideoBig);
-		QObject::connect(m_big_videoItems[i], SIGNAL(muteSignal(QString)), this, SLOT(mute(QString)));
-		QObject::connect(m_big_videoItems[i], SIGNAL(unmuteSignal(QString)), this, SLOT(unmute(QString)));
-		QObject::connect(this, SIGNAL(muteResultSignal(bool, QString)), m_big_videoItems[i], SLOT(onMuteResult(bool, QString)));
-		QObject::connect(this, SIGNAL(unmuteResultSignal(bool, QString)), m_big_videoItems[i], SLOT(onUnmuteResult(bool, QString)));
+		connect(m_big_videoItems[i], SIGNAL(muteSignal(QString)), this, SLOT(mute(QString)));
+		connect(m_big_videoItems[i], SIGNAL(unmuteSignal(QString)), this, SLOT(unmute(QString)));
+		connect(this, SIGNAL(muteResultSignal(bool, QString)), m_big_videoItems[i], SLOT(onMuteResult(bool, QString)));
+		connect(this, SIGNAL(unmuteResultSignal(bool, QString)), m_big_videoItems[i], SLOT(onUnmuteResult(bool, QString)));
 		m_big_videoItems[i]->setRenderSize(400, 225);
 		m_big_videoItems[i]->setBgImage(":/SoftTerminal/images/video_bg_big.png");
 		m_big_videoItems[i]->setObjectName(QString::number(i));
@@ -57,10 +65,6 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
 	qRegisterMetaType<QPoint>("QPoint");
 	qRegisterMetaType<QList<int>>("QList<int>");
 
-	m_messageClient = new STMessageClient;
-	connect(m_messageClient, SIGNAL(whiteBoardMessageSignal(QString)),
-		this, SLOT(whiteBoardMessageSlot(QString)));
-
 	QVBoxLayout* layout = (QVBoxLayout*)ui.widPaint->layout();
 	m_view = new STWBView;
 	layout->addWidget(m_view);
@@ -69,19 +73,25 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
 	stackLayout->setStackingMode(QStackedLayout::StackAll);
 	m_view->setLayout(stackLayout);
 
+	m_raiseHandPanel = new STWBRaiseHandPanel(this);
+	int raiseHandPanelX = geometry().width() - m_raiseHandPanel->width() - 10;
+	int raiseHandPanelY = geometry().height() - m_raiseHandPanel->height() - 30;
+	m_raiseHandPanel->show();
+	m_raiseHandPanel->move(QPoint(raiseHandPanelX, raiseHandPanelY));
+
 	m_vtoolbar = new STWBVToolbar(this);
-	int toolbarX = 10;
+	int toolbarX = geometry().width() - m_vtoolbar->width() - 10;
 	int toolbarY = geometry().height() / 2 - m_vtoolbar->height() / 2;
 	m_vtoolbar->show();
 	m_vtoolbar->move(QPoint(toolbarX, toolbarY));
 
 	m_penStylePanel = new STWBPenStylePanel(this);
 	m_penStylePanel->hide();
-	m_penStylePanel->move(QPoint(toolbarX + m_vtoolbar->width(), toolbarY));
+	m_penStylePanel->move(QPoint(toolbarX - m_penStylePanel->width(), toolbarY));
 
 	m_textStylePanel = new STWBTextStylePanel(this);
 	m_textStylePanel->hide();
-	m_textStylePanel->move(QPoint(toolbarX + m_vtoolbar->width(), toolbarY + 52));
+	m_textStylePanel->move(QPoint(toolbarX - m_textStylePanel->width(), toolbarY + 52));
 
 	connect(m_penStylePanel, SIGNAL(updatePenThickness(int)), this, SLOT(setPenThickness(int)));
 	connect(m_penStylePanel, SIGNAL(updatePenColor(QString)), this, SLOT(setPenColor(QString)));
@@ -92,7 +102,13 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
 	connect(m_vtoolbar, SIGNAL(hideStylePanels()), this, SLOT(hideStylePanels()));
 	connect(m_vtoolbar, SIGNAL(showPenStylePanel()), this, SLOT(showPenStylePanel()));
 	connect(m_vtoolbar, SIGNAL(showTextStylePanel()), this, SLOT(showTextStylePanel()));
-	connect(m_vtoolbar, SIGNAL(openCloudFileSignal(QString)), this, SLOT(openCloudFile(QString)));
+	connect(m_vtoolbar, SIGNAL(openCloudFileViewSignal()), this, SLOT(openCloudFileView()));
+	connect(m_vtoolbar, SIGNAL(closeCloudFileViewSignal()), this, SLOT(closeCloudFileView()));
+	connect(m_vtoolbar, SIGNAL(openInviteFriendSignal()), this, SLOT(openInviteFriend()));
+	connect(m_vtoolbar, SIGNAL(closeInviteFriendSignal()), this, SLOT(closeInviteFriend()));
+	connect(m_vtoolbar, SIGNAL(openRosterSignal()), this, SLOT(openRoster()));
+	connect(m_vtoolbar, SIGNAL(closeRosterSignal()), this, SLOT(closeRoster()));
+	connect(m_vtoolbar, SIGNAL(deleteCourseSignal()), this, SLOT(deleteCourse()));
 
 	m_penStylePanel->init();
 	m_textStylePanel->init();
@@ -100,18 +116,31 @@ STWhiteBoard::STWhiteBoard(QString jid, QString name, QWidget *parent)
 
 	m_docWindowIndex = 0;
 
+	m_cloud_file_view = new STWBCloudFileView(this);
+	connect(m_cloud_file_view, SIGNAL(closeCloudFileView()), m_vtoolbar, SLOT(closeCloudFileView()));
+	connect(m_cloud_file_view, SIGNAL(openCloudFileSignal(QString)), this, SLOT(openCloudFile(QString)));
+	m_cloud_file_view->hide();
+
+	m_inviteFriend = new STWBInviteFriend(m_xmppClient, this);
+	connect(m_inviteFriend, SIGNAL(closeInviteFriend()), m_vtoolbar, SLOT(closeInviteFriend()));
+	m_inviteFriend->hide();
+
+	m_roster = new STWBRoster(m_xmppClient, this);
+	connect(m_roster, SIGNAL(closeRoster()), m_vtoolbar, SLOT(closeRoster()));
+	m_roster->hide();
+
 	// 页面初始化
 	ui.pbNormal->setVisible(false);
+	m_raiseHandPanel->hide();
 	m_vtoolbar->hide();
 	m_currentIndex = 1;
 	ui.swMain->setCurrentIndex(m_currentIndex);
 	ui.widTitle->installEventFilter(this);
 
 	on_pbMaximum_clicked();
-}
-
-STWhiteBoard::~STWhiteBoard()
-{
+	// 视频相关
+	initConferenceClient();
+	login();
 }
 
 void STWhiteBoard::switchShowMode(bool mode)
@@ -124,6 +153,7 @@ void STWhiteBoard::switchShowMode(bool mode)
 	{
 		m_currentIndex = 1;
 		ui.swMain->setCurrentIndex(m_currentIndex);
+		m_raiseHandPanel->hide();
 		m_vtoolbar->hide();
 
 		for (it = ids.begin(); it != ids.end(); it++)
@@ -159,6 +189,7 @@ void STWhiteBoard::switchShowMode(bool mode)
 	{
 		m_currentIndex = 0;
 		ui.swMain->setCurrentIndex(m_currentIndex);
+		m_raiseHandPanel->show();
 		m_vtoolbar->show();
 
 		for (it = ids.begin(); it != ids.end(); it++)
@@ -235,7 +266,7 @@ void STWhiteBoard::on_pbClose_clicked()
 	close();
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STWhiteBoard ------------------------
 void STWhiteBoard::initConferenceClient()
 {
 	m_hardware_accelerated = false;
@@ -682,7 +713,7 @@ void STWhiteBoard::stopSendLocalCamera()
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STWhiteBoard ------------------------
 void STWhiteBoard::hideStylePanels()
 {
 	m_penStylePanel->hide();
@@ -756,15 +787,69 @@ void STWhiteBoard::closeCloudFile(int index)
 	}
 }
 
+void STWhiteBoard::openCloudFileView()
+{
+	int x = (geometry().width() - m_cloud_file_view->geometry().width()) / 2
+		+ geometry().x();
+	int y = (geometry().height() - m_cloud_file_view->geometry().height()) / 2
+		+ geometry().y();
+	m_cloud_file_view->move(QPoint(x, y));
+	m_cloud_file_view->show();
+	m_cloud_file_view->initCloudFileView();
+}
+
+void STWhiteBoard::closeCloudFileView()
+{
+	m_cloud_file_view->hide();
+}
+
+void STWhiteBoard::openInviteFriend()
+{
+	int x = (geometry().width() - m_inviteFriend->geometry().width()) / 2
+		+ geometry().x();
+	int y = (geometry().height() - m_inviteFriend->geometry().height()) / 2
+		+ geometry().y();
+	m_inviteFriend->move(QPoint(x, y));
+	m_inviteFriend->show();
+	m_inviteFriend->initFriendList();
+}
+
+void STWhiteBoard::closeInviteFriend()
+{
+	m_inviteFriend->hide();
+}
+
+void STWhiteBoard::openRoster()
+{
+	int x = (geometry().width() - m_roster->geometry().width()) / 2
+		+ geometry().x();
+	int y = (geometry().height() - m_roster->geometry().height()) / 2
+		+ geometry().y();
+	m_roster->move(QPoint(x, y));
+	m_roster->show();
+	m_roster->initRoster();
+}
+
+void STWhiteBoard::closeRoster()
+{
+	m_roster->hide();
+}
+
+void STWhiteBoard::deleteCourse()
+{
+	deleteCourse(m_courseID);
+	on_pbClose_clicked();
+}
+
 void STWhiteBoard::setPenThickness(int thickness)
 {
 	m_pen_thickness = thickness;
 	m_view->setPenThickness(thickness);
 	hideStylePanels();
-	if (m_vtoolbar->getCurrentSelect() != 2)
+	/*if (m_vtoolbar->getCurrentSelect() != 2)
 	{
 		m_vtoolbar->on_pbPen_clicked();
-	}
+	}*/
 	Q_EMIT setPenThicknessSignal(thickness);
 }
 
@@ -774,10 +859,10 @@ void STWhiteBoard::setPenColor(QString color)
 	m_view->setPenColor(color);
 	m_vtoolbar->changePenShowColor(color);
 	hideStylePanels();
-	if (m_vtoolbar->getCurrentSelect() != 2)
+	/*if (m_vtoolbar->getCurrentSelect() != 2)
 	{
 		m_vtoolbar->on_pbPen_clicked();
-	}
+	}*/
 	Q_EMIT setPenColorSignal(color);
 }
 
@@ -786,10 +871,10 @@ void STWhiteBoard::setTextSize(int size)
 	m_text_size = size;
 	m_view->setTextSize(size);
 	hideStylePanels();
-	if (m_vtoolbar->getCurrentSelect() != 3)
+	/*if (m_vtoolbar->getCurrentSelect() != 3)
 	{
 		m_vtoolbar->on_pbText_clicked();
-	}
+	}*/
 	Q_EMIT setTextSizeSignal(size);
 }
 
@@ -799,10 +884,10 @@ void STWhiteBoard::setTextColor(QString color)
 	m_view->setTextColor(color);
 	m_vtoolbar->changeTextShowColor(color);
 	hideStylePanels();
-	if (m_vtoolbar->getCurrentSelect() != 3)
+	/*if (m_vtoolbar->getCurrentSelect() != 3)
 	{
 		m_vtoolbar->on_pbText_clicked();
-	}
+	}*/
 	Q_EMIT setTextColorSignal(color);
 }
 
@@ -853,12 +938,15 @@ bool STWhiteBoard::eventFilter(QObject* watched, QEvent* e)
 
 void STWhiteBoard::resizeEvent(QResizeEvent* size)
 {
-	int toolbarX = 10;
+	int raiseHandPanelX = geometry().width() - m_raiseHandPanel->width() - 10;
+	int raiseHandPanelY = geometry().height() - m_raiseHandPanel->height() - 30;
+	m_raiseHandPanel->move(QPoint(raiseHandPanelX, raiseHandPanelY));
+
+	int toolbarX = geometry().width() - m_vtoolbar->width() - 10;
 	int toolbarY = geometry().height() / 2 - m_vtoolbar->height() / 2;
-	//m_vtoolbar->show();
 	m_vtoolbar->move(QPoint(toolbarX, toolbarY));
-	m_penStylePanel->move(QPoint(toolbarX + m_vtoolbar->width(), toolbarY));
-	m_textStylePanel->move(QPoint(toolbarX + m_vtoolbar->width(), toolbarY + 52));
+	m_penStylePanel->move(QPoint(toolbarX - m_penStylePanel->width(), toolbarY));
+	m_textStylePanel->move(QPoint(toolbarX - m_textStylePanel->width(), toolbarY + 52));
 
 	resizeMaximumDocWindow();
 }
@@ -871,22 +959,22 @@ void STWhiteBoard::showEvent(QShowEvent* event)
 
 void STWhiteBoard::drawRemoteRealtimePen(QString color, int thickness, QVector<QPoint> points)
 {
-	setPenColor(color);
-	setPenThickness(thickness);
+	//setPenColor(color);
+	//setPenThickness(thickness);
 	m_view->drawRemoteRealtimePen(color, thickness, points);
 }
 
 void STWhiteBoard::drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, QString itemID)
 {
-	setPenColor(color);
-	setPenThickness(thickness);
+	//setPenColor(color);
+	//setPenThickness(thickness);
 	m_view->drawRemotePenItem(color, thickness, points, itemID);
 }
 
 void STWhiteBoard::drawRemoteTextItem(QString color, int size, QString content, QPoint pos, QString itemID)
 {
-	setTextColor(color);
-	setTextSize(size);
+	//setTextColor(color);
+	//setTextSize(size);
 	m_view->drawRemoteTextItem(color, size, content, pos, itemID);
 }
 
@@ -963,12 +1051,13 @@ void STWhiteBoard::joinCourse(QString courseID)
 	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
 	QString complexJsonStr(complexByteArray);
 	m_messageClient->subscribeMessage(courseID);
-	QThread::sleep(1);
-
+	//QThread::sleep(1);
 
 	m_messageClient->sendMessage(complexJsonStr);
 
 	m_view->setCourseID(courseID);
+
+	m_courseID = courseID;
 }
 
 void STWhiteBoard::deleteCourse(QString courseID)
@@ -1273,7 +1362,7 @@ void STWhiteBoard::whiteBoardMessageSlot(QString message)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ ConfSubObserver ------------------------
 ConfSubObserver::ConfSubObserver(QString id)
 	: m_id(id)
 {

@@ -4,13 +4,31 @@
 #include <QWidget>
 #include <QDialog>
 #include <QEvent>
-#include "stwbcloudfileview.h"
+#include <QKeyEvent>
 #include "ui_STWBVToolbar.h"
 #include "ui_STWBPenStylePanel.h"
 #include "ui_STWBTextStylePanel.h"
+#include "ui_STWBRaiseHandPanel.h"
 
 namespace tahiti
 {
+	class STWBRaiseHandPanel : public QDialog
+	{
+		Q_OBJECT
+
+	public:
+		STWBRaiseHandPanel(QWidget * parent = 0);
+		~STWBRaiseHandPanel();
+		private Q_SLOTS:
+		void on_pbRaiseHand_clicked();
+	Q_SIGNALS:
+		void raiseHandSignal(bool raise);
+
+	private:
+		Ui::STWBRaiseHandPanelClass ui;
+		bool m_isRaised;
+	};
+
 	class STWBPenStylePanel : public QDialog
 	{
 		Q_OBJECT
@@ -72,26 +90,39 @@ namespace tahiti
 		void init();
 	protected:
 		bool eventFilter(QObject* watched, QEvent* e);
+		virtual void keyPressEvent(QKeyEvent *event);
 		public Q_SLOTS:
 		void on_pbSelect_clicked();
 		void on_pbPen_clicked();
 		void on_pbText_clicked();
-		void on_pbCloud_clicked();
 		void on_pbDelete_clicked();
-		void openCloudFile(QString path);
+		void on_pbCloud_clicked();
+		void on_pbInvite_clicked();
+		void on_pbRoster_clicked();
+		void on_pbDeleteCourse_clicked();
 		void closeCloudFileView();
+		void closeInviteFriend();
+		void closeRoster();
 	Q_SIGNALS:
+		void openCloudFileViewSignal();
+		void openInviteFriendSignal();
+		void openRosterSignal();
+		void closeCloudFileViewSignal();
+		void closeInviteFriendSignal();
+		void closeRosterSignal();
+		void deleteCourseSignal();
 		void setActionMode(int mode);
 		void deleteAction();
 		void hideStylePanels();
 		void showPenStylePanel();
 		void showTextStylePanel();
-		void openCloudFileSignal(QString path);
 
 	private:
 		Ui::STWBVToolbarClass ui;
 		int m_currentSelect;
-		STWBCloudFileView* m_cloud_file_view;
+		bool m_showCloudFileView;
+		bool m_showInviteFriend;
+		bool m_showRoster;
 	};
 }
 #endif

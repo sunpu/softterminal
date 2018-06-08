@@ -1,7 +1,7 @@
 ﻿#ifndef _STWBCLOUDFILEVIEW_H_
 #define _STWBCLOUDFILEVIEW_H_
 
-#include <QWidget>
+#include <QDialog>
 #include <QPushButton>
 #include <QHeaderView>
 #include <QFileInfo>
@@ -16,7 +16,7 @@
 
 namespace tahiti
 {
-	class STWBCloudFileView : public QWidget
+	class STWBCloudFileView : public QDialog
 	{
 		Q_OBJECT
 
@@ -39,6 +39,7 @@ namespace tahiti
 		virtual void mouseMoveEvent(QMouseEvent* event);
 		virtual void mousePressEvent(QMouseEvent* event);
 		virtual void mouseReleaseEvent(QMouseEvent* event);
+		virtual void keyPressEvent(QKeyEvent *event);
 	private:
 		void resizeHeaders();
 		void refreshCurrentPageTable();

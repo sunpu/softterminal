@@ -174,7 +174,7 @@ void STSetting::keyPressEvent(QKeyEvent *event)
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ NoFocusFrameDelegate ------------------------
 NoFocusFrameDelegate::NoFocusFrameDelegate(QWidget *parent) :
 	QStyledItemDelegate(parent)
 {

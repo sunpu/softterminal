@@ -136,5 +136,31 @@
         <file>images/load_small.gif</file>
         <file>images/join_lesson.png</file>
         <file>images/join_lesson_focus.png</file>
+        <file>images/delete_course.png</file>
+        <file>images/invite.png</file>
+        <file>images/roster.png</file>
+        <file>images/hand.png</file>
+        <file>images/trashcan_focus.png</file>
+        <file>images/text_focus.png</file>
+        <file>images/roster_focus.png</file>
+        <file>images/pen_focus.png</file>
+        <file>images/mouse_focus.png</file>
+        <file>images/invite_focus.png</file>
+        <file>images/delete_course_focus.png</file>
+        <file>images/hand_focus.png</file>
+        <file>images/hand_on.png</file>
+        <file>images/recorder_disable.png</file>
+        <file>images/cam_disable.png</file>
+        <file>images/control_disable.png</file>
+        <file>images/control_on.png</file>
+        <file>images/talk_on.png</file>
+        <file>images/talk_disable.png</file>
+        <file>images/talk_off.png</file>
+        <file>images/cam_off.png</file>
+        <file>images/cam_on.png</file>
+        <file>images/recorder_off.png</file>
+        <file>images/recorder_on.png</file>
+        <file>images/roster_on.png</file>
+        <file>images/invite_on.png</file>
     </qresource>
 </RCC>

@@ -448,7 +448,7 @@ void STCloudFileManager::on_pbSupport_clicked()
 	m_support->show();
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STCloudSupport ------------------------
 STCloudSupport::STCloudSupport(QWidget * parent) : QWidget(parent)
 {
 	ui.setupUi(this);
@@ -479,7 +479,7 @@ bool STCloudSupport::event(QEvent* event)
 	return QWidget::event(event);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STCloudUploadFile ------------------------
 STCloudUploadFile::STCloudUploadFile(QString path, QWidget * parent) : QDialog(parent), m_path(path)
 {
 	ui.setupUi(this);
@@ -576,7 +576,7 @@ void STCloudUploadFile::mouseReleaseEvent(QMouseEvent* event)
 	m_isPressed = false;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STCloudNewFolder ------------------------
 STCloudNewFolder::STCloudNewFolder(QWidget * parent) : QDialog(parent)
 {
 	ui.setupUi(this);
@@ -633,7 +633,7 @@ void STCloudNewFolder::mouseReleaseEvent(QMouseEvent* event)
 	m_isPressed = false;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ STCloudFolderView ------------------------
 STCloudFolderView::STCloudFolderView(QString action, QWidget * parent)
 	: QDialog(parent), m_action(action)
 {
