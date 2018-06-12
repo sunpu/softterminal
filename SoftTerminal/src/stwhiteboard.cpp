@@ -848,7 +848,7 @@ void STWhiteBoard::closeRoster()
 
 void STWhiteBoard::deleteCourse()
 {
-	STConfirm* m_confirm = new STConfirm(this);
+	STConfirm* m_confirm = new STConfirm(false, this);
 	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(deleteCourseSlot()));
 	m_confirm->setText(QStringLiteral("您是否确定结束本次课程？"));
 	int parentX = geometry().x();

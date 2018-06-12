@@ -151,6 +151,9 @@ QPushButton:hover:!pressed {
    </item>
    <item>
     <widget class="QWidget" name="widget" native="true">
+     <property name="styleSheet">
+      <string notr="true">QWidget#widget {border-left: 1px solid #e3e3e3;border-right: 1px solid #e3e3e3;}</string>
+     </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <property name="topMargin">
        <number>9</number>

@@ -379,9 +379,6 @@
     <CustomBuild Include="forms\STChatItem.ui">
       <Filter>Form Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="forms\STChatRecordItem.ui">
-      <Filter>Form Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="forms\STCloudFileManager.ui">
       <Filter>Form Files</Filter>
     </CustomBuild>
@@ -607,15 +604,15 @@
     <CustomBuild Include="src\stwbroster.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="forms\STChatRecordItem.ui">
+      <Filter>Form Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeneratedFiles\ui_STChatDetail.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_STChatItem.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GeneratedFiles\ui_STChatRecordItem.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_STCloudFileManager.h">
@@ -769,6 +766,9 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_STWBInviteFriendItem.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_STChatRecordItem.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

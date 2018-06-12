@@ -54,14 +54,21 @@ void STChatItem::setChatInfo(UserInfo userInfo, XmppGroup* group)
 
 	if (m_group)
 	{
-		QString name = m_group->getUserInfo(recordItem.jid).userName;
-		if (name.isEmpty())
+		if (recordItem.type == MessageType::MT_CourseCreate)
 		{
-			name = recordItem.jid;
+			content = QString("%1 : %2").arg(recordItem.jid, QStringLiteral("[课程]"));
 		}
-		if (!recordItem.content.isEmpty())
+		else
 		{
-			content = QString("%1:%2").arg(name, recordItem.content);
+			QString name = m_group->getUserInfo(recordItem.jid).userName;
+			if (name.isEmpty())
+			{
+				name = recordItem.jid;
+			}
+			if (!recordItem.content.isEmpty())
+			{
+				content = QString("%1:%2").arg(name, recordItem.content);
+			}
 		}
 	}
 	ui.lblChatPreview->setText(content);
@@ -69,6 +76,11 @@ void STChatItem::setChatInfo(UserInfo userInfo, XmppGroup* group)
 
 void STChatItem::updateOthersMessage(RecordItem item)
 {
+	if (item.type == MessageType::MT_CourseDelete)
+	{
+		return;
+	}
+
 	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
 	recordManager->writeRecordItem(item);
 
@@ -90,12 +102,19 @@ void STChatItem::updateOthersMessage(RecordItem item)
 
 	if (m_group)
 	{
-		QString name = m_group->getUserInfo(item.jid).userName;
-		if (name.isEmpty())
+		if (item.type == MessageType::MT_CourseCreate)
 		{
-			name = item.jid;
+			content = QString("%1 : %2").arg(item.jid, QStringLiteral("[课程]"));
 		}
-		content = QString("%1:%2").arg(name, item.content);
+		else
+		{
+			QString name = m_group->getUserInfo(item.jid).userName;
+			if (name.isEmpty())
+			{
+				name = item.jid;
+			}
+			content = QString("%1 : %2").arg(name, item.content);
+		}
 	}
 	ui.lblChatPreview->setText(content);
 }

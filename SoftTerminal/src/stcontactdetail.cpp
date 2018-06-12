@@ -7,7 +7,7 @@ STContactDetail::STContactDetail(QWidget* parent)
 {
 	ui.setupUi(this);
 
-	m_confirm = new STConfirm(this);
+	m_confirm = new STConfirm(false, this);
 	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
 }
 

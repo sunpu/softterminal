@@ -54,6 +54,8 @@ namespace tahiti
 		void onSliderChanged(int pos);
 		void showMoreRecord();
 		void deleteCourseSlot();
+		private Q_SLOTS:
+		void joinCourseSlot();
 	private:
 		void openScreenshot();
 		void loadMoreRecord();
@@ -80,6 +82,7 @@ namespace tahiti
 		int m_scrollNum;
 		QMovie* m_movie;
 		pthread_t m_tidLoad;
+		QString m_courseDeleteTime;
 	};
 
 	// ------------------------ STScreenshotOption ------------------------

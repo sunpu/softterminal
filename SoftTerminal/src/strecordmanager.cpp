@@ -69,5 +69,9 @@ RecordItem STRecordManager::getLastestRecordItem()
 		return blankRecordItem;
 	}
 	int lastIndex = list.size() - 1;
+	while (list.at(lastIndex).type == MessageType::MT_CourseDelete)
+	{
+		lastIndex--;
+	}
 	return list.at(lastIndex);
 }

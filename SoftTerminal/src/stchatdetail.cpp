@@ -34,6 +34,9 @@ STChatDetail::STChatDetail(XmppClient* client, STWhiteBoard* whiteboard, QWidget
 	connect(this, SIGNAL(showMoreRecordSignal()), this, SLOT(showMoreRecord()));
 
 	connect(m_whiteboard, SIGNAL(deleteCourseSignal()), this, SLOT(deleteCourseSlot()));
+
+	ui.pbScreenShot->setVisible(false);
+	ui.pbScreenShotOption->setVisible(false);
 }
 
 STChatDetail::~STChatDetail()
@@ -54,6 +57,7 @@ void STChatDetail::clearChatDetail()
 	m_recordList.clear();
 	ui.pbLoadMore->setVisible(false);
 	ui.widLoadMore->setVisible(true);
+	m_courseDeleteTime.clear();
 }
 
 void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
@@ -102,6 +106,27 @@ void STChatDetail::deleteCourseSlot()
 	{
 		ui.pbCreateCourse->setVisible(true);
 	}
+
+	QString deleteTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+	RecordItem item;
+	item.time = deleteTime;
+	item.jid = m_selfInfo.userName;
+	item.type = MessageType::MT_CourseDelete;
+
+	// 写文件
+	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
+	recordManager->writeRecordItem(item);
+
+	// 更新聊天记录界面
+	QList<STChatRecordItem*>::Iterator it;
+	for (it = m_recordItemList.begin(); it != m_recordItemList.end(); it++)
+	{
+		(*it)->updateCourseDelete(deleteTime);
+	}
+
+	// 发送消息给远端
+	QString msg = QString("course|delete|%1|%2").arg(m_userInfo.jid, deleteTime);
+	m_group->sendMsg(msg);
 }
 
 void STChatDetail::on_pbLoadMore_clicked()
@@ -142,13 +167,30 @@ void STChatDetail::showMoreRecord()
 		}
 		item = m_recordList.takeLast();
 
+		if (item.type == MessageType::MT_CourseDelete)
+		{
+			m_courseDeleteTime = item.time;
+			i--;
+			continue;
+		}
+
 		chatDetailItem = new STChatRecordItem(item);
+		if (item.type == MessageType::MT_CourseCreate)
+		{
+			connect(chatDetailItem, SIGNAL(joinCourseSignal()), this, SLOT(joinCourseSlot()));
+		}
 		m_recordItemList.append(chatDetailItem);
 		itemSize = chatDetailItem->getItemSize();
 		pItem = new QListWidgetItem();
 		pItem->setSizeHint(QSize(0, itemSize.height() + 56));
 		ui.lwChatRecordList->insertItem(0, pItem);
 		ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
+
+		if (item.type == MessageType::MT_CourseCreate && !m_courseDeleteTime.isEmpty())
+		{
+			chatDetailItem->updateCourseDelete(m_courseDeleteTime);
+		}
+
 		unshowNum++;
 	}
 	m_scrollbar->setSliderPosition(unshowNum);
@@ -315,14 +357,13 @@ void STChatDetail::on_pbCreateCourse_clicked()
 	ui.pbJoinCourse->setVisible(true);
 	// 创建课程
 	m_whiteboard->createCourse(m_userInfo.jid);
-	on_pbJoinCourse_clicked();
+	//on_pbJoinCourse_clicked();
 
-	/*RecordItem item;
-	item.time = QTime::currentTime().toString();
-	item.from = MessageFrom::Self;
-	item.type = MessageType::MT_Class;
-	item.content = myMessage;
-	item.pic = m_selfPicPath;
+	QString createTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+	RecordItem item;
+	item.time = createTime;
+	item.jid = m_selfInfo.userName;
+	item.type = MessageType::MT_CourseCreate;
 
 	// 写文件
 	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
@@ -330,6 +371,7 @@ void STChatDetail::on_pbCreateCourse_clicked()
 
 	// 更新聊天记录界面
 	STChatRecordItem* chatDetailItem = new STChatRecordItem(item);
+	connect(chatDetailItem, SIGNAL(joinCourseSignal()), this, SLOT(joinCourseSlot()));
 	m_recordItemList.append(chatDetailItem);
 	QSize itemSize = chatDetailItem->getItemSize();
 	QListWidgetItem* pItem = new QListWidgetItem();
@@ -343,7 +385,13 @@ void STChatDetail::on_pbCreateCourse_clicked()
 	Q_EMIT changeChatListOrder(m_userInfo.jid);
 
 	// 发送消息给远端
-	m_xmppClient->sendMsg(m_userInfo.jid, myMessage);*/
+	QString msg = QString("course|create|%1|%2").arg(m_userInfo.jid, createTime);
+	m_group->sendMsg(msg);
+}
+
+void STChatDetail::joinCourseSlot()
+{
+	on_pbJoinCourse_clicked();
 }
 
 void STChatDetail::on_pbJoinCourse_clicked()
@@ -356,13 +404,13 @@ void STChatDetail::on_pbJoinCourse_clicked()
 	}
 	else
 	{
-		STConfirm* m_confirm = new STConfirm(this);
+		STConfirm* m_confirm = new STConfirm(true, this);
 		connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(deleteCourseSlot()));
 		m_confirm->setText(QStringLiteral("请先关闭已打开的课程。"));
-		int parentX = geometry().x();
-		int parentY = geometry().y();
-		int parentWidth = geometry().width();
-		int parentHeight = geometry().height();
+		int parentX = m_main->geometry().x();
+		int parentY = m_main->geometry().y();
+		int parentWidth = m_main->geometry().width();
+		int parentHeight = m_main->geometry().height();
 		m_confirm->move(QPoint(parentX + (parentWidth - m_confirm->width()) / 2,
 			parentY + (parentHeight - m_confirm->height()) / 2));
 		m_confirm->exec();
@@ -431,15 +479,30 @@ void STChatDetail::onCancelScreenshot()
 void STChatDetail::updateOthersMessage(RecordItem item)
 {
 	// 更新聊天记录界面
-	STChatRecordItem* chatDetailItem = new STChatRecordItem(item);
-	m_recordItemList.append(chatDetailItem);
-	QSize itemSize = chatDetailItem->getItemSize();
-	QListWidgetItem* pItem = new QListWidgetItem();
-	ui.lwChatRecordList->addItem(pItem);
-	ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
-	pItem->setSizeHint(QSize(ui.lwChatRecordList->width() - 5, itemSize.height() + 56));
+	if (item.type == MessageType::MT_CourseDelete)
+	{
+		QList<STChatRecordItem*>::Iterator it;
+		for (it = m_recordItemList.begin(); it != m_recordItemList.end(); it++)
+		{
+			(*it)->updateCourseDelete(item.time);
+		}
+	}
+	else
+	{
+		STChatRecordItem* chatDetailItem = new STChatRecordItem(item);
+		if (item.type == MessageType::MT_CourseCreate)
+		{
+			connect(chatDetailItem, SIGNAL(joinCourseSignal()), this, SLOT(joinCourseSlot()));
+		}
+		m_recordItemList.append(chatDetailItem);
+		QSize itemSize = chatDetailItem->getItemSize();
+		QListWidgetItem* pItem = new QListWidgetItem();
+		ui.lwChatRecordList->addItem(pItem);
+		ui.lwChatRecordList->setItemWidget(pItem, chatDetailItem);
+		pItem->setSizeHint(QSize(ui.lwChatRecordList->width() - 5, itemSize.height() + 56));
 
-	m_scrollbar->setSliderPosition(m_scrollbar->maximum());
+		m_scrollbar->setSliderPosition(m_scrollbar->maximum());
+	}
 }
 
 bool STChatDetail::eventFilter(QObject *obj, QEvent *e)

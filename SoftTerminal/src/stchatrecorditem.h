@@ -21,6 +21,11 @@ namespace tahiti
 		~STChatRecordItem();
 		void updateSelfPic(QString picPath);
 		QSize getItemSize();
+		void updateCourseDelete(QString deleteTime);
+		public Q_SLOTS:
+		void on_pbEnterCourse_clicked();
+	Q_SIGNALS:
+		void joinCourseSignal();
 	private:
 	private:
 		Ui::STChatRecordItemClass ui;

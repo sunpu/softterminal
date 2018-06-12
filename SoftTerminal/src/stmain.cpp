@@ -210,7 +210,7 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	connect(m_chatDeleteMenu, SIGNAL(deleteChatSingal(QString)), this, SLOT(deleteChatSlot(QString)));
 	m_chatDeleteMenu->hide();
 
-	m_confirm = new STConfirm(this);
+	m_confirm = new STConfirm(false, this);
 	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
 
 	connect(m_xmppClient, SIGNAL(showMessage(QString, QString, QString)),
@@ -554,8 +554,9 @@ void STMain::updateOthersMessage(QString jid, QString msg, QString time)
 void STMain::updateGroupMessage(QString jid, QString user, QString msg, QString time)
 {
 	STRecordManager* record = createChat(jid);
-	RecordItem item = record->getLastestRecordItem();
-	if (!item.time.isEmpty() && time < item.time)
+	RecordItem historyItem = record->getLastestRecordItem();
+	if (!historyItem.time.isEmpty() && (historyItem.type == MessageType::MT_Text
+		|| historyItem.type == MessageType::MT_CourseCreate) && time < historyItem.time)
 	{
 		return;
 	}
@@ -575,12 +576,29 @@ void STMain::updateGroupMessage(QString jid, QString user, QString msg, QString 
 				return;
 			}
 			RecordItem item;
-			item.time = time;
- 			item.from = MessageFrom::Other;
-			item.jid = userInfo.userName;
-			item.type = MessageType::MT_Text;
-			item.content = msg;
-			item.pic = userInfo.photoPath;
+			QStringList msgList = msg.split("|");
+			if (msgList.size() == 4 && msgList[0] == "course")
+			{
+				item.time = time;
+				item.jid = userInfo.userName;
+				if (msgList[1] == "create")
+				{
+					item.type = MessageType::MT_CourseCreate;
+				}
+				else if (msgList[1] == "delete")
+				{
+					item.type = MessageType::MT_CourseDelete;
+				}
+			}
+			else
+			{
+				item.time = time;
+				item.from = MessageFrom::Other;
+				item.jid = userInfo.userName;
+				item.type = MessageType::MT_Text;
+				item.content = msg;
+				item.pic = userInfo.photoPath;
+			}
 
 			if (m_currentChatJid != jid)
 			{

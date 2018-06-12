@@ -103,6 +103,7 @@ void STWBScene::onPenUp(int id)
 
 	drawPenItem(m_pen_color, m_pen_thickness,
 		m_pathItemData->pathItem->points(), m_pathItemData->pathItem->itemID());
+	m_pathItemData = NULL;
 }
 
 void STWBScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -399,7 +400,7 @@ void STWBScene::removeEmptyTextItem()
 
 void STWBScene::drawRemoteRealtimePen(QString color, int thickness, QVector<QPoint> points)
 {
-	if (points.size() == 0)
+	if (points.size() == 0 || m_pathItemData != NULL)
 	{
 		return;
 	}
