@@ -85,6 +85,7 @@ void STFileClient::uploadFileData(qint64 numBytes)  //开始发送文件内容
 	if (m_byteToWrite == 0)
 	{
 		m_tcpSocket->write("#*#finish@%@");
+		m_localFile->close();
 		//发送完毕
 		Q_EMIT onUploadFinished();
 	}
@@ -99,9 +100,8 @@ void STFileClient::uploadFileData(qint64 numBytes)  //开始发送文件内容
 void STFileClient::downloadFile(QString remotePath, QString localFilePath)
 {
 	m_remoteFilePath = remotePath;
-
-	m_localFile = new QFile(localFilePath);
-	m_localFile->open(QIODevice::WriteOnly | QIODevice::Append);
+	m_localFilePath = localFilePath;
+	m_localFile = NULL;
 
 	startDownload();
 }
@@ -111,13 +111,14 @@ void STFileClient::startDownload()
 	delete(m_tcpSocket);
 	m_tcpSocket = NULL;
 	m_tcpSocket = new QTcpSocket(this);
-	QString server = STConfig::getConfig("/xmpp/server");
-	m_tcpSocket->connectToHost(server, FILE_SERVER_PORT);
 
 	connect(m_tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this,
 		SLOT(displayError(QAbstractSocket::SocketError)));
 	connect(m_tcpSocket, SIGNAL(connected()), this, SLOT(sendDownloadInfo()));  //当连接成功时，就开始传送文件
 	connect(m_tcpSocket, SIGNAL(readyRead()), this, SLOT(downloadFileData()));
+
+	QString server = STConfig::getConfig("/xmpp/server");
+	m_tcpSocket->connectToHost(server, FILE_SERVER_PORT);
 }
 
 void STFileClient::finishDownload()
@@ -134,7 +135,12 @@ void STFileClient::sendDownloadInfo()
 
 void STFileClient::downloadFileData()
 {
-	if (m_localFile)
+	if (m_localFile == NULL)
+	{
+		m_localFile = new QFile(m_localFilePath);
+		m_localFile->open(QIODevice::WriteOnly | QIODevice::Append);
+	}
+	else
 	{
 		m_bytesReceived += m_tcpSocket->bytesAvailable();
 		QByteArray data = m_tcpSocket->readAll();

@@ -43,6 +43,7 @@
 #include "pthread/pthread.h"
 #include "stcommon.h"
 #include "stconfig.h"
+#include "stfileclient.h"
 
 using namespace std;
 using namespace gloox;
@@ -82,6 +83,7 @@ namespace tahiti
 		UserInfo getSelfInfo();
 		void modifyPasswd(QString password);
 		void queryVCard(QString jid);
+		void queryAvatar(QString jid);
 		void modifyVCard(UserInfo userInfo);
 		void modifySelfPic(QString picFile);
 		bool subscribeOther(QString jid);
@@ -113,6 +115,7 @@ namespace tahiti
 		void joinGroupResultSignal(bool result);
 		void createGroupResultSignal(QString id);
 	private:
+
 		void notifyMyInfo();
 		void createNewClient();
 		void callRefreshSignalProc();

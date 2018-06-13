@@ -163,11 +163,20 @@ void STPersonalInfo::uploadPicFinished(QString path)
 	QString desFile = desPath + m_userInfo.jid + "." + baseName;
 	QFile::copy(path, desFile);
 
+	QString finalFile = desFile;
+	if (baseName != "png")
+	{
+		finalFile = desPath + m_userInfo.jid + ".png";
+		QImage* img = new QImage(desFile);
+		img->save(finalFile, "PNG");
+		QFile::remove(desFile);
+	}
+
 	// 更新
-	m_userInfo.photoPath = desFile;
+	m_userInfo.photoPath = finalFile;
 	updatePersonalInfoData(m_userInfo);
 
-	m_xmppClient->modifySelfPic(desFile);
+	m_xmppClient->modifySelfPic(finalFile);
 
-	Q_EMIT updateSelfPic(desFile);
+	Q_EMIT updateSelfPic(finalFile);
 }

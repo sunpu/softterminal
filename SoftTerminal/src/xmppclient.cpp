@@ -104,6 +104,8 @@ void XmppClient::login()
 	m_selfInfo = {"", "", "", "", "", ""};
 
 	pthread_create(&m_tidConnect, NULL, longConnectProc, m_client);
+
+	queryAvatar(m_xmppUser + "@localhost");
 }
 
 void* XmppClient::longConnectProc(void* args)
@@ -149,6 +151,7 @@ void XmppClient::onConnect()
 
 	setXmppStatus(Presence::Chat);
 	notifyMyInfo();
+
 	m_selfInfo.jid = m_client->jid().bare().c_str();
 	queryVCard(m_selfInfo.jid);
 
@@ -276,6 +279,7 @@ void XmppClient::queryRoster()
 
 		// 获取card信息
 		queryVCard((*it).second->jidJID().full().c_str());
+		queryAvatar((*it).second->jidJID().full().c_str());
 	}
 }
 
@@ -339,6 +343,22 @@ void XmppClient::queryVCard(QString id)
 	m_vManager->fetchVCard(jid, this);
 }
 
+void XmppClient::queryAvatar(QString jid)
+{
+	QString fileName = jid + ".png";
+	QString desPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+		+ DATA_ROOT_PATH + AVATAR_PATH;
+	QString path = desPath + fileName;
+	if (QFile::exists(path))
+	{
+		return;
+	}
+
+	// 更新新图片
+	STFileClient* uploadClient = new STFileClient();
+	uploadClient->downloadFile(QString("avatar/%1").arg(fileName), path);
+}
+
 void XmppClient::handleVCard(const JID& jid, const VCard *v)
 {
 	if (!v)
@@ -349,50 +369,14 @@ void XmppClient::handleVCard(const JID& jid, const VCard *v)
 
 	m_current_vcard = new VCard(*v);
 
-	// 删除旧图片
-	QString desPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-		+ DATA_ROOT_PATH + AVATAR_PATH;
-	QString oldFileName;
-	QDir dir;
-	dir.setPath(desPath);
-	QDirIterator iter(dir, QDirIterator::Subdirectories);
-	while (iter.hasNext())
-	{
-		iter.next();
-		QFileInfo info = iter.fileInfo();
-		if (info.isFile() && info.fileName().startsWith(jid.full().c_str()))
-		{
-			oldFileName = QString(desPath) + info.fileName();
-			QFile::remove(oldFileName);
-		}
-	}
-
-	// 更新新图片
-	QString path = desPath + QString(jid.full().c_str());
-	QString photoType;
-	photoType = m_current_vcard->photo().type.c_str();
-	if (photoType == "image/jpeg")
-	{
-		path = path + ".jpg";
-	}
-	else if (photoType == "image/png")
-	{
-		path = path + ".png";
-	}
-	/*string photoContent;
-	photoContent = m_current_vcard->photo().binval;
-	if (photoContent.size() != 0)
-	{
-		QFile file(path);
-		file.open(QIODevice::WriteOnly);
-		file.write(photoContent.c_str(), photoContent.size());
-		file.close();
-	}*/
-
 	// 返回用户资料
 	UserInfo userInfo;
 	userInfo.jid = jid.full().c_str();
 	userInfo.userName = m_current_vcard->nickname().c_str();
+	QString desPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+		+ DATA_ROOT_PATH + AVATAR_PATH;
+	QString fileName = QString(jid.full().c_str()) + ".png";
+	QString path = desPath + fileName;
 	userInfo.photoPath = path;
 	if (m_current_vcard->telephone().size() > 0)
 	{
@@ -477,38 +461,8 @@ void XmppClient::modifyVCard(UserInfo userInfo)
 /* 修改个人头像 */
 void XmppClient::modifySelfPic(QString picFile)
 {
-	VCard* vcard = new VCard(*m_self_vcard);
-
-	/* 图片 */
-	QFileInfo fi = QFileInfo(picFile);
-	QString fileType;
-	QString suffix = fi.suffix().toLower();
-	if (suffix == "jpg" || suffix == "jpeg")
-	{
-		fileType = "image/jpeg";
-	}
-	else if (suffix == "png")
-	{
-		fileType = "image/png";
-	}
-
-	if (QFile::exists(picFile))
-	{
-		string photoData;
-		string type = fileType.toUtf8().constData();
-
-		QFile file(picFile);
-		file.open(QIODevice::ReadOnly);
-		QByteArray dataByteArray = file.readAll();
-		photoData = dataByteArray.toStdString();
-
-		vcard->setPhoto(type, photoData);
-
-		m_vManager->storeVCard(vcard, this);
-
-		m_selfInfo.photoPath = picFile;
-		file.close();
-	}
+	STFileClient* uploadClient = new STFileClient();
+	uploadClient->uploadFile("avatar", picFile);
 }
 
 void XmppClient::handleVCardResult(VCardContext context, const JID& jid,
@@ -770,6 +724,7 @@ XmppGroup::XmppGroup(XmppClient* client, QString nick) : m_client(client)
 	m_info.id = nick.split("@")[0];
 	m_owner = nick.split("/")[1].append("@localhost");
 	m_client->queryVCard(m_owner);
+	m_client->queryAvatar(m_owner);
 
 	m_room = new MUCRoom(client->getClient(), JID(nick.toUtf8().constData()), this, this);
 	m_room->join();
@@ -838,6 +793,7 @@ void XmppGroup::setMembers(QList<QString> members)
 		MUCListItem item(JID(it->toUtf8().constData()), RoleParticipant, AffiliationMember, "");
 		items.push_back(item);
 		m_client->queryVCard(*it);
+		m_client->queryAvatar(*it);
 	}
 	m_room->storeList(items, StoreMemberList);
 	m_room->requestList(RequestMemberList);
@@ -991,6 +947,7 @@ void XmppGroup::handleMUCConfigList(MUCRoom* room, const MUCListItemList& items,
 			printf("owner----------- %s\n", it->jid().username().c_str());
 			m_owner = QString(it->jid().username().c_str()).append("@localhost");
 			m_client->queryVCard(m_owner);
+			m_client->queryAvatar(m_owner);
 			break;
 		}
 	}
@@ -1002,6 +959,7 @@ void XmppGroup::handleMUCConfigList(MUCRoom* room, const MUCListItemList& items,
 			printf("member----------- %s\n", it->jid().username().c_str());
 			m_members.append(QString(it->jid().username().c_str()).append("@localhost"));
 			m_client->queryVCard(QString(it->jid().username().c_str()).append("@localhost"));
+			m_client->queryAvatar(QString(it->jid().username().c_str()).append("@localhost"));
 		}
 	}
 }

@@ -116,6 +116,8 @@ STWhiteBoard::STWhiteBoard(XmppClient* client, QWidget *parent)
 
 	ui.widTitle->installEventFilter(this);
 	ui.pgVideo->installEventFilter(this);
+
+	m_localCameraRenderID = -1;
 }
 
 STWhiteBoard::~STWhiteBoard()
