@@ -309,6 +309,8 @@ STWBVToolbar::STWBVToolbar(QWidget * parent) : QDialog(parent)
 	m_showCloudFileView = false;
 	m_showInviteFriend = false;
 	m_showRoster = false;
+
+	layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
 
 STWBVToolbar::~STWBVToolbar()
@@ -468,6 +470,27 @@ void STWBVToolbar::closeInviteFriend()
 void STWBVToolbar::closeRoster()
 {
 	on_pbRoster_clicked();
+}
+
+void STWBVToolbar::listenModeSlot()
+{
+	ui.widSelect->setVisible(false);
+	ui.widPen->setVisible(false);
+	ui.widText->setVisible(false);
+	ui.widDelete->setVisible(false);
+	ui.widCloud->setVisible(false);
+	ui.widInvite->setVisible(false);
+	ui.widDeleteCourse->setVisible(false);
+	ui.line->setVisible(false);
+	ui.line_2->setVisible(false);
+}
+
+void STWBVToolbar::paintEvent(QPaintEvent *e)
+{
+	int toolbarX = parentWidget()->geometry().width() - width() - 10;
+	int toolbarY = parentWidget()->geometry().height() / 2 - height() / 2;
+	move(QPoint(toolbarX, toolbarY));
+	QWidget::paintEvent(e);
 }
 
 void STWBVToolbar::init()

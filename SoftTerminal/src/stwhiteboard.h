@@ -90,6 +90,7 @@ namespace tahiti
 		void muteResultSignal(bool result, QString);
 		void unmuteResultSignal(bool result, QString);
 		void deleteCourseSignal();
+		void listenModeSignal();
 		private Q_SLOTS:
 		void setPenThickness(int thickness);
 		void setPenColor(QString color);

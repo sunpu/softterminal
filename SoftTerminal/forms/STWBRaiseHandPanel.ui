@@ -15,7 +15,7 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QDialog{
-background-color: rgb(46,48,55);
+background-color:#21222a;
 }</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">

@@ -23,7 +23,7 @@ STWBView::STWBView(bool subWin)
 	}
 	else
 	{
-		setStyleSheet("QWidget#widWhiteboard{background-color:#2e3037;border:0px;}");
+		setStyleSheet("QWidget#widWhiteboard{background-color:#21222a;border:0px;}");
 	}
 
 	//init scene

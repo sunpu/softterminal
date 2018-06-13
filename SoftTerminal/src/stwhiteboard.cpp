@@ -99,6 +99,7 @@ STWhiteBoard::STWhiteBoard(XmppClient* client, QWidget *parent)
 	connect(m_vtoolbar, SIGNAL(openRosterSignal()), this, SLOT(openRoster()));
 	connect(m_vtoolbar, SIGNAL(closeRosterSignal()), this, SLOT(closeRoster()));
 	connect(m_vtoolbar, SIGNAL(deleteCourseSignal()), this, SLOT(deleteCourse()));
+	connect(this, SIGNAL(listenModeSignal()), m_vtoolbar, SLOT(listenModeSlot()));
 
 	m_cloud_file_view = new STWBCloudFileView(this);
 	connect(m_cloud_file_view, SIGNAL(closeCloudFileView()), m_vtoolbar, SLOT(closeCloudFileView()));
@@ -114,6 +115,7 @@ STWhiteBoard::STWhiteBoard(XmppClient* client, QWidget *parent)
 	m_roster->hide();
 
 	ui.widTitle->installEventFilter(this);
+	ui.pgVideo->installEventFilter(this);
 }
 
 STWhiteBoard::~STWhiteBoard()
@@ -138,8 +140,9 @@ void STWhiteBoard::init(QString jid, QString name)
 	m_docWindowIndex = 0;
 
 	ui.pbNormal->setVisible(false);
-	m_raiseHandPanel->hide();
-	m_vtoolbar->hide();
+	//m_raiseHandPanel->hide();
+	//m_vtoolbar->hide();
+
 	m_currentIndex = 1;
 	ui.swMain->setCurrentIndex(m_currentIndex);
 
@@ -160,8 +163,8 @@ void STWhiteBoard::switchShowMode(bool mode)
 	{
 		m_currentIndex = 1;
 		ui.swMain->setCurrentIndex(m_currentIndex);
-		m_raiseHandPanel->hide();
-		m_vtoolbar->hide();
+		//m_raiseHandPanel->hide();
+		//m_vtoolbar->hide();
 
 		for (it = ids.begin(); it != ids.end(); it++)
 		{
@@ -196,8 +199,8 @@ void STWhiteBoard::switchShowMode(bool mode)
 	{
 		m_currentIndex = 0;
 		ui.swMain->setCurrentIndex(m_currentIndex);
-		m_raiseHandPanel->show();
-		m_vtoolbar->show();
+		//m_raiseHandPanel->show();
+		//m_vtoolbar->show();
 
 		for (it = ids.begin(); it != ids.end(); it++)
 		{
@@ -937,7 +940,7 @@ void STWhiteBoard::mouseReleaseEvent(QMouseEvent* event)
 
 bool STWhiteBoard::eventFilter(QObject* watched, QEvent* e)
 {
-	if (watched == m_view && e->type() == QEvent::Enter)
+	if ((watched == m_view || watched == ui.pgVideo) && e->type() == QEvent::Enter)
 	{
 		hideStylePanels();
 	}
@@ -1077,6 +1080,12 @@ void STWhiteBoard::joinCourse(QString courseID)
 	m_view->setCourseID(courseID);
 
 	m_courseID = courseID;
+
+	QString admin = queryCourse(m_courseID);
+	if (admin != m_jid)
+	{
+		Q_EMIT listenModeSignal();
+	}
 }
 
 void STWhiteBoard::deleteCourseSlot()

@@ -405,7 +405,6 @@ void STChatDetail::on_pbJoinCourse_clicked()
 	else
 	{
 		STConfirm* m_confirm = new STConfirm(true, this);
-		connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(deleteCourseSlot()));
 		m_confirm->setText(QStringLiteral("请先关闭已打开的课程。"));
 		int parentX = m_main->geometry().x();
 		int parentY = m_main->geometry().y();
@@ -486,6 +485,16 @@ void STChatDetail::updateOthersMessage(RecordItem item)
 		{
 			(*it)->updateCourseDelete(item.time);
 		}
+		m_whiteboard->on_pbClose_clicked();
+		STConfirm* m_confirm = new STConfirm(true, this);
+		m_confirm->setText(QStringLiteral("当前课程已结束。"));
+		int parentX = m_main->geometry().x();
+		int parentY = m_main->geometry().y();
+		int parentWidth = m_main->geometry().width();
+		int parentHeight = m_main->geometry().height();
+		m_confirm->move(QPoint(parentX + (parentWidth - m_confirm->width()) / 2,
+			parentY + (parentHeight - m_confirm->height()) / 2));
+		m_confirm->exec();
 	}
 	else
 	{
@@ -493,6 +502,10 @@ void STChatDetail::updateOthersMessage(RecordItem item)
 		if (item.type == MessageType::MT_CourseCreate)
 		{
 			connect(chatDetailItem, SIGNAL(joinCourseSignal()), this, SLOT(joinCourseSlot()));
+			if (m_group)
+			{
+				ui.pbJoinCourse->setVisible(true);
+			}
 		}
 		m_recordItemList.append(chatDetailItem);
 		QSize itemSize = chatDetailItem->getItemSize();

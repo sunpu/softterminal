@@ -91,6 +91,7 @@ namespace tahiti
 	protected:
 		bool eventFilter(QObject* watched, QEvent* e);
 		virtual void keyPressEvent(QKeyEvent *event);
+		void paintEvent(QPaintEvent *);
 		public Q_SLOTS:
 		void on_pbSelect_clicked();
 		void on_pbPen_clicked();
@@ -103,6 +104,7 @@ namespace tahiti
 		void closeCloudFileView();
 		void closeInviteFriend();
 		void closeRoster();
+		void listenModeSlot();
 	Q_SIGNALS:
 		void openCloudFileViewSignal();
 		void openInviteFriendSignal();
