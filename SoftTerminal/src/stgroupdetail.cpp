@@ -40,12 +40,6 @@ STGroupDetail::STGroupDetail(XmppClient* client, QWidget* parent)
 
 	m_confirm = new STConfirm(false, this);
 	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
-
-	m_cameraPic = new MaskLabel(ui.lblPic);
-	QImage* image = new QImage(":/SoftTerminal/images/camera.png");
-	m_cameraPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
-	m_cameraPic->hide();
-	ui.lblPic->installEventFilter(this);
 }
 
 STGroupDetail::~STGroupDetail()
@@ -167,6 +161,14 @@ void STGroupDetail::setGroupDetail(XmppGroup* group)
 		ui.pbEdit->setVisible(false);
 		ui.tabWidget->removeTab(1);
 		ui.tabWidget->removeTab(1);
+	}
+	else
+	{
+		m_cameraPic = new MaskLabel(ui.lblPic);
+		QImage* image = new QImage(":/SoftTerminal/images/camera.png");
+		m_cameraPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
+		m_cameraPic->hide();
+		ui.lblPic->installEventFilter(this);
 	}
 }
 

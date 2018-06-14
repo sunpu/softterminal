@@ -241,12 +241,7 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	connect(m_contactDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
 	connect(m_contactDetail, SIGNAL(deleteFriend(QString)), this, SLOT(deleteFriend(QString)));
 
-	m_groupDetail = new STGroupDetail(m_xmppClient, this);
-	connect(m_groupDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
-	connect(m_groupDetail, SIGNAL(refreshGroupSignal(QString)), this, SLOT(refreshGroup(QString)));
-	connect(m_groupDetail, SIGNAL(deleteGroupChatSignal(QString)), this, SLOT(deleteChatSlot(QString)));
-	connect(m_groupDetail, SIGNAL(updateGroupPicSignal(QString)), this, SLOT(updateGroupPicSlot(QString)));
-	ui.widGroupDetail->layout()->addWidget(m_groupDetail);
+	m_groupDetail = NULL;
 
 	ui.lblDirect->installEventFilter(this);
 	ui.lblFriend->installEventFilter(this);
@@ -735,6 +730,16 @@ void STMain::on_lwGroupList_itemClicked()
 	QWidget* widget = ui.lwGroupList->itemWidget(item);
 	STGroupItem* groupItem = (STGroupItem*)widget;
 
+	if (m_groupDetail != NULL)
+	{
+		ui.widGroupDetail->layout()->removeWidget(m_groupDetail);
+	}
+	m_groupDetail = new STGroupDetail(m_xmppClient, this);
+	connect(m_groupDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
+	connect(m_groupDetail, SIGNAL(refreshGroupSignal(QString)), this, SLOT(refreshGroup(QString)));
+	connect(m_groupDetail, SIGNAL(deleteGroupChatSignal(QString)), this, SLOT(deleteChatSlot(QString)));
+	connect(m_groupDetail, SIGNAL(updateGroupPicSignal(QString)), this, SLOT(updateGroupPicSlot(QString)));
+	ui.widGroupDetail->layout()->addWidget(m_groupDetail);
 	XmppGroup* group = groupItem->getGroup();
 	m_groupDetail->setGroupDetail(group);
 

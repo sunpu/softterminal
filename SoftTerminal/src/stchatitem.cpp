@@ -76,10 +76,10 @@ void STChatItem::setChatInfo(UserInfo userInfo, XmppGroup* group)
 
 void STChatItem::updateOthersMessage(RecordItem item)
 {
-	if (item.type == MessageType::MT_CourseDelete)
+	/*if (item.type == MessageType::MT_CourseDelete)
 	{
 		return;
-	}
+	}*/
 
 	STRecordManager* recordManager = new STRecordManager(m_userInfo.jid);
 	recordManager->writeRecordItem(item);
@@ -102,7 +102,8 @@ void STChatItem::updateOthersMessage(RecordItem item)
 
 	if (m_group)
 	{
-		if (item.type == MessageType::MT_CourseCreate)
+		if (item.type == MessageType::MT_CourseCreate
+			|| item.type == MessageType::MT_CourseDelete)
 		{
 			content = QString("%1 : %2").arg(item.jid, QStringLiteral("[课程]"));
 		}
