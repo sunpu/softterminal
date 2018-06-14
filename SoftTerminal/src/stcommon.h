@@ -53,6 +53,15 @@ namespace tahiti
 		MT_CourseDelete
 	};
 
+	enum ToolbarMode
+	{
+		Video_Teacher = 0,
+		Video_Student,
+		WhiteBoard_Teacher,
+		WhiteBoard_Student,
+		WhiteBoard_Operator
+	};
+
 	typedef struct user
 	{
 		QString jid;

@@ -99,7 +99,7 @@ STWhiteBoard::STWhiteBoard(XmppClient* client, QWidget *parent)
 	connect(m_vtoolbar, SIGNAL(openRosterSignal()), this, SLOT(openRoster()));
 	connect(m_vtoolbar, SIGNAL(closeRosterSignal()), this, SLOT(closeRoster()));
 	connect(m_vtoolbar, SIGNAL(deleteCourseSignal()), this, SLOT(deleteCourse()));
-	connect(this, SIGNAL(listenModeSignal()), m_vtoolbar, SLOT(listenModeSlot()));
+	connect(this, SIGNAL(toolbarModeSignal(int)), m_vtoolbar, SLOT(toolbarModeSlot(int)));
 
 	m_cloud_file_view = new STWBCloudFileView(this);
 	connect(m_cloud_file_view, SIGNAL(closeCloudFileView()), m_vtoolbar, SLOT(closeCloudFileView()));
@@ -196,6 +196,15 @@ void STWhiteBoard::switchShowMode(bool mode)
 			m_big_videoItems[m_localCameraRenderID]->setVisible(true);
 			m_local_camera_stream->AttachVideoRenderer(m_big_videoItems[m_localCameraRenderID]->getRenderWindow());
 		}
+
+		if (m_admin == m_jid)
+		{
+			Q_EMIT toolbarModeSignal(ToolbarMode::Video_Teacher);
+		}
+		else
+		{
+			Q_EMIT toolbarModeSignal(ToolbarMode::Video_Student);
+		}
 	}
 	else
 	{
@@ -231,6 +240,14 @@ void STWhiteBoard::switchShowMode(bool mode)
 			m_videoItems[m_localCameraRenderID]->use("", QStringLiteral("ÎÒ"), false);
 			m_videoItems[m_localCameraRenderID]->setVisible(true);
 			m_local_camera_stream->AttachVideoRenderer(m_videoItems[m_localCameraRenderID]->getRenderWindow());
+		}
+		if (m_admin == m_jid)
+		{
+			Q_EMIT toolbarModeSignal(ToolbarMode::WhiteBoard_Teacher);
+		}
+		else
+		{
+			Q_EMIT toolbarModeSignal(ToolbarMode::WhiteBoard_Student);
 		}
 	}
 	ui.widVideo->update();
@@ -1083,10 +1100,16 @@ void STWhiteBoard::joinCourse(QString courseID)
 
 	m_courseID = courseID;
 
-	QString admin = queryCourse(m_courseID);
-	if (admin != m_jid)
+	m_admin = queryCourse(m_courseID);
+
+	if (m_admin == m_jid)
 	{
-		Q_EMIT listenModeSignal();
+		m_raiseHandPanel->setVisible(false);
+		Q_EMIT toolbarModeSignal(ToolbarMode::Video_Teacher);
+	}
+	else
+	{
+		Q_EMIT toolbarModeSignal(ToolbarMode::Video_Student);
 	}
 }
 

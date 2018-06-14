@@ -472,17 +472,46 @@ void STWBVToolbar::closeRoster()
 	on_pbRoster_clicked();
 }
 
-void STWBVToolbar::listenModeSlot()
+void STWBVToolbar::toolbarModeSlot(int mode)
 {
-	ui.widSelect->setVisible(false);
-	ui.widPen->setVisible(false);
-	ui.widText->setVisible(false);
-	ui.widDelete->setVisible(false);
-	ui.widCloud->setVisible(false);
-	ui.widInvite->setVisible(false);
-	ui.widDeleteCourse->setVisible(false);
-	ui.line->setVisible(false);
-	ui.line_2->setVisible(false);
+	if (mode == ToolbarMode::Video_Teacher ||
+		mode == ToolbarMode::Video_Student ||
+		mode == ToolbarMode::WhiteBoard_Student)
+	{
+		ui.widSelect->setVisible(false);
+		ui.widPen->setVisible(false);
+		ui.widText->setVisible(false);
+		ui.widDelete->setVisible(false);
+		ui.widCloud->setVisible(false);
+		ui.widInvite->setVisible(false);
+		ui.widDeleteCourse->setVisible(false);
+		ui.line->setVisible(false);
+		ui.line_2->setVisible(false);
+		if (mode == ToolbarMode::Video_Teacher)
+		{
+			ui.widDeleteCourse->setVisible(true);
+			ui.line_2->setVisible(true);
+		}
+	}
+	else if (mode == ToolbarMode::WhiteBoard_Teacher ||
+		mode == ToolbarMode::WhiteBoard_Operator)
+	{
+		ui.widSelect->setVisible(true);
+		ui.widPen->setVisible(true);
+		ui.widText->setVisible(true);
+		ui.widDelete->setVisible(true);
+		ui.widCloud->setVisible(true);
+		ui.widInvite->setVisible(false);
+		ui.widDeleteCourse->setVisible(true);
+		ui.line->setVisible(true);
+		ui.line_2->setVisible(true);
+		if (mode == ToolbarMode::WhiteBoard_Operator)
+		{
+			ui.widCloud->setVisible(false);
+			ui.widDeleteCourse->setVisible(false);
+			ui.line_2->setVisible(false);
+		}
+	}
 }
 
 void STWBVToolbar::paintEvent(QPaintEvent *e)
@@ -512,16 +541,6 @@ void STWBVToolbar::init()
 	m_showRoster = false;
 	ui.widRoster->setStyleSheet("");
 	ui.pbRoster->setStyleSheet("border-image: url(:/SoftTerminal/images/roster.png);");
-
-	ui.widSelect->setVisible(true);
-	ui.widPen->setVisible(true);
-	ui.widText->setVisible(true);
-	ui.widDelete->setVisible(true);
-	ui.widCloud->setVisible(true);
-	ui.widInvite->setVisible(false);
-	ui.widDeleteCourse->setVisible(true);
-	ui.line->setVisible(true);
-	ui.line_2->setVisible(true);
 }
 
 bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)

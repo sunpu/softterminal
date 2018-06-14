@@ -90,7 +90,7 @@ namespace tahiti
 		void muteResultSignal(bool result, QString);
 		void unmuteResultSignal(bool result, QString);
 		void deleteCourseSignal();
-		void listenModeSignal();
+		void toolbarModeSignal(int mode);
 		private Q_SLOTS:
 		void setPenThickness(int thickness);
 		void setPenColor(QString color);
@@ -191,6 +191,7 @@ namespace tahiti
 		std::shared_ptr<ConferencePublication> m_publication;
 		XmppClient* m_xmppClient;
 		QString m_courseID;
+		QString m_admin;
 	};
 }
 #endif

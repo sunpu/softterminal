@@ -5,6 +5,7 @@
 #include <QDialog>
 #include <QEvent>
 #include <QKeyEvent>
+#include "stcommon.h"
 #include "ui_STWBVToolbar.h"
 #include "ui_STWBPenStylePanel.h"
 #include "ui_STWBTextStylePanel.h"
@@ -104,7 +105,7 @@ namespace tahiti
 		void closeCloudFileView();
 		void closeInviteFriend();
 		void closeRoster();
-		void listenModeSlot();
+		void toolbarModeSlot(int mode);
 	Q_SIGNALS:
 		void openCloudFileViewSignal();
 		void openInviteFriendSignal();
