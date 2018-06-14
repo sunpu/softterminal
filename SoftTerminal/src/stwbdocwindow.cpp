@@ -72,7 +72,8 @@ STWBDocWindow::STWBDocWindow(QString path, int index, QWidget * parent)
 
 	m_downloadClient = new STFileClient();
 	connect(m_downloadClient, SIGNAL(onDownloadFinished()), this, SLOT(onDownloadFinished()));
-	m_downloadClient->downloadFile(m_path, m_downloadPath);
+	QString user = STConfig::getConfig("/xmpp/user");
+	m_downloadClient->downloadFile(user + m_path, m_downloadPath);
 }
 
 STWBDocWindow::~STWBDocWindow()

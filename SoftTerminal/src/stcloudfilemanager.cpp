@@ -16,6 +16,8 @@ STCloudFileManager::STCloudFileManager(QWidget * parent) : QWidget(parent)
 
 	m_messageClient = new STMessageClient;
 	connect(m_messageClient, SIGNAL(cloudFileMessageSignal(QString)), this, SLOT(processMessage(QString)));
+
+	m_user = STConfig::getConfig("/xmpp/user");
 }
 
 STCloudFileManager::~STCloudFileManager()
@@ -82,7 +84,8 @@ void STCloudFileManager::refreshCurrentPageTable()
 		path = path + m_folderList.at(i);
 	}
 
-	QString msg = QString("{\"type\":\"file\",\"action\":\"list\",\"data\":{\"path\":\"%1\"}}").arg(path);
+	QString msg= QString("{\"type\":\"file\",\"action\":\"list\","
+		"\"user\":\"%1\",\"data\":{\"path\":\"%2\"}}").arg(m_user, path);
 	m_messageClient->sendMessage(msg);
 }
 
@@ -335,8 +338,8 @@ void STCloudFileManager::handleNewFile(QString name)
 	{
 		path = path + m_folderList.at(i);
 	}
-	QString msg = QString("{\"type\":\"file\",\"action\":\"new\","
-		"\"data\":{\"path\":\"%1\",\"name\":\"%2\"}}").arg(path, name);
+	QString msg = QString("{\"type\":\"file\",\"action\":\"new\",\"user\":\"%1\","
+		"\"data\":{\"path\":\"%2\",\"name\":\"%3\"}}").arg(m_user, path, name);
 	m_messageClient->sendMessage(msg);
 }
 
@@ -409,8 +412,9 @@ void STCloudFileManager::handleFolderView(QString action, QString destPath)
 	QString msg;
 	for (int i = 0; i < m_checkedList.size(); i++)
 	{
-		msg = QString("{\"type\":\"file\",\"action\":\"%1\","
-			"\"data\":{\"path\":\"%2\",\"name\":\"%3\",\"destPath\":\"%4\"}}").arg(action, path, m_checkedList.at(i), destPath);
+		msg = QString("{\"type\":\"file\",\"action\":\"%1\",\"user\":\"%2\","
+			"\"data\":{\"path\":\"%3\",\"name\":\"%4\",\"destPath\":\"%5\"}}").arg(
+				action, m_user, path, m_checkedList.at(i), destPath);
 		m_messageClient->sendMessage(msg);
 	}
 }
@@ -430,8 +434,8 @@ void STCloudFileManager::on_pbDel_clicked()
 	QString msg;
 	for (int i = 0; i < m_checkedList.size(); i++)
 	{
-		msg = QString("{\"type\":\"file\",\"action\":\"del\","
-			"\"data\":{\"path\":\"%1\",\"name\":\"%2\"}}").arg(path, m_checkedList.at(i));
+		msg = QString("{\"type\":\"file\",\"action\":\"del\",\"user\":\"%1\","
+			"\"data\":{\"path\":\"%2\",\"name\":\"%3\"}}").arg(m_user, path, m_checkedList.at(i));
 		m_messageClient->sendMessage(msg);
 	}
 }
@@ -528,7 +532,8 @@ void STCloudUploadFile::on_pbUpload_clicked()
 	{
 		return;
 	}
-	m_uploadClient->uploadFile(m_path, path);
+	QString user = STConfig::getConfig("/xmpp/user");
+	m_uploadClient->uploadFile(user + m_path, path);
 
 	ui.pbUploadStatus->setValue(0);
 	ui.swUpload->setCurrentIndex(1);
@@ -651,7 +656,8 @@ STCloudFolderView::STCloudFolderView(QString action, QWidget * parent)
 
 	STMessageClient* m_messageClient = new STMessageClient;
 	connect(m_messageClient, SIGNAL(cloudFileMessageSignal(QString)), this, SLOT(processMessage(QString)));
-	QString msg = QString("{\"type\":\"folder\",\"action\":\"list\"}");
+	QString user = STConfig::getConfig("/xmpp/user");
+	QString msg = QString("{\"type\":\"folder\",\"action\":\"list\",\"user\":\"%1\"}").arg(user);
 	m_messageClient->sendMessage(msg);
 }
 

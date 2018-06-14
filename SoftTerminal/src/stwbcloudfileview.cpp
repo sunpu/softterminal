@@ -14,6 +14,8 @@ STWBCloudFileView::STWBCloudFileView(QWidget * parent) : QDialog(parent)
 
 	m_messageClient = new STMessageClient;
 	connect(m_messageClient, SIGNAL(cloudFileMessageSignal(QString)), this, SLOT(processMessage(QString)));
+
+	m_user = STConfig::getConfig("/xmpp/user");
 }
 
 STWBCloudFileView::~STWBCloudFileView()
@@ -80,7 +82,8 @@ void STWBCloudFileView::refreshCurrentPageTable()
 		path = path + m_folderList.at(i);
 	}
 
-	QString msg = QString("{\"type\":\"file\",\"action\":\"list\",\"data\":{\"path\":\"%1\"}}").arg(path);
+	QString msg = QString("{\"type\":\"file\",\"action\":\"list\","
+		"\"user\":\"%1\",\"data\":{\"path\":\"%2\"}}").arg(m_user, path);
 	m_messageClient->sendMessage(msg);
 }
 

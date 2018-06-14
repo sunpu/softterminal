@@ -54,6 +54,7 @@ namespace tahiti
 		QMap<QPushButton*, FileInfo> m_folderBtnInfo;
 		STMessageClient* m_messageClient;
 		QString m_action;
+		QString m_user;
 	};
 }
 #endif

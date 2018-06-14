@@ -75,6 +75,7 @@ namespace tahiti
 		QString m_action;
 		QList<QString> m_checkedList;
 		STCloudSupport* m_support;
+		QString m_user;
 	};
 
 	// ------------------------ STCloudSupport ------------------------

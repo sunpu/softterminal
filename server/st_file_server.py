@@ -8,11 +8,12 @@ import zipfile
 import time
 
 HOST = ''
-PORT = 10002
+PORT = 10001
 ADDR = (HOST, PORT)
 
-ROOT_PATH = './file'
-CONVERT_PATH = './convert'
+AVATAR_PATH = './avatar/'
+ROOT_PATH = './sourcefile/'
+CONVERT_PATH = './convertfile/'
 
 class STCloudUploadServer(SocketServer.BaseRequestHandler):
     filePath = ''
@@ -22,8 +23,11 @@ class STCloudUploadServer(SocketServer.BaseRequestHandler):
     convertThread = None
     downloadThread = None
     supportExt = ['.pptx', '.ppt', '.pptm', '.docx', '.doc', '.pdf']
+    isAvatar = False
 
     def downloadFileProcess(self, destFilePath):
+        if not os.path.exists(destFilePath):
+            return
         f = open(destFilePath, 'rb')
         total = 0
         while True:
@@ -92,14 +96,17 @@ class STCloudUploadServer(SocketServer.BaseRequestHandler):
             path = data.replace('#*#download#', '')
             path = path.replace('@%@', '')
             print path
-            (filepath, tempfilename) = os.path.split(path)
-            (shortname, extension) = os.path.splitext(tempfilename)
-            print shortname, extension
             destFilePath = ''
-            if extension.lower() in self.supportExt:
-                destFilePath = os.path.join(CONVERT_PATH + path, tempfilename + '.zip')
+            if path.startswith('avatar'):
+                    destFilePath = AVATAR_PATH + path.split('/')[1]
             else:
-                destFilePath = ROOT_PATH + path
+                (filepath, tempfilename) = os.path.split(path)
+                (shortname, extension) = os.path.splitext(tempfilename)
+                print shortname, extension
+                if extension.lower() in self.supportExt:
+                    destFilePath = os.path.join(CONVERT_PATH + path, tempfilename + '.zip')
+                else:
+                    destFilePath = ROOT_PATH + path
             # 循环写文件
             print destFilePath
             self.downloadThread = threading.Thread(target = self.downloadFileProcess, args=(destFilePath,))
@@ -107,8 +114,12 @@ class STCloudUploadServer(SocketServer.BaseRequestHandler):
         elif len(self.filePath) == 0:
             data = data.replace('#*#', '')
             data = data.replace('@%@', '')
-            self.filePath = ROOT_PATH + data
-            self.convertPath = CONVERT_PATH + data
+            if data.startswith('avatar'):
+                self.isAvatar = True
+                self.filePath = AVATAR_PATH + data.split('/')[1]
+            else:
+                self.filePath = ROOT_PATH + data
+                self.convertPath = CONVERT_PATH + data
             print '--------------', self.filePath
             print '--------------', self.convertPath
             self.desFile = open(self.filePath, 'wb+')
@@ -117,8 +128,9 @@ class STCloudUploadServer(SocketServer.BaseRequestHandler):
             data = data.replace('#*#finish@%@', '')
             self.desFile.write(data)
             self.desFile.close()
-            self.convertThread = threading.Thread(target = self.convertFileProcess)
-            self.convertThread.start()
+            if not self.isAvatar:
+                self.convertThread = threading.Thread(target = self.convertFileProcess)
+                self.convertThread.start()
         else:
             self.total += len(data)
             print self.total
