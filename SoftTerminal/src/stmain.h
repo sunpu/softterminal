@@ -153,6 +153,7 @@ namespace tahiti
 		void updateOthersMessage(QString jid, QString msg, QString time);
 		void updateGroupMessage(QString jid, QString user, QString msg, QString time);
 		void deleteChatSlot(QString id);
+		void updateGroupPicSlot(QString picPath);
 	private:
 		Ui::STMainClass ui;
 		QPoint mousePosition;

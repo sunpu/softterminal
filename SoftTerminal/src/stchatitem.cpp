@@ -151,3 +151,9 @@ void STChatItem::clearUnreadNum()
 	ui.lblUnreadNum->clear();
 	ui.lblUnreadNum->setVisible(false);
 }
+
+void STChatItem::updateChatPic(QString picPath)
+{
+	QImage* image = new QImage(picPath);
+	ui.lblChatPic->setPixmap(QPixmap::fromImage(*image).scaled(36, 36));
+}

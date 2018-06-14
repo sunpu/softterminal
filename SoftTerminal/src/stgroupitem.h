@@ -19,6 +19,7 @@ namespace tahiti
 		~STGroupItem();
 		XmppGroup* getGroup() { return m_group; };
 		GroupInfo getGroupInfo() { return m_groupInfo; };
+		void updateGroupPic(QString picPath);
 	private:
 		Ui::STGroupItemClass ui;
 		XmppGroup* m_group;

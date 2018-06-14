@@ -512,6 +512,16 @@ void STWBVToolbar::init()
 	m_showRoster = false;
 	ui.widRoster->setStyleSheet("");
 	ui.pbRoster->setStyleSheet("border-image: url(:/SoftTerminal/images/roster.png);");
+
+	ui.widSelect->setVisible(true);
+	ui.widPen->setVisible(true);
+	ui.widText->setVisible(true);
+	ui.widDelete->setVisible(true);
+	ui.widCloud->setVisible(true);
+	ui.widInvite->setVisible(false);
+	ui.widDeleteCourse->setVisible(true);
+	ui.line->setVisible(true);
+	ui.line_2->setVisible(true);
 }
 
 bool STWBVToolbar::eventFilter(QObject* watched, QEvent* e)

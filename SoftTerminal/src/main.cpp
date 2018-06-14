@@ -4,9 +4,6 @@
 #include "stconfig.h"
 #include "stloginrotate.h"
 #include <QtWidgets/QApplication>
-#include <QFile>
-#include <QFileInfo>
-#include <QDirIterator>
 
 using namespace tahiti;
 
@@ -35,18 +32,6 @@ int main(int argc, char *argv[])
 	if (!dir->exists(rootPath + LOG_PATH))
 	{
 		dir->mkpath(rootPath + LOG_PATH);
-	}
-
-	QString avatarPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-		+ DATA_ROOT_PATH + AVATAR_PATH;
-	QDir deleteDir;
-	deleteDir.setPath(avatarPath);
-	QDirIterator iter(deleteDir, QDirIterator::Subdirectories);
-	while (iter.hasNext())
-	{
-		iter.next();
-		QFileInfo info = iter.fileInfo();
-		QFile::remove(QString(avatarPath) + info.fileName());
 	}
 
 	XmppClient* xmppClient = new XmppClient();

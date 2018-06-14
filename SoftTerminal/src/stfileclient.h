@@ -47,6 +47,39 @@ namespace tahiti
 		QString m_remotePath;
 		QString m_localFilePath;
 	};
+	/*
+	class STAvatarClient
+	{
+	public:
+		STAvatarClient(QObject * parent = 0);
+		~STAvatarClient();
+		void downloadAvatar(QString remotePath, QString localFilePath);
+	private:
+		void startDownload();
+		void finishDownload();
+		private Q_SLOTS :
+		void sendUploadInfo();
+		void uploadFileData(qint64);
+		void sendDownloadInfo();
+		void downloadFileData();
+		void displayError(QAbstractSocket::SocketError);
+	Q_SIGNALS:
+		void onUploadProcess(int percent);
+		void onUploadFinished();
+		void onDownloadFinished();
+	private:
+		QTcpSocket* m_tcpSocket;//直接建立TCP套接字类
+		QByteArray m_outBlock;  //分次传
+		qint64 m_loadSize;  //每次发送数据的大小
+		qint64 m_byteToWrite;  //剩余数据大小
+		qint64 m_totalSize;  //文件总大小
+		bool m_startUploadFileData;
+		QString m_remoteFilePath;
+		qint64 m_bytesReceived;
+		QFile* m_localFile;
+		QString m_remotePath;
+		QString m_localFilePath;
+	};*/
 }
 
 #endif

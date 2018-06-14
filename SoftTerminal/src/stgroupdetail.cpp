@@ -40,6 +40,12 @@ STGroupDetail::STGroupDetail(XmppClient* client, QWidget* parent)
 
 	m_confirm = new STConfirm(false, this);
 	connect(m_confirm, SIGNAL(confirmOK()), this, SLOT(handleConfirmOK()));
+
+	m_cameraPic = new MaskLabel(ui.lblPic);
+	QImage* image = new QImage(":/SoftTerminal/images/camera.png");
+	m_cameraPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
+	m_cameraPic->hide();
+	ui.lblPic->installEventFilter(this);
 }
 
 STGroupDetail::~STGroupDetail()
@@ -86,8 +92,15 @@ void STGroupDetail::setGroupDetail(XmppGroup* group)
 	ui.pbEdit->setVisible(true);
 	ui.pbSave->setVisible(false);
 
-	QString path = ":/SoftTerminal/images/group_icon.png";
-	QImage* image = new QImage(path);
+
+	QString avatarPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+		+ DATA_ROOT_PATH + AVATAR_PATH;
+	QString avatarFile = avatarPath + m_groupInfo.id + ".png";
+	if (!QFile::exists(avatarFile))
+	{
+		avatarFile = ":/SoftTerminal/images/group_icon.png";
+	}
+	QImage* image = new QImage(avatarFile);
 	ui.lblPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
 
 	ui.lblGroupName->setText(m_groupInfo.name);
@@ -277,4 +290,77 @@ void STGroupDetail::handleConfirmOK()
 	ui.widMessage->setVisible(true);
 	Q_EMIT refreshGroupSignal("");
 	Q_EMIT deleteGroupChatSignal(m_groupInfo.id);
+}
+
+bool STGroupDetail::eventFilter(QObject* obj, QEvent* e)
+{
+	if (ui.lblPic == obj)
+	{
+		if (e->type() == QEvent::Enter)
+		{
+			m_cameraPic->show();
+			return true;
+		}
+		else if (e->type() == QEvent::Leave)
+		{
+			m_cameraPic->hide();
+			return true;
+		}
+		else if (e->type() == QEvent::MouseButtonPress)
+		{
+			STUploadPic* uploadPic = new STUploadPic(this);
+			connect(uploadPic, SIGNAL(uploadPic(QString)), this, SLOT(uploadPicFinished(QString)));
+			uploadPic->setGeometry(mapToGlobal(pos()).x() + (width() - uploadPic->width()) / 2,
+				mapToGlobal(pos()).y() + (height() - uploadPic->height()) / 2,
+				uploadPic->width(), uploadPic->height());
+			uploadPic->exec();
+			return true;
+		}
+	}
+	return false;
+}
+
+void STGroupDetail::uploadPicFinished(QString path)
+{
+	QString desPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+		+ DATA_ROOT_PATH + AVATAR_PATH;
+
+	// 删除旧图片
+	QString oldFileName;
+	QDir dir;
+	dir.setPath(desPath);
+	QDirIterator iter(dir, QDirIterator::Subdirectories);
+	while (iter.hasNext())
+	{
+		iter.next();
+		QFileInfo info = iter.fileInfo();
+		if (info.isFile() && info.fileName().startsWith(m_groupInfo.id))
+		{
+			oldFileName = QString(desPath) + info.fileName();
+			QFile::remove(oldFileName);
+		}
+	}
+
+	// 复制新图片
+	QFileInfo fi = QFileInfo(path);
+	QString baseName = fi.suffix().toLower();
+	QString desFile = desPath + m_groupInfo.id + "." + baseName;
+	QFile::copy(path, desFile);
+
+	QString finalFile = desFile;
+	if (baseName != "png")
+	{
+		finalFile = desPath + m_groupInfo.id + ".png";
+		QImage* img = new QImage(desFile);
+		img->save(finalFile, "PNG");
+		QFile::remove(desFile);
+	}
+
+	// 更新
+	m_xmppClient->modifySelfPic(finalFile);
+
+	Q_EMIT updateGroupPicSignal(finalFile);
+
+	QImage* image = new QImage(finalFile);
+	ui.lblPic->setPixmap(QPixmap::fromImage(*image).scaled(80, 80));
 }

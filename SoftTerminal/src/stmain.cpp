@@ -245,6 +245,7 @@ STMain::STMain(XmppClient* client) : m_xmppClient(client)
 	connect(m_groupDetail, SIGNAL(openChatDetail(QString)), this, SLOT(switchChatWindow(QString)));
 	connect(m_groupDetail, SIGNAL(refreshGroupSignal(QString)), this, SLOT(refreshGroup(QString)));
 	connect(m_groupDetail, SIGNAL(deleteGroupChatSignal(QString)), this, SLOT(deleteChatSlot(QString)));
+	connect(m_groupDetail, SIGNAL(updateGroupPicSignal(QString)), this, SLOT(updateGroupPicSlot(QString)));
 	ui.widGroupDetail->layout()->addWidget(m_groupDetail);
 
 	ui.lblDirect->installEventFilter(this);
@@ -293,7 +294,6 @@ void STMain::initChatData()
 	STChatItem* chatItem;
 	QList<QString>::Iterator fileIt;
 	UserInfo groupInfo;
-	groupInfo.photoPath = ":/SoftTerminal/images/group_icon.png";
 	// 过滤
 	for (fileIt = files.begin(); fileIt != files.end(); fileIt++)
 	{
@@ -312,6 +312,15 @@ void STMain::initChatData()
 		{
 			if (fileIt->startsWith((*groupIt)->getGroupInfo().id))
 			{
+				QString avatarPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+					+ DATA_ROOT_PATH + AVATAR_PATH;
+				QString avatarFile = avatarPath + (*groupIt)->getGroupInfo().id + ".png";
+				if (!QFile::exists(avatarFile))
+				{
+					avatarFile = ":/SoftTerminal/images/group_icon.png";
+				}
+
+				groupInfo.photoPath = avatarFile;
 				groupInfo.jid = (*groupIt)->getGroupInfo().id;
 				groupInfo.userName = (*groupIt)->getGroupInfo().name;
 
@@ -515,6 +524,30 @@ void STMain::refreshGroup(QString id)
 void STMain::deleteChatSlot(QString id)
 {
 	deleteChat(id);
+}
+
+void STMain::updateGroupPicSlot(QString picPath)
+{
+	QList<STChatItem*>::Iterator itemIt;
+	int index = 0;
+	for (itemIt = m_chatItemList.begin(); itemIt != m_chatItemList.end(); itemIt++, index++)
+	{
+		if (picPath.contains((*itemIt)->getUserInfo().jid))
+		{
+			(*itemIt)->updateChatPic(picPath);
+			break;
+		}
+	}
+
+	QList<STGroupItem*>::Iterator it;
+	for (it = m_groupItemList.begin(); it != m_groupItemList.end(); it++)
+	{
+		if (picPath.contains((*it)->getGroupInfo().id))
+		{
+			(*it)->updateGroupPic(picPath);
+			break;
+		}
+	}
 }
 
 void STMain::updateOthersMessage(QString jid, QString msg, QString time)
@@ -799,11 +832,22 @@ STRecordManager* STMain::createChat(QString jid)
 	QList<XmppGroup*> groupList = m_xmppClient->getGroups();
 	QList<XmppGroup*>::const_iterator groupIt;
 	UserInfo groupInfo;
-	groupInfo.photoPath = ":/SoftTerminal/images/group_icon.png";
+	QString avatarPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+		+ DATA_ROOT_PATH + AVATAR_PATH;
+	QString avatarFile;
 	for (groupIt = groupList.constBegin(); groupIt != groupList.constEnd(); groupIt++)
 	{
 		if ((*groupIt)->getGroupInfo().id == jid)
 		{
+			avatarFile = avatarPath + jid + ".png";
+			if (QFile::exists(avatarFile))
+			{
+				groupInfo.photoPath = avatarFile;
+			}
+			else
+			{
+				groupInfo.photoPath = ":/SoftTerminal/images/group_icon.png";
+			}
 			groupInfo.jid = jid;
 			groupInfo.userName = (*groupIt)->getGroupInfo().name;
 

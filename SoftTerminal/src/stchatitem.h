@@ -24,6 +24,7 @@ namespace tahiti
 		void updateUnreadNum();
 		void clearUnreadNum();
 		XmppGroup* getGroup();
+		void updateChatPic(QString picPath);
 	private:
 		Ui::STChatItemClass ui;
 		UserInfo m_userInfo;

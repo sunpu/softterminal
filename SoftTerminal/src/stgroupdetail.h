@@ -9,6 +9,7 @@
 #include "stcontactitem.h"
 #include "xmppclient.h"
 #include "stconfirm.h"
+#include "stuploadpic.h"
 
 using namespace tahiti;
 
@@ -46,10 +47,14 @@ namespace tahiti
 		void addFriendSlot(UserInfo userInfo);
 		void deleteMemberSlot(UserInfo userInfo);
 		void handleConfirmOK();
+		void uploadPicFinished(QString path);
+	protected:
+		bool eventFilter(QObject* obj, QEvent* e);
 	Q_SIGNALS:
 		void openChatDetail(QString jid);
 		void refreshGroupSignal(QString id);
 		void deleteGroupChatSignal(QString jid);
+		void updateGroupPicSignal(QString picPath);
 	private:
 		Ui::STGroupDetailClass ui;
 		XmppClient* m_xmppClient;
@@ -59,6 +64,7 @@ namespace tahiti
 		QList<QString> m_memberList;
 		STConfirm* m_confirm;
 		QWidget* m_main;
+		MaskLabel* m_cameraPic;
 	};
 }
 #endif

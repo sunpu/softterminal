@@ -83,7 +83,6 @@ namespace tahiti
 		UserInfo getSelfInfo();
 		void modifyPasswd(QString password);
 		void queryVCard(QString jid);
-		void queryAvatar(QString jid);
 		void modifyVCard(UserInfo userInfo);
 		void modifySelfPic(QString picFile);
 		bool subscribeOther(QString jid);
@@ -102,6 +101,8 @@ namespace tahiti
 		void createGroup(GroupInfo info, QList<QString> members);
 		void removeGroup(QString id);
 		void processOfflineMsg();
+		public Q_SLOTS:
+		void queryAvatar(QString jid);
 		private Q_SLOTS:
 		void ackSubscriptionRequest(QString jid, bool ack);
 		void joinGroupResultSlot(bool result);
@@ -114,6 +115,7 @@ namespace tahiti
 		void refreshContactSignal();
 		void joinGroupResultSignal(bool result);
 		void createGroupResultSignal(QString id);
+		void queryAvatarSignal(QString);
 	private:
 
 		void notifyMyInfo();
@@ -211,6 +213,7 @@ namespace tahiti
 		void createGroupResultSignal(QString id);
 		void showGroupMessage(QString jid, QString user, QString msg, QString time);
 		void refreshOnlineSignal();
+		void queryAvatarSignal(QString jid);
 		private Q_SLOTS:
 		void onContactFoundResult(int result, QVariant dataVar);
 	private:

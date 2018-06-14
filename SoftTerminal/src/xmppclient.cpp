@@ -17,6 +17,7 @@ XmppClient::XmppClient()
 	m_isWorking = false;
 
 	qRegisterMetaType<QVariant>("QVariant");
+	connect(this, SIGNAL(queryAvatarSignal(QString)), this, SLOT(queryAvatar(QString)));
 }
 
 XmppClient::~XmppClient()
@@ -104,8 +105,6 @@ void XmppClient::login()
 	m_selfInfo = {"", "", "", "", "", ""};
 
 	pthread_create(&m_tidConnect, NULL, longConnectProc, m_client);
-
-	queryAvatar(m_xmppUser + "@localhost");
 }
 
 void* XmppClient::longConnectProc(void* args)
@@ -148,6 +147,22 @@ void XmppClient::logout()
 void XmppClient::onConnect()
 {
 	TAHITI_INFO("connect server success!");
+
+	QString avatarPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+		+ DATA_ROOT_PATH + AVATAR_PATH;
+	QDir deleteDir;
+	deleteDir.setPath(avatarPath);
+	QDirIterator iter(deleteDir, QDirIterator::Subdirectories);
+	while (iter.hasNext())
+	{
+		iter.next();
+		QFileInfo info = iter.fileInfo();
+		if (info.fileName().startsWith(m_xmppUser + "@localhost"))
+		{
+			continue;
+		}
+		QFile::remove(QString(avatarPath) + info.fileName());
+	}
 
 	setXmppStatus(Presence::Chat);
 	notifyMyInfo();
@@ -279,7 +294,6 @@ void XmppClient::queryRoster()
 
 		// 获取card信息
 		queryVCard((*it).second->jidJID().full().c_str());
-		queryAvatar((*it).second->jidJID().full().c_str());
 	}
 }
 
@@ -341,6 +355,7 @@ void XmppClient::queryVCard(QString id)
 {
 	JID jid(id.toUtf8().constData());
 	m_vManager->fetchVCard(jid, this);
+	Q_EMIT queryAvatarSignal(id);
 }
 
 void XmppClient::queryAvatar(QString jid)
@@ -720,11 +735,12 @@ void XmppClient::removeGroup(QString id)
 XmppGroup::XmppGroup(XmppClient* client, QString nick) : m_client(client)
 {
 	connect(m_client, SIGNAL(contactFoundResult(int, QVariant)), this, SLOT(onContactFoundResult(int, QVariant)));
+	connect(this, SIGNAL(queryAvatarSignal(QString)), m_client, SLOT(queryAvatar(QString)));
 
 	m_info.id = nick.split("@")[0];
 	m_owner = nick.split("/")[1].append("@localhost");
 	m_client->queryVCard(m_owner);
-	m_client->queryAvatar(m_owner);
+	Q_EMIT queryAvatarSignal(m_info.id);
 
 	m_room = new MUCRoom(client->getClient(), JID(nick.toUtf8().constData()), this, this);
 	m_room->join();
@@ -793,7 +809,6 @@ void XmppGroup::setMembers(QList<QString> members)
 		MUCListItem item(JID(it->toUtf8().constData()), RoleParticipant, AffiliationMember, "");
 		items.push_back(item);
 		m_client->queryVCard(*it);
-		m_client->queryAvatar(*it);
 	}
 	m_room->storeList(items, StoreMemberList);
 	m_room->requestList(RequestMemberList);
@@ -947,7 +962,6 @@ void XmppGroup::handleMUCConfigList(MUCRoom* room, const MUCListItemList& items,
 			printf("owner----------- %s\n", it->jid().username().c_str());
 			m_owner = QString(it->jid().username().c_str()).append("@localhost");
 			m_client->queryVCard(m_owner);
-			m_client->queryAvatar(m_owner);
 			break;
 		}
 	}
@@ -959,7 +973,6 @@ void XmppGroup::handleMUCConfigList(MUCRoom* room, const MUCListItemList& items,
 			printf("member----------- %s\n", it->jid().username().c_str());
 			m_members.append(QString(it->jid().username().c_str()).append("@localhost"));
 			m_client->queryVCard(QString(it->jid().username().c_str()).append("@localhost"));
-			m_client->queryAvatar(QString(it->jid().username().c_str()).append("@localhost"));
 		}
 	}
 }
