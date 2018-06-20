@@ -1,0 +1,31 @@
+文件：
+{"type":"folder","action":"list","user":"aaa"}
+{"type":"file","action":"list","user":"aaa","data":{"path":"/1/2"}}
+{"type":"file","action":"new","user":"aaa","data":{"path":"/1/2","name":"xxx"}}
+{"type":"file","action":"copy","user":"aaa","data":{"path":"/2","name":"xxx","destPath":"/3"}}
+{"type":"file","action":"move","user":"aaa","data":{"path":"/2","name":"xxx","destPath":"/3"}}
+{"type":"file","action":"del","user":"aaa","data":{"path":"/2","name":"xxx"}}
+
+2 老师加载文档时，别人下载
+
+
+课程：
+{"type":"course","action":"new","courseID":"111","admin":"st1@localhost"}  // 插入T_COURSE_INFO表
+{"type":"course","action":"del","courseID":"111"}  // 删T_COURSE_INFO表、T_COURSE_CONTENT表
+{"type":"course","action":"join","courseID":"111","isAdmin":"false", "jid":"a","name":"aaa","mic":"disable","camera":"disable"}   // 读取T_COURSE_CONTENT表，返回历史数据，插入/更新T_COURSE_MEMBER表
+{"type":"course","action":"keepalive","courseID":"111","jid":"a"}  // 插入/更新T_COURSE_MEMBER表
+{"type":"course","action":"quit","courseID":"111","jid":"a"}  // 删除T_COURSE_MEMBER表
+{"type":"course","action":"queryAdmin","courseID":"111"}  // 查询T_COURSE_INFO表
+{"type":"course","action":"queryRoster","courseID":"111"}  // 查询T_COURSE_MEMBER表
+
+权限：
+{"type":"authority","subtype":"show","flag":"true","courseID":"111","jid":"a"}  // 实时广播
+{"type":"authority","subtype":"operate","flag":"true","courseID":"111","jid":"a"}  // 实时广播
+{"type":"authority","subtype":"mic","flag":"true","courseID":"111","jid":"a"}  // 实时广播
+
+电子白板：
+{"type":"wbrealtime","courseID":"111","data":{"action":"pen","color":"#000000","thickness":12,"points":[12,23,12,34]}}  // 实时广播
+{"type":"wbitem","subtype":"add","courseID":"111","data":{"action":"pen","color":"#000000","thickness":12,"points":[12,23,12,34]},"id":"uuid"}  // 实时广播、插入T_COURSE_CONTENT表
+{"type":"wbitem","subtype":"add","courseID":"111","data":{"action":"text","color":"#000000","size":12,"content":"aaa","pos":[12,23]},"id":"uuid"}   // 实时广播、插入T_COURSE_CONTENT表
+{"type":"wbitem","subtype":"move","courseID":"111","data":{"pos":[2,3]},"id":"uuid"}    // 实时广播、修改T_COURSE_CONTENT表
+{"type":"wbitem","subtype":"del","courseID":"111","ids":["uuid1","uuid2","uuid3"]}  // 实时广播、删除T_COURSE_CONTENT表

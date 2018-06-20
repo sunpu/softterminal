@@ -85,30 +85,76 @@ def processMessage(data):
     if datas['type'] == 'course':
         courseID = datas['courseID']
         if datas['action'] == 'new':
-            # 插course表、wbitem表
+            # 插T_COURSE_INFO表
             admin = datas['admin']
             sqlRet = Db.execute('select * from T_COURSE_INFO where COURSE_ID="%s";' % courseID)
             if len(sqlRet) == 0:
                 Db.execute('insert into T_COURSE_INFO values ("%s", "%s");' % (courseID, admin))
-        elif datas['action'] == 'query':
-            # 查询course表
-            sqlRet = Db.execute('select ADMIN from T_COURSE_INFO where COURSE_ID="%s";' % courseID)
-            if len(sqlRet) == 1:
-                return str(sqlRet[0][0])
-            else:
-                return ''
         elif datas['action'] == 'del':
-            # 删course表、wbitem表
+            # 删T_COURSE_INFO表、T_COURSE_CONTENT表
             Db.execute('delete from T_COURSE_INFO where COURSE_ID="%s";' % courseID)
             Db.execute('delete from T_COURSE_CONTENT where COURSE_ID="%s";' % courseID)
         elif datas['action'] == 'join':
-            # 读取wbitem表，返回历史数据
+            # 读取T_COURSE_CONTENT表，返回历史数据
             sqlRet = Db.execute('select CONTENT from T_COURSE_CONTENT where COURSE_ID="%s";' % courseID)
             for i in range(0, len(sqlRet)):
                 content = str(sqlRet[i][0])
                 content = content.replace('\\\'', '\"')
                 print content
                 publisher.send_multipart([str(courseID), content])
+            # 插/更新T_COURSE_MEMBER表
+            isAdmin = datas['isAdmin']
+            if isAdmin == 'false':
+                jid = datas['jid']
+                name = datas['name']
+                mic = datas['mic']
+                camera = datas['camera']
+                time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                sqlRet = Db.execute('select * from T_COURSE_MEMBER where COURSE_ID="%s" and JID="%s";' % (courseID, jid))
+                if len(sqlRet) == 1:
+                    Db.execute('update T_COURSE_MEMBER set NAME="%s",SHOW="false",OPERATE="false",MIC="%s", \
+                        CAMERA="%s",KEEPALIVE="%s" where COURSE_ID="%s" and JID="%s";' % (name, mic, camera, time, courseID, jid))
+                else:
+                    Db.execute('insert into T_COURSE_MEMBER values ("%s", "%s", "%s", "false", "false", "%s", "%s", "%s");'
+                        % (courseID, jid, name, mic, camera, time))
+            publisher.send_multipart([str(courseID), str(data)])
+        elif datas['action'] == 'quit':
+            # 删除T_COURSE_MEMBER表
+            jid = datas['jid']
+            Db.execute('delete from T_COURSE_MEMBER where COURSE_ID="%s" and JID="%s";' % (courseID, jid))
+            publisher.send_multipart([str(courseID), str(data)])
+        elif datas['action'] == 'queryAdmin':
+            # 查询T_COURSE_INFO表
+            sqlRet = Db.execute('select ADMIN from T_COURSE_INFO where COURSE_ID="%s";' % courseID)
+            if len(sqlRet) == 1:
+                return str(sqlRet[0][0])
+            else:
+                return ''
+        elif datas['action'] == 'queryRoster':
+            # 查询T_COURSE_MEMBER表
+            sqlRet = Db.execute('select JID,NAME,SHOW,OPERATE,MIC,CAMERA,KEEPALIVE from T_COURSE_MEMBER where COURSE_ID="%s";' % courseID)
+            print sqlRet
+            timeNow = datetime.datetime.now()
+            ret = '['
+            for i in range(0, len(sqlRet)):
+                timeKeepalive = datetime.datetime.strptime(sqlRet[i][6], '%Y-%m-%d %H:%M:%S')
+                if (timeNow - timeKeepalive).seconds > 20:
+                    Db.execute('delete from T_COURSE_MEMBER where COURSE_ID="%s" and JID="%s";' % (courseID, sqlRet[i][0]))
+                    continue
+                ret += '{"jid":"%s","name":"%s","show":"%s","operate":"%s","mic":"%s","camera":"%s"},'  % (sqlRet[i][0], sqlRet[i][1], sqlRet[i][2], sqlRet[i][3], sqlRet[i][4], sqlRet[i][5])
+            ret = ret[:-1] + ']'
+            if len(ret) == 1:
+                ret = ''
+            return ret
+        elif datas['action'] == 'keepalive':
+            # 更新T_COURSE_MEMBER表
+            jid = datas['jid']
+            time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            sqlRet = Db.execute('select * from T_COURSE_MEMBER where COURSE_ID="%s" and JID="%s";' % (courseID, jid))
+            if len(sqlRet) == 1:
+                Db.execute('update T_COURSE_MEMBER set KEEPALIVE="%s" where COURSE_ID="%s" and JID="%s";' % (time, courseID, jid))
+            else:
+                pass
         else:
             pass
     elif datas['type'] == 'wbitem':
@@ -118,17 +164,32 @@ def processMessage(data):
         data = data.replace('\"', '\\\'')
         if datas['subtype'] == 'add':
             id = datas['id']
-            # 插wbitem表
+            # 插T_COURSE_CONTENT表
             Db.execute('insert into T_COURSE_CONTENT values ("%s", "%s", "%s");' % (id, courseID, data))
         elif datas['subtype'] == 'move':
             id = datas['id']
-            # 修改wbitem表
+            # 修改T_COURSE_CONTENT表
             Db.execute('insert into T_COURSE_CONTENT values ("%s", "%s", "%s");' % (id, courseID, data))
         elif datas['subtype'] == 'del':
             ids = datas['ids']
-            # 删除wbitem表
+            # 删除T_COURSE_CONTENT表
             for i in range(0, len(ids)):
                 Db.execute('delete from T_COURSE_CONTENT where ID="%s";' % ids[i])
+    elif datas['type'] == 'authority':
+        # 实时广播
+        courseID = datas['courseID']
+        publisher.send_multipart([str(courseID), str(data)])
+        jid = datas['jid']
+        subtype = datas['subtype']
+        flag = datas['flag']
+        sqlRet = Db.execute('select * from T_COURSE_MEMBER where COURSE_ID="%s" and JID="%s";' % (courseID, jid))
+        if len(sqlRet) == 1:
+            if subtype == 'show':
+                Db.execute('update T_COURSE_MEMBER set SHOW="%s" where COURSE_ID="%s" and JID="%s";' % (flag, courseID, jid))
+            elif subtype == 'operate':
+                Db.execute('update T_COURSE_MEMBER set OPERATE="%s" where COURSE_ID="%s" and JID="%s";' % (flag, courseID, jid))
+            elif subtype == 'mic':
+                Db.execute('update T_COURSE_MEMBER set MIC="%s" where COURSE_ID="%s" and JID="%s";' % (flag, courseID, jid))
     elif datas['type'] == 'wbrealtime':
         # 实时广播
         courseID = datas['courseID']

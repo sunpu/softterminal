@@ -102,7 +102,7 @@ class MajorDomoBroker(object):
 
                 sender = msg.pop(0)
                 empty = msg.pop(0)
-                #assert empty == ''
+                assert empty == ''
                 header = msg.pop(0)
 
                 if (MDP.C_CLIENT == header):
