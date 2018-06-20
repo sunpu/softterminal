@@ -10,6 +10,11 @@ start()
     python mdbroker.py &
     python st_message_server.py &
     python st_file_server.py &
+
+    ret=`ps aux | grep "brokerwd.sh" | grep -v grep | wc -l`
+    if [ $ret -eq 0 ]; then
+        ./brokerwd.sh &
+    fi
 }
 
 stop()

@@ -366,6 +366,7 @@ void STWBRoster::updateBtnImage(QPushButton* button, BtnInfo info)
 			{
 				info.operateBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_off.png);");
 			}
+			info.operateBtn->setEnabled(true);
 			if (m_btnInfoMap[info.cameraBtn].enable)
 			{
 				if (m_btnInfoMap[info.cameraBtn].flag)
@@ -376,6 +377,7 @@ void STWBRoster::updateBtnImage(QPushButton* button, BtnInfo info)
 				{
 					info.cameraBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/camera_off.png);");
 				}
+				info.cameraBtn->setEnabled(true);
 			}
 			if (m_btnInfoMap[info.micBtn].enable)
 			{
@@ -387,6 +389,7 @@ void STWBRoster::updateBtnImage(QPushButton* button, BtnInfo info)
 				{
 					info.micBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_off.png);");
 				}
+				info.micBtn->setEnabled(true);
 			}
 		}
 		else
@@ -395,6 +398,9 @@ void STWBRoster::updateBtnImage(QPushButton* button, BtnInfo info)
 			info.operateBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_disable.png);");
 			info.cameraBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/camera_disable.png);");
 			info.micBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_disable.png);");
+			info.operateBtn->setEnabled(false);
+			info.cameraBtn->setEnabled(false);
+			info.micBtn->setEnabled(false);
 		}
 	}
 	else if (info.type == "operate")
