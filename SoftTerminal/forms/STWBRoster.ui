@@ -448,12 +448,12 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
         </column>
         <column>
          <property name="text">
-          <string>麦克风</string>
+          <string>摄像头</string>
          </property>
         </column>
         <column>
          <property name="text">
-          <string>摄像头</string>
+          <string>麦克风</string>
          </property>
         </column>
         <column>

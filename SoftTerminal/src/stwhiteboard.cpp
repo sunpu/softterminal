@@ -13,6 +13,7 @@ STWhiteBoard::STWhiteBoard(XmppClient* client, QWidget *parent)
 	connect(m_messageClient, SIGNAL(whiteBoardMessageSignal(QString)),
 		this, SLOT(whiteBoardMessageSlot(QString)));
 
+	connect(this, SIGNAL(sendKeepaliveSignal()), this, SLOT(sendKeepaliveSlot()));
 	connect(this, SIGNAL(newStreamSignal(QString, int, int)), this, SLOT(newStreamSlot(QString, int, int)));
 	connect(this, SIGNAL(showLocalCameraSignal()), this, SLOT(showLocalCamera()));
 	connect(this, SIGNAL(unshowLocalCameraSignal()), this, SLOT(unshowLocalCamera()));
@@ -72,7 +73,7 @@ STWhiteBoard::STWhiteBoard(XmppClient* client, QWidget *parent)
 	m_vtoolbar = new STWBVToolbar(this);
 	int toolbarX = geometry().width() - m_vtoolbar->width() - 10;
 	int toolbarY = geometry().height() / 2 - m_vtoolbar->height() / 2;
-	m_vtoolbar->show();
+	//m_vtoolbar->show();
 	m_vtoolbar->move(QPoint(toolbarX, toolbarY));
 
 	m_penStylePanel = new STWBPenStylePanel(this);
@@ -110,8 +111,13 @@ STWhiteBoard::STWhiteBoard(XmppClient* client, QWidget *parent)
 	connect(m_inviteFriend, SIGNAL(closeInviteFriend()), m_vtoolbar, SLOT(closeInviteFriend()));
 	m_inviteFriend->hide();
 
-	m_roster = new STWBRoster(m_xmppClient, this);
+	m_roster = new STWBRoster(this);
 	connect(m_roster, SIGNAL(closeRoster()), m_vtoolbar, SLOT(closeRoster()));
+	connect(m_roster, SIGNAL(setAuthorityStatusSignal(QString, QString, bool)),
+		this, SLOT(setAuthorityStatusSlot(QString, QString, bool)));
+	connect(this, SIGNAL(updateAuthorityStatusSignal(QString, QString, bool)),
+		m_roster, SLOT(updateAuthorityStatusSlot(QString, QString, bool)));
+	connect(this, SIGNAL(refreshRosterSignal()), m_roster, SLOT(refreshRosterTable()));
 	m_roster->hide();
 
 	ui.widTitle->installEventFilter(this);
@@ -124,10 +130,14 @@ STWhiteBoard::~STWhiteBoard()
 {
 }
 
-void STWhiteBoard::init(QString jid, QString name)
+void STWhiteBoard::init()
 {
-	m_jid = jid;
-	m_name = name;
+	m_show = false;
+	m_operate = false;
+	m_mic = "disable";
+	m_camera = "disable";
+	m_group = NULL;
+	m_canOperate = false;
 
 	// 页面初始化
 	SwitchButton* button = (SwitchButton*)ui.widSwitch;
@@ -149,10 +159,6 @@ void STWhiteBoard::init(QString jid, QString name)
 	ui.swMain->setCurrentIndex(m_currentIndex);
 
 	on_pbMaximum_clicked();
-
-	// 视频相关
-	initConferenceClient();
-	login();
 }
 
 void STWhiteBoard::switchShowMode(bool mode)
@@ -194,10 +200,13 @@ void STWhiteBoard::switchShowMode(bool mode)
 
 			m_big_videoItems[m_localCameraRenderID]->use("", QStringLiteral("我"), false);
 			m_big_videoItems[m_localCameraRenderID]->setVisible(true);
-			m_local_camera_stream->AttachVideoRenderer(m_big_videoItems[m_localCameraRenderID]->getRenderWindow());
+			if (m_local_camera_stream.get())
+			{
+				m_local_camera_stream->AttachVideoRenderer(m_big_videoItems[m_localCameraRenderID]->getRenderWindow());
+			}
 		}
 
-		if (m_admin == m_jid)
+		if (m_isAdmin)
 		{
 			Q_EMIT toolbarModeSignal(ToolbarMode::Video_Teacher);
 		}
@@ -239,15 +248,25 @@ void STWhiteBoard::switchShowMode(bool mode)
 
 			m_videoItems[m_localCameraRenderID]->use("", QStringLiteral("我"), false);
 			m_videoItems[m_localCameraRenderID]->setVisible(true);
-			m_local_camera_stream->AttachVideoRenderer(m_videoItems[m_localCameraRenderID]->getRenderWindow());
+			if (m_local_camera_stream.get())
+			{
+				m_local_camera_stream->AttachVideoRenderer(m_videoItems[m_localCameraRenderID]->getRenderWindow());
+			}
 		}
-		if (m_admin == m_jid)
+		if (m_isAdmin)
 		{
 			Q_EMIT toolbarModeSignal(ToolbarMode::WhiteBoard_Teacher);
 		}
 		else
 		{
-			Q_EMIT toolbarModeSignal(ToolbarMode::WhiteBoard_Student);
+			if (m_canOperate)
+			{
+				Q_EMIT toolbarModeSignal(ToolbarMode::WhiteBoard_Operator);
+			}
+			else
+			{
+				Q_EMIT toolbarModeSignal(ToolbarMode::WhiteBoard_Student);
+			}
 		}
 	}
 	ui.widVideo->update();
@@ -290,6 +309,19 @@ void STWhiteBoard::resizeMaximumDocWindow()
 
 void STWhiteBoard::on_pbClose_clicked()
 {
+	if (m_admin != m_jid)
+	{
+		pthread_cancel(m_tidKeepalive);
+		void* tmp;
+		pthread_join(m_tidKeepalive, &tmp);
+		m_group = NULL;
+	}
+
+	// {"type":"course","action":"quit","courseID":"111","jid":"a"}
+	QString msg = QString("{\"type\":\"course\",\"action\":\"quit\",\"courseID\":\"%1\","
+		"\"jid\":\"%2\"}").arg(m_courseID, m_jid);
+	m_messageClient->sendMessage(msg);
+
 	m_cloud_file_view->hide();
 	m_inviteFriend->hide();
 	m_roster->hide();
@@ -297,6 +329,17 @@ void STWhiteBoard::on_pbClose_clicked()
 	logout();
 	m_docWindows.clear();
 	close();
+}
+
+void STWhiteBoard::setAuthorityStatusSlot(QString subtype, QString jid, bool flag)
+{
+	// {"type":"authority","subtype":"show","flag":"true","courseID":"111","jid":"a"}
+	// {"type":"authority","subtype":"operate","flag":"true","courseID":"111","jid":"a"}
+	// {"type":"authority","subtype":"mic","flag":"true","courseID":"111","jid":"a"}
+	QString value = flag ? "true" : "false";
+	QString msg = QString("{\"type\":\"authority\",\"subtype\":\"%1\","
+		"\"flag\":\"%2\",\"courseID\":\"%3\",\"jid\":\"%4\"}").arg(subtype, value, m_courseID, jid);
+	m_messageClient->sendMessage(msg);
 }
 
 // ------------------------ STWhiteBoard ------------------------
@@ -532,8 +575,16 @@ void STWhiteBoard::removeStream(std::shared_ptr<RemoteStream> stream)
 void STWhiteBoard::subscriptionEnd(QString id)
 {
 	unsubscribeStream(id);
-	m_all_stream_map[id].subscription->Stop();
-	m_all_stream_map.remove(id);
+
+	if (!m_all_stream_map.contains(id))
+	{
+		return;
+	}
+	if (m_all_stream_map[id].stream.get())
+	{
+		m_all_stream_map[id].subscription->Stop();
+		m_all_stream_map.remove(id);
+	}
 }
 
 void STWhiteBoard::OnServerDisconnected()
@@ -563,7 +614,11 @@ void STWhiteBoard::login()
 				}
 			}
 			TAHITI_INFO("登入成功...");
-			sendLocalCamera();
+			if (m_isAdmin)
+			{
+				sendLocalCamera(true);
+				m_operate = true;
+			}
 		},
 			[=](unique_ptr<Exception> err)
 		{
@@ -580,10 +635,10 @@ void STWhiteBoard::login()
 
 void STWhiteBoard::logout()
 {
-	if (m_localCameraRenderID != -1)
+	/*if (m_localCameraRenderID != -1)
 	{
 		Q_EMIT unshowLocalCameraSignal();
-	}
+	}*/
 
 	QList<QString> ids = m_all_stream_map.keys();
 
@@ -594,7 +649,7 @@ void STWhiteBoard::logout()
 	}
 	m_all_stream_map.clear();
 
-	stopSendLocalCamera();
+	sendLocalCamera(false);
 }
 
 void STWhiteBoard::showLocalCamera()
@@ -616,7 +671,10 @@ void STWhiteBoard::showLocalCamera()
 		{
 			return;
 		}
-		m_local_camera_stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
+		if (m_local_camera_stream.get())
+		{
+			m_local_camera_stream->AttachVideoRenderer(m_videoItems[renderID]->getRenderWindow());
+		}
 		ui.widVideo->update();
 	}
 	else
@@ -635,7 +693,10 @@ void STWhiteBoard::showLocalCamera()
 		{
 			return;
 		}
-		m_local_camera_stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
+		if (m_local_camera_stream.get())
+		{
+			m_local_camera_stream->AttachVideoRenderer(m_big_videoItems[renderID]->getRenderWindow());
+		}
 		ui.widVideoBig->update();
 	}
 	m_localCameraRenderID = renderID;
@@ -662,87 +723,170 @@ void STWhiteBoard::unshowLocalCamera()
 	m_localCameraRenderID = -1;
 }
 
-void STWhiteBoard::sendLocalCamera()
+void STWhiteBoard::canOperate(bool flag, bool change)
 {
-	int err_code;
-
-	QString cameraId = STConfig::getConfig("/camera/id");
-	if (cameraId.size() == 0)
+	if (change)
 	{
-		return;
+		m_canOperate = flag;
 	}
-	std::string capturerId;
-	std::vector<std::string> capturerIds = DeviceUtils::VideoCapturerIds();
-	for (int i = 0; i < capturerIds.size(); i++)
+	if (m_currentIndex == 0)
 	{
-		if (cameraId.contains(capturerIds[i].c_str()))
+		if (flag)
 		{
-			capturerId = capturerIds[i];
-			break;
+			Q_EMIT toolbarModeSignal(ToolbarMode::WhiteBoard_Operator);
+		}
+		else
+		{
+			Q_EMIT toolbarModeSignal(ToolbarMode::WhiteBoard_Student);
 		}
 	}
-	if (capturerId.size() == 0)
-	{
-		return;
-	}
+}
 
-	int width = STConfig::getConfig("/camera/width").toInt();
-	int height = STConfig::getConfig("/camera/height").toInt();
-	if (!m_local_camera_stream.get())
+void STWhiteBoard::sendLocalCamera(bool flag)
+{
+	if (flag)
 	{
-		m_local_camera_stream_param.reset(new LocalCameraStreamParameters(true, true));
-		m_local_camera_stream_param->Resolution(width, height);
-		m_local_camera_stream_param->CameraId(capturerId);
-		m_local_camera_stream = LocalStream::Create(*m_local_camera_stream_param, err_code);
-		if (!m_local_camera_stream.get())
+		int err_code;
+
+		QString cameraId = STConfig::getConfig("/camera/id");
+		if (cameraId.size() == 0)
 		{
 			return;
 		}
+		std::string capturerId;
+		std::vector<std::string> capturerIds = DeviceUtils::VideoCapturerIds();
+		for (int i = 0; i < capturerIds.size(); i++)
+		{
+			if (cameraId.contains(capturerIds[i].c_str()))
+			{
+				capturerId = capturerIds[i];
+				break;
+			}
+		}
+		if (capturerId.size() == 0)
+		{
+			return;
+		}
+		if (m_camera == "false")
+		{
+			m_camera = "true";
+		}
+		if (m_mic == "false")
+		{
+			m_mic = "true";
+		}
+		int width = STConfig::getConfig("/camera/width").toInt();
+		int height = STConfig::getConfig("/camera/height").toInt();
+		bool camera = (m_camera == "true");
+		bool mic = (m_mic == "true");
+		if (!m_local_camera_stream.get())
+		{
+			m_local_camera_stream_param.reset(new LocalCameraStreamParameters(camera, mic));
+			m_local_camera_stream_param->Resolution(width, height);
+			m_local_camera_stream_param->CameraId(capturerId);
+			m_local_camera_stream = LocalStream::Create(*m_local_camera_stream_param, err_code);
+			if (!m_local_camera_stream.get())
+			{
+				return;
+			}
+		}
+		PublishOptions options;
+		VideoCodecParameters codec_params;
+		codec_params.name = ics::base::VideoCodec::kH264;
+		VideoEncodingParameters video_params(codec_params, 0, m_hardware_accelerated);
+		options.video.push_back(video_params);
+
+		AudioEncodingParameters audio_params;
+		audio_params.codec.name = ics::base::AudioCodec::kOpus;
+		options.audio.push_back(audio_params);
+
+		unordered_map<string, string> attributes;
+		string jid = m_jid.toUtf8().constData();
+		string name = m_name.toUtf8().constData();
+		attributes.insert(unordered_map<string, string>::value_type("jid", jid));
+		attributes.insert(unordered_map<string, string>::value_type("name", name));
+		m_local_camera_stream->Attributes(attributes);
+
+		m_client->Publish(m_local_camera_stream,
+			options,
+			[=](std::shared_ptr<ConferencePublication> publication)
+		{
+			m_publication = publication;
+			m_show = true;
+			m_camera = true;
+			m_mic = true;
+			TAHITI_INFO("发送本地视频成功...");
+			Q_EMIT showLocalCameraSignal();
+		},
+			[=](unique_ptr<Exception> err)
+		{
+			TAHITI_ERROR("发送本地视频失败...");
+		});
+
 	}
-	PublishOptions options;
-	VideoCodecParameters codec_params;
-	codec_params.name = ics::base::VideoCodec::kH264;
-	VideoEncodingParameters video_params(codec_params, 0, m_hardware_accelerated);
-	options.video.push_back(video_params);
-
-	AudioEncodingParameters audio_params;
-	audio_params.codec.name = ics::base::AudioCodec::kOpus;
-	options.audio.push_back(audio_params);
-
-	unordered_map<string, string> attributes;
-	string jid = m_jid.toUtf8().constData();
-	string name = m_name.toUtf8().constData();
-	attributes.insert(unordered_map<string, string>::value_type("jid", jid));
-	attributes.insert(unordered_map<string, string>::value_type("name", name));
-	m_local_camera_stream->Attributes(attributes);
-
-	m_client->Publish(m_local_camera_stream,
-		options,
-		[=](std::shared_ptr<ConferencePublication> publication)
+	else
 	{
-		m_publication = publication;
-		TAHITI_INFO("发送本地视频成功...");
-		Q_EMIT showLocalCameraSignal();
-	},
-		[=](unique_ptr<Exception> err)
-	{
-		TAHITI_ERROR("发送本地视频失败...");
-	});
+		if (m_publication.get())
+		{
+			m_publication->Stop();
+
+			m_publication.reset();
+			m_publication = nullptr;
+			m_local_camera_stream->Close();
+			m_local_camera_stream.reset();
+			m_local_camera_stream_param = nullptr;
+			m_local_camera_stream = nullptr;
+			m_show = false;
+			if (m_camera == "true")
+			{
+				m_camera = "false";
+			}
+			if (m_mic == "true")
+			{
+				m_mic = "false";
+			}
+			TAHITI_INFO("停止发送本地视频成功...");
+			Q_EMIT unshowLocalCameraSignal();
+		}
+	}
 }
 
-void STWhiteBoard::stopSendLocalCamera()
+void STWhiteBoard::sendLocalAudio(bool flag)
 {
 	if (m_publication.get())
 	{
-		m_publication->Stop();
-
-		m_publication.reset();
-		m_publication = nullptr;
-		m_local_camera_stream->Close();
-		m_local_camera_stream.reset();
-		m_local_camera_stream_param = nullptr;
-		m_local_camera_stream = nullptr;
-		TAHITI_INFO("停止发送本地视频成功...");
+		if (flag)
+		{
+			m_publication->Unmute(TrackKind::kAudio,
+				[=]()
+			{
+				if (m_mic == "false")
+				{
+					m_mic = "true";
+				}
+				TAHITI_INFO("取消静音成功...");
+			},
+				[=](std::unique_ptr<Exception>)
+			{
+				TAHITI_INFO("取消静音失败...");
+			});
+		}
+		else
+		{
+			m_publication->Mute(TrackKind::kAudio,
+				[=]()
+			{
+				if (m_mic == "true")
+				{
+					m_mic = "false";
+				}
+				TAHITI_INFO("静音成功...");
+			},
+				[=](std::unique_ptr<Exception>)
+			{
+				TAHITI_INFO("静音失败...");
+			});
+		}
 	}
 }
 
@@ -860,7 +1004,7 @@ void STWhiteBoard::openRoster()
 		+ geometry().y();
 	m_roster->move(QPoint(x, y));
 	m_roster->show();
-	m_roster->initRoster();
+	m_roster->initRoster(m_courseID, m_group->getUserInfo(m_admin).userName, m_isAdmin);
 }
 
 void STWhiteBoard::closeRoster()
@@ -1029,80 +1173,78 @@ void STWhiteBoard::deleteRemoteItems(QList<QString> itemIDs)
 	m_view->deleteRemoteItems(itemIDs);
 }
 
-void STWhiteBoard::editableAuthority(QString editable)
-{
-	m_vtoolbar->init();
-	if (editable == "True")
-	{
-		m_penStylePanel->show();
-		m_textStylePanel->show();
-		m_vtoolbar->show();
-	}
-	else
-	{
-		m_penStylePanel->hide();
-		m_textStylePanel->hide();
-		m_vtoolbar->hide();
-	}
-}
-
-void STWhiteBoard::createCourse(QString courseID)
+void STWhiteBoard::createCourse(QString courseID, QString admin)
 {
 	// {"type":"course","action":"new","courseID":"111","admin":"st1@localhost"}
-	QJsonObject complexJson;
-	complexJson.insert("type", "course");
-	complexJson.insert("action", "new");
-	complexJson.insert("courseID", courseID);
-	complexJson.insert("admin", m_jid);
-
-	QJsonDocument complexDocument;
-	complexDocument.setObject(complexJson);
-	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
-	QString complexJsonStr(complexByteArray);
-
-	m_messageClient->sendMessage(complexJsonStr);
+	QString msg = QString("{\"type\":\"course\",\"action\":\"new\",\"courseID\":\"%1\","
+		"\"admin\":\"%2\"}").arg(courseID, admin);
+	m_messageClient->sendMessage(msg);
 }
 
-QString STWhiteBoard::queryCourse(QString courseID)
+QString STWhiteBoard::queryAdmin(QString courseID)
 {
-	// {"type":"course","action":"query","courseID":"111"}
-	QJsonObject complexJson;
-	complexJson.insert("type", "course");
-	complexJson.insert("action", "query");
-	complexJson.insert("courseID", courseID);
-
-	QJsonDocument complexDocument;
-	complexDocument.setObject(complexJson);
-	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
-	QString complexJsonStr(complexByteArray);
-
-	return m_messageClient->sendMessage(complexJsonStr);
+	// {"type":"course","action":"queryAdmin","courseID":"111"}
+	QString msg = QString("{\"type\":\"course\",\"action\":\"queryAdmin\",\"courseID\":\"%1\"}").arg(courseID);
+	return m_messageClient->sendMessage(msg);
 }
 
-void STWhiteBoard::joinCourse(QString courseID)
+void STWhiteBoard::joinCourse(QString courseID, QString jid, XmppGroup* group)
 {
-	// {"type":"course","action":"join","courseID":"111"}
-	QJsonObject complexJson;
-	complexJson.insert("type", "course");
-	complexJson.insert("action", "join");
-	complexJson.insert("courseID", courseID);
+	m_jid = jid;
+	m_group = group;
+	m_courseID = courseID;
+	m_admin = queryAdmin(m_courseID);
+	m_name = m_group->getUserInfo(m_jid).userName;
+	m_isAdmin = (m_admin == m_jid);
 
-	QJsonDocument complexDocument;
-	complexDocument.setObject(complexJson);
-	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
-	QString complexJsonStr(complexByteArray);
 	m_messageClient->subscribeMessage(courseID);
-	//QThread::sleep(1);
 
-	m_messageClient->sendMessage(complexJsonStr);
+	// {"type":"course","action":"join","courseID":"111","isAdmin":"false",
+	// "jid":"a","name":"aaa","mic":"disable","camera":"disable"}
+	QString isAdmin = m_isAdmin ? "true" : "false";
+	m_camera = STConfig::getConfig("/camera/id").size() == 0 ? "disable" : "false";
+
+	m_mic = "disable";
+	QString micId = STConfig::getConfig("/mic/id");
+	if (micId.size() > 0)
+	{
+		QList<QAudioDeviceInfo> audioInputs = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
+		QList<QAudioDeviceInfo>::Iterator itAudio;
+		for (itAudio = audioInputs.begin(); itAudio != audioInputs.end(); itAudio++)
+		{
+			if (itAudio->deviceName() == micId)
+			{
+				m_mic = "false";
+				break;
+			}
+		}
+	}
+
+	m_camera = "disable";
+	QString cameraId = STConfig::getConfig("/camera/id");
+	if (cameraId.size() > 0)
+	{
+		QList<QCameraInfo> cameras = QCameraInfo::availableCameras();
+		QList<QCameraInfo>::Iterator itCamera;
+		for (itCamera = cameras.begin(); itCamera != cameras.end(); itCamera++)
+		{
+			if (itCamera->deviceName() == cameraId)
+			{
+				m_mic = "false";
+				break;
+			}
+		}
+	}
+
+	QString msg = QString("{\"type\":\"course\",\"action\":\"join\","
+		"\"courseID\":\"%1\",\"isAdmin\":\"%2\",\"jid\":\"%3\","
+		"\"name\":\"%4\",\"mic\":\"%5\",\"camera\":\"%6\"}").arg(courseID,
+			isAdmin, m_jid, m_name, m_mic, m_camera);
+	m_messageClient->sendMessage(msg);
 
 	m_view->setCourseID(courseID);
 
-	m_courseID = courseID;
-
-	m_admin = queryCourse(m_courseID);
-
-	if (m_admin == m_jid)
+	if (m_isAdmin)
 	{
 		m_raiseHandPanel->setVisible(false);
 		Q_EMIT toolbarModeSignal(ToolbarMode::Video_Teacher);
@@ -1110,45 +1252,51 @@ void STWhiteBoard::joinCourse(QString courseID)
 	else
 	{
 		Q_EMIT toolbarModeSignal(ToolbarMode::Video_Student);
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		pthread_create(&m_tidKeepalive, &attr, keepAliveProc, this);
 	}
+
+	// 视频相关
+	initConferenceClient();
+	login();
+}
+
+void* STWhiteBoard::keepAliveProc(void* args)
+{
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL); //允许退出线程 
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL); //设置立即取消 
+	STWhiteBoard* whiteboard = (STWhiteBoard*)args;
+	while (1)
+	{
+		whiteboard->callSendKeepaliveSignal();
+		QThread::sleep(15);
+	}
+	return NULL;
+}
+
+void STWhiteBoard::callSendKeepaliveSignal()
+{
+	Q_EMIT sendKeepaliveSignal();
+}
+
+void STWhiteBoard::sendKeepaliveSlot()
+{
+	// {"type":"course","action":"keepalive","courseID":"111","jid":"a"}
+	QString msg = QString("{\"type\":\"course\",\"action\":\"keepalive\","
+		"\"courseID\":\"%1\",\"jid\":\"%2\"}").arg(m_courseID, m_jid);
+	m_messageClient->sendMessage(msg);
 }
 
 void STWhiteBoard::deleteCourseSlot()
 {
 	// {"type":"course","action":"del","courseID":"111"}
-	QJsonObject complexJson;
-	complexJson.insert("type", "course");
-	complexJson.insert("action", "del");
-	complexJson.insert("courseID", m_courseID);
-
-	QJsonDocument complexDocument;
-	complexDocument.setObject(complexJson);
-	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
-	QString complexJsonStr(complexByteArray);
-
-	m_messageClient->sendMessage(complexJsonStr);
+	QString msg = QString("{\"type\":\"course\",\"action\":\"del\",\"courseID\":\"%1\"}").arg(m_courseID);
+	m_messageClient->sendMessage(msg);
 
 	Q_EMIT deleteCourseSignal();
 	on_pbClose_clicked();
-}
-
-void STWhiteBoard::setClientAuthority(QString editable)
-{
-	// {"type":"setClientAuthority","data":{"editable":"True/False"}}
-	QJsonObject complexJson;
-	complexJson.insert("type", "setClientAuthority");
-
-	QJsonObject dataJson;
-	dataJson.insert("editable", editable);
-
-	complexJson.insert("data", dataJson);
-
-	QJsonDocument complexDocument;
-	complexDocument.setObject(complexJson);
-	QByteArray complexByteArray = complexDocument.toJson(QJsonDocument::Compact);
-	QString complexJsonStr(complexByteArray);
-
-	m_messageClient->sendMessage(complexJsonStr);
 }
 
 void STWhiteBoard::whiteBoardMessageSlot(QString message)
@@ -1190,40 +1338,49 @@ void STWhiteBoard::whiteBoardMessageSlot(QString message)
 				dataObject = value.toObject();
 			}
 		}
-		if (jsonObject.contains("id"))
-		{
-			value = jsonObject.take("id");
-			if (value.isString())
-			{
-				itemID = value.toString();
-			}
-		}
-		if (jsonObject.contains("ids"))
-		{
-			value = jsonObject.take("ids");
-			if (value.isArray())
-			{
-				QJsonArray itemArray = value.toArray();
-				for (int i = 0; i < itemArray.size(); i++)
-				{
-					if (itemArray.at(i).isString())
-					{
-						itemIDs.append(itemArray.at(i).toString());
-					}
-				}
-			}
-		}
 		// 根据分支处理
-		if (type == "setClientAuthority")
+		if (type == "authority")
 		{
-			QString editable;
-			if (dataObject.contains("editable"))
+			QString jid;
+			bool flag;
+			if (jsonObject.contains("flag"))
 			{
-				value = dataObject.take("editable");
+				value = jsonObject.take("flag");
 				if (value.isString())
 				{
-					editable = value.toString();
-					editableAuthority(editable);
+					flag = (value.toString() == "true");
+				}
+			}
+			if (jsonObject.contains("jid"))
+			{
+				value = jsonObject.take("jid");
+				if (value.isString())
+				{
+					jid = value.toString();
+					if (jid == m_jid)
+					{
+						if (subtype == "show")
+						{
+							sendLocalCamera(flag);
+							if (flag)
+							{
+								canOperate(m_canOperate);
+							}
+							else
+							{
+								canOperate(false, false);
+							}
+						}
+						else if (subtype == "operate")
+						{
+							canOperate(flag);
+						}
+						else if (subtype == "mic")
+						{
+							sendLocalAudio(flag);
+						}
+					}
+					Q_EMIT updateAuthorityStatusSignal(subtype, jid, flag);
 				}
 			}
 		}
@@ -1280,6 +1437,29 @@ void STWhiteBoard::whiteBoardMessageSlot(QString message)
 		}
 		else if (type == "wbitem")
 		{
+			if (jsonObject.contains("id"))
+			{
+				value = jsonObject.take("id");
+				if (value.isString())
+				{
+					itemID = value.toString();
+				}
+			}
+			if (jsonObject.contains("ids"))
+			{
+				value = jsonObject.take("ids");
+				if (value.isArray())
+				{
+					QJsonArray itemArray = value.toArray();
+					for (int i = 0; i < itemArray.size(); i++)
+					{
+						if (itemArray.at(i).isString())
+						{
+							itemIDs.append(itemArray.at(i).toString());
+						}
+					}
+				}
+			}
 			if (subtype == "add")
 			{
 				QString action;
@@ -1407,6 +1587,22 @@ void STWhiteBoard::whiteBoardMessageSlot(QString message)
 					}
 				}
 				moveRemoteItems(QPoint(x, y), itemID);
+			}
+		}
+		else if (type == "course")
+		{
+			if (jsonObject.contains("action"))
+			{
+				QString action;
+				value = jsonObject.take("action");
+				if (value.isString())
+				{
+					action = value.toString();
+					if (action == "join" || action == "quit")
+					{
+						Q_EMIT refreshRosterSignal();
+					}
+				}
 			}
 		}
 	}

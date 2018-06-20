@@ -157,7 +157,6 @@ namespace tahiti
 		Client* m_client;
 		VCardManager* m_vManager;
 		pthread_t m_tidConnect;
-		pthread_t m_tidKeepalive;
 		pthread_t m_tidRefreshSignal;
 		pthread_t m_tidLoadOfflineMsg;
 		//MessageSession* m_msgSession;

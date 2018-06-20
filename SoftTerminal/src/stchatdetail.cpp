@@ -88,7 +88,7 @@ void STChatDetail::setChatDetail(UserInfo userInfo, XmppGroup* group)
 		refreshOnlineSlot();
 		ui.widStatus->setVisible(true);
 
-		if (m_whiteboard->queryCourse(m_userInfo.jid).size() != 0)
+		if (m_whiteboard->queryAdmin(m_userInfo.jid).size() != 0)
 		{
 			ui.pbJoinCourse->setVisible(true);
 		}
@@ -356,7 +356,7 @@ void STChatDetail::on_pbCreateCourse_clicked()
 	ui.pbCreateCourse->setVisible(false);
 	ui.pbJoinCourse->setVisible(true);
 	// 创建课程
-	m_whiteboard->createCourse(m_userInfo.jid);
+	m_whiteboard->createCourse(m_userInfo.jid, m_selfInfo.jid);
 	//on_pbJoinCourse_clicked();
 
 	QString createTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
@@ -398,9 +398,9 @@ void STChatDetail::on_pbJoinCourse_clicked()
 {
 	if (m_whiteboard->isHidden())
 	{
-		m_whiteboard->init(m_selfInfo.jid, m_selfInfo.userName);
+		m_whiteboard->init();
 		m_whiteboard->show();
-		m_whiteboard->joinCourse(m_userInfo.jid);
+		m_whiteboard->joinCourse(m_userInfo.jid, m_selfInfo.jid, m_group);
 	}
 	else
 	{
@@ -486,6 +486,7 @@ void STChatDetail::updateOthersMessage(RecordItem item)
 			(*it)->updateCourseDelete(item.time);
 		}
 		m_whiteboard->on_pbClose_clicked();
+		ui.pbJoinCourse->setVisible(false);
 		STConfirm* m_confirm = new STConfirm(true, this);
 		m_confirm->setText(QStringLiteral("当前课程已结束。"));
 		int parentX = m_main->geometry().x();

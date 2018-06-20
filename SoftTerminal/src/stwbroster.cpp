@@ -1,7 +1,8 @@
 ﻿#include "stwbroster.h"
 
-STWBRoster::STWBRoster(XmppClient* client, QWidget * parent)
-	: m_xmppClient(client), QDialog(parent)
+using namespace tahiti;
+
+STWBRoster::STWBRoster(QWidget * parent) : QDialog(parent)
 {
 	ui.setupUi(this);
 	setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
@@ -39,6 +40,8 @@ STWBRoster::STWBRoster(XmppClient* client, QWidget * parent)
 	connect(m_clearBtn, SIGNAL(clicked()), this, SLOT(clearSearchInput()));
 	m_clearBtn->setVisible(false);
 	ui.leSearch->installEventFilter(this);
+
+	m_messageClient = new STMessageClient;
 }
 
 STWBRoster::~STWBRoster() {
@@ -72,100 +75,372 @@ void STWBRoster::resizeHeaders()
 	ui.twRoster->horizontalHeader()->resizeSection(5, 90);
 }
 
-void STWBRoster::initRoster()
+void STWBRoster::initRoster(QString courseID, QString admin, bool isAdmin)
 {
+	m_courseID = courseID;
+	m_isAdmin = isAdmin;
+
+	ui.lblTeacherName->setText(admin);
+
 	resizeHeaders();
 
 	ui.twRoster->setRowCount(0);
 	ui.twRoster->clearContents();
 
+	refreshRosterTable();
+}
+
+void STWBRoster::refreshRosterTable()
+{
+	// {"type":"course","action":"queryRoster","courseID":"111"}
+	QString msg = QString("{\"type\":\"course\",\"action\":\"queryRoster\",\"courseID\":\"%1\"}").arg(m_courseID);
+	QString data = m_messageClient->sendMessage(msg);
+
+	ui.twRoster->setRowCount(0);
+	ui.twRoster->clearContents();
+	m_btnInfoMap.clear();
+	//data = "[{\"jid\":\"a\",\"name\":\"aaa\",\"show\":\"true\",\"operate\":\"false\",\"mic\":\"true\",\"camera\":\"false\"},{\"jid\":\"b\",\"name\":\"bbb\",\"show\":\"false\",\"operate\":\"false\",\"mic\":\"false\",\"camera\":\"false\"},{\"jid\":\"c\",\"name\":\"ccc\",\"show\":\"true\",\"operate\":\"true\",\"mic\":\"false\",\"camera\":\"false\"},{\"jid\":\"d\",\"name\":\"ddd\",\"show\":\"true\",\"operate\":\"false\",\"mic\":\"true\",\"camera\":\"true\"}]";
+
 	QWidget* widget;
 	QHBoxLayout* hLayout;
 	QLabel* lbl;
-	QPushButton* btn;
-	QString iconPath = ":/SoftTerminal/images/";
-	QTableWidgetItem* sizeItem;
-	QTableWidgetItem* timeItem;
-	for (int i = 0; i < 3; i++)
+	QPushButton* showBtn;
+	QPushButton* operateBtn;
+	QPushButton* cameraBtn;
+	QPushButton* micBtn;
+	QPushButton* handBtn;
+	QJsonArray members;
+	QJsonValue item;
+	QJsonObject object;
+	QString jid;
+	QString name;
+	bool show;
+	bool operate;
+	QString mic;
+	QString camera;
+	BtnInfo info;
+	QJsonParseError complexJsonError;
+	QJsonDocument doucment = QJsonDocument::fromJson(data.toLatin1(), &complexJsonError);
+	if (complexJsonError.error == QJsonParseError::NoError && doucment.isArray())
 	{
-		ui.twRoster->insertRow(i);
+		members = doucment.array();
+		for (int i = 0; i < members.size(); i++)
+		{
+			item = members.at(i);
+			if (item.isObject())
+			{
+				object = item.toObject();
+				if (object.contains("jid") && object["jid"].isString())
+				{
+					jid = object["jid"].toString();
+				}
+				if (object.contains("name") && object["name"].isString())
+				{
+					name = object["name"].toString();
+				}
+				if (object.contains("show") && object["show"].isString())
+				{
+					show = (object["show"].toString().compare("true") == 0);
+				}
+				if (object.contains("operate") && object["operate"].isString())
+				{
+					operate = (object["operate"].toString().compare("true") == 0);
+				}
+				if (object.contains("camera") && object["camera"].isString())
+				{
+					camera = object["camera"].toString();
+				}
+				if (object.contains("mic") && object["mic"].isString())
+				{
+					mic = object["mic"].toString();
+				}
+			}
 
-		lbl = new QLabel();
-		lbl->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-		lbl->setStyleSheet("QLabel{color:#ffffff;font:10pt \"微软雅黑\";}");
-		lbl->setText("hahaha");
-		hLayout = new QHBoxLayout();
-		widget = new QWidget(ui.twRoster);
-		widget->setObjectName("widget");
-		widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
-		hLayout->addWidget(lbl);
-		widget->setLayout(hLayout);
-		ui.twRoster->setCellWidget(i, 0, widget);
+			ui.twRoster->insertRow(i);
 
-		btn = new QPushButton();
-		btn->setFixedSize(20, 20);
-		btn->setStyleSheet("border-image: url(:/SoftTerminal/images/talk_on.png);");
-		connect(btn, SIGNAL(clicked()), this, SLOT(onFileItemClicked()));
-		hLayout = new QHBoxLayout();
-		widget = new QWidget(ui.twRoster);
-		widget->setObjectName("widget");
-		widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
-		hLayout->addWidget(btn);
-		widget->setLayout(hLayout);
-		ui.twRoster->setCellWidget(i, 1, widget);
+			lbl = new QLabel();
+			lbl->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+			lbl->setStyleSheet("QLabel{color:#ffffff;font:10pt \"微软雅黑\";}");
+			lbl->setText(name);
+			hLayout = new QHBoxLayout();
+			widget = new QWidget(ui.twRoster);
+			widget->setObjectName("widget");
+			widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
+			hLayout->addWidget(lbl);
+			widget->setLayout(hLayout);
+			ui.twRoster->setCellWidget(i, 0, widget);
 
-		btn = new QPushButton();
-		btn->setFixedSize(20, 20);
-		btn->setStyleSheet("border-image: url(:/SoftTerminal/images/control_disable.png);");
-		connect(btn, SIGNAL(clicked()), this, SLOT(onFileItemClicked()));
-		hLayout = new QHBoxLayout();
-		widget = new QWidget(ui.twRoster);
-		widget->setObjectName("widget");
-		widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
-		hLayout->addWidget(btn);
-		widget->setLayout(hLayout);
-		ui.twRoster->setCellWidget(i, 2, widget);
+			operateBtn = new QPushButton();
+			operateBtn->setFixedSize(20, 20);
+			if (!show)
+			{
+				operateBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_disable.png);");
+			}
+			else
+			{
+				if (operate)
+				{
+					operateBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_on.png);");
+				}
+				else
+				{
+					operateBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_off.png);");
+				}
+			}
+			if (m_isAdmin)
+			{
+				connect(operateBtn, SIGNAL(clicked()), this, SLOT(onBtnClicked()));
+			}
+			info.type = "operate";
+			info.jid = jid;
+			info.flag = operate;
+			info.enable = true;
+			m_btnInfoMap[operateBtn] = info;
+			hLayout = new QHBoxLayout();
+			widget = new QWidget(ui.twRoster);
+			widget->setObjectName("widget");
+			widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
+			hLayout->addWidget(operateBtn);
+			widget->setLayout(hLayout);
+			ui.twRoster->setCellWidget(i, 2, widget);
 
-		btn = new QPushButton();
-		btn->setFixedSize(20, 20);
-		btn->setStyleSheet("border-image: url(:/SoftTerminal/images/cam_off.png);");
-		connect(btn, SIGNAL(clicked()), this, SLOT(onFileItemClicked()));
-		hLayout = new QHBoxLayout();
-		widget = new QWidget(ui.twRoster);
-		widget->setObjectName("widget");
-		widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
-		hLayout->addWidget(btn);
-		widget->setLayout(hLayout);
-		ui.twRoster->setCellWidget(i, 3, widget);
+			cameraBtn = new QPushButton();
+			cameraBtn->setFixedSize(18, 20);
+			if (!show)
+			{
+				cameraBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/camera_disable.png);");
+			}
+			else
+			{
+				if (camera == "true")
+				{
+					cameraBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/camera_on.png);");
+				}
+				else if (camera == "false")
+				{
+					cameraBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/camera_off.png);");
+				}
+				else
+				{
+					cameraBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/camera_disable.png);");
+				}
+			}
+			info.type = "camera";
+			info.jid = jid;
+			if (camera == "disable")
+			{
+				info.enable = false;
+			}
+			else
+			{
+				info.flag = (camera == "true");
+			}
+			m_btnInfoMap[cameraBtn] = info;
+			hLayout = new QHBoxLayout();
+			widget = new QWidget(ui.twRoster);
+			widget->setObjectName("widget");
+			widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
+			hLayout->addWidget(cameraBtn);
+			widget->setLayout(hLayout);
+			ui.twRoster->setCellWidget(i, 3, widget);
 
-		btn = new QPushButton();
-		btn->setFixedSize(20, 20);
-		btn->setStyleSheet("border-image: url(:/SoftTerminal/images/recorder_disable.png);");
-		connect(btn, SIGNAL(clicked()), this, SLOT(onFileItemClicked()));
-		hLayout = new QHBoxLayout();
-		widget = new QWidget(ui.twRoster);
-		widget->setObjectName("widget");
-		widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
-		hLayout->addWidget(btn);
-		widget->setLayout(hLayout);
-		ui.twRoster->setCellWidget(i, 4, widget);
+			micBtn = new QPushButton();
+			micBtn->setFixedSize(30, 20);
+			if (!show)
+			{
+				micBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_disable.png);");
+			}
+			else
+			{
+				if (mic == "true")
+				{
+					micBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_on.png);");
+				}
+				else if (mic == "false")
+				{
+					micBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_off.png);");
+				}
+				else
+				{
+					micBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_disable.png);");
+				}
+			}
+			if (m_isAdmin)
+			{
+				connect(micBtn, SIGNAL(clicked()), this, SLOT(onBtnClicked()));
+			}
+			info.type = "mic";
+			info.jid = jid;
+			if (mic == "disable")
+			{
+				info.enable = false;
+			}
+			else
+			{
+				info.flag = (mic == "true");
+			}
+			m_btnInfoMap[micBtn] = info;
+			hLayout = new QHBoxLayout();
+			widget = new QWidget(ui.twRoster);
+			widget->setObjectName("widget");
+			widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
+			hLayout->addWidget(micBtn);
+			widget->setLayout(hLayout);
+			ui.twRoster->setCellWidget(i, 4, widget);
 
-		btn = new QPushButton();
-		btn->setFixedSize(20, 20);
-		btn->setStyleSheet("border-image: url(:/SoftTerminal/images/hand_on.png);");
-		connect(btn, SIGNAL(clicked()), this, SLOT(onFileItemClicked()));
-		hLayout = new QHBoxLayout();
-		widget = new QWidget(ui.twRoster);
-		widget->setObjectName("widget");
-		widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
-		hLayout->addWidget(btn);
-		widget->setLayout(hLayout);
-		ui.twRoster->setCellWidget(i, 5, widget);
+			handBtn = new QPushButton();
+			handBtn->setFixedSize(20, 20);
+			handBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/hand.png);");
+			hLayout = new QHBoxLayout();
+			widget = new QWidget(ui.twRoster);
+			widget->setObjectName("widget");
+			widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
+			hLayout->addWidget(handBtn);
+			widget->setLayout(hLayout);
+			ui.twRoster->setCellWidget(i, 5, widget);
 
-		ui.twRoster->setRowHeight(i, 35);
+			showBtn = new QPushButton();
+			showBtn->setFixedSize(20, 20);
+			if (show)
+			{
+				showBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/show_on.png);");
+			}
+			else
+			{
+				showBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/show_off.png);");
+			}
+			if (m_isAdmin)
+			{
+				connect(showBtn, SIGNAL(clicked()), this, SLOT(onBtnClicked()));
+			}
+			info.type = "show";
+			info.jid = jid;
+			info.flag = show;
+			info.enable = true;
+			info.operateBtn = operateBtn;
+			info.cameraBtn = cameraBtn;
+			info.micBtn = micBtn;
+			m_btnInfoMap[showBtn] = info;
+			hLayout = new QHBoxLayout();
+			widget = new QWidget(ui.twRoster);
+			widget->setObjectName("widget");
+			widget->setStyleSheet("QWidget#widget{border-bottom: 1px solid #494c54;}");
+			hLayout->addWidget(showBtn);
+			widget->setLayout(hLayout);
+			ui.twRoster->setCellWidget(i, 1, widget);
+
+			ui.twRoster->setRowHeight(i, 35);
+		}
 	}
 }
 
+void STWBRoster::onBtnClicked()
+{
+	QPushButton* button = dynamic_cast<QPushButton*>(QObject::sender());
+	if (m_btnInfoMap.contains(button))
+	{
+		BtnInfo info = m_btnInfoMap[button];
+		if (!info.enable)
+		{
+			return;
+		}
+		info.flag = !info.flag;
+		m_btnInfoMap[button] = info;
+		updateBtnImage(button, info);
+		Q_EMIT setAuthorityStatusSignal(info.type, info.jid, info.flag);
+	}
+}
+
+void STWBRoster::updateBtnImage(QPushButton* button, BtnInfo info)
+{
+	if (info.type == "show")
+	{
+		if (info.flag)
+		{
+			button->setStyleSheet("border-image: url(:/SoftTerminal/images/show_on.png);");
+			if (m_btnInfoMap[info.operateBtn].flag)
+			{
+				info.operateBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_on.png);");
+			}
+			else
+			{
+				info.operateBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_off.png);");
+			}
+			if (m_btnInfoMap[info.cameraBtn].enable)
+			{
+				if (m_btnInfoMap[info.cameraBtn].flag)
+				{
+					info.cameraBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/camera_on.png);");
+				}
+				else
+				{
+					info.cameraBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/camera_off.png);");
+				}
+			}
+			if (m_btnInfoMap[info.micBtn].enable)
+			{
+				if (m_btnInfoMap[info.micBtn].flag)
+				{
+					info.micBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_on.png);");
+				}
+				else
+				{
+					info.micBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_off.png);");
+				}
+			}
+		}
+		else
+		{
+			button->setStyleSheet("border-image: url(:/SoftTerminal/images/show_off.png);");
+			info.operateBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_disable.png);");
+			info.cameraBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/camera_disable.png);");
+			info.micBtn->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_disable.png);");
+		}
+	}
+	else if (info.type == "operate")
+	{
+		if (info.flag)
+		{
+			button->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_on.png);");
+		}
+		else
+		{
+			button->setStyleSheet("border-image: url(:/SoftTerminal/images/operate_off.png);");
+		}
+	}
+	else if (info.type == "mic")
+	{
+		if (info.flag)
+		{
+			button->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_on.png);");
+		}
+		else
+		{
+			button->setStyleSheet("border-image: url(:/SoftTerminal/images/mic_off.png);");
+		}
+	}
+}
+
+void STWBRoster::updateAuthorityStatusSlot(QString subtype, QString jid, bool flag)
+{
+	QMap<QPushButton*, BtnInfo>::Iterator it;
+	for (it = m_btnInfoMap.begin(); it != m_btnInfoMap.end(); it++)
+	{
+		if (it.value().jid == jid && it.value().type == subtype)
+		{
+			QPushButton* button = it.key();
+			BtnInfo info = m_btnInfoMap[button];
+			if (!info.enable || info.flag == flag)
+			{
+				return;
+			}
+
+			info.flag = flag;
+			m_btnInfoMap[button] = info;
+			updateBtnImage(button, info);
+		}
+	}
+}
 
 void STWBRoster::mousePressEvent(QMouseEvent* event)
 {

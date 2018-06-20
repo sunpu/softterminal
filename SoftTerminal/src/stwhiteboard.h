@@ -7,6 +7,8 @@
 #include <QListView>
 #include <QMetaType>
 #include <QStackedLayout>
+#include <QCameraInfo>
+#include <QAudioDeviceInfo>
 #include "ui_STWhiteBoard.h"
 #include "stwbview.h"
 #include "stwbvtoolbar.h"
@@ -71,10 +73,12 @@ namespace tahiti
 	public:
 		STWhiteBoard(XmppClient* client, QWidget *parent = 0);
 		~STWhiteBoard();
-		void init(QString jid, QString name);
-		void createCourse(QString courseID);
-		QString queryCourse(QString courseID);
-		void joinCourse(QString courseID);
+		void init();
+		void createCourse(QString courseID, QString admin);
+		QString queryAdmin(QString courseID);
+		void joinCourse(QString courseID, QString jid, XmppGroup* group);
+		static void* keepAliveProc(void* args);
+		void callSendKeepaliveSignal();
 	Q_SIGNALS:
 		void newStreamSignal(QString id, int width, int height);
 		void attachRenderSignal(QString id, std::shared_ptr<RemoteStream> stream);
@@ -91,6 +95,9 @@ namespace tahiti
 		void unmuteResultSignal(bool result, QString);
 		void deleteCourseSignal();
 		void toolbarModeSignal(int mode);
+		void sendKeepaliveSignal();
+		void updateAuthorityStatusSignal(QString subtype, QString jid, bool flag);
+		void refreshRosterSignal();
 		private Q_SLOTS:
 		void setPenThickness(int thickness);
 		void setPenColor(QString color);
@@ -121,6 +128,8 @@ namespace tahiti
 		void closeRoster();
 		void deleteCourse();
 		void deleteCourseSlot();
+		void sendKeepaliveSlot();
+		void setAuthorityStatusSlot(QString subtype, QString jid, bool flag);
 		public Q_SLOTS:
 		void on_pbMinimum_clicked();
 		void on_pbMaximum_clicked();
@@ -144,16 +153,15 @@ namespace tahiti
 		void removeStream(std::shared_ptr<RemoteStream> stream);
 		void login();
 		void logout();
-		void sendLocalCamera();
-		void stopSendLocalCamera();
 		void resizeMaximumDocWindow();
-		void setClientAuthority(QString editable);
 		void drawRemoteRealtimePen(QString color, int thickness, QVector<QPoint> points);
 		void drawRemotePenItem(QString color, int thickness, QVector<QPoint> points, QString itemID);
 		void drawRemoteTextItem(QString color, int size, QString content, QPoint pos, QString itemID);
 		void moveRemoteItems(QPoint pos, QString itemID);
 		void deleteRemoteItems(QList<QString> itemIDs);
-		void editableAuthority(QString editable);
+		void canOperate(bool flag, bool change = true);
+		void sendLocalCamera(bool flag);
+		void sendLocalAudio(bool flag);
 	private:
 		Ui::STWhiteBoardClass ui;
 		STWBView* m_view;
@@ -192,6 +200,14 @@ namespace tahiti
 		XmppClient* m_xmppClient;
 		QString m_courseID;
 		QString m_admin;
+		XmppGroup* m_group;
+		pthread_t m_tidKeepalive;
+		bool m_show;
+		bool m_operate;
+		bool m_isAdmin;
+		QString m_mic;
+		QString m_camera;
+		bool m_canOperate;
 	};
 }
 #endif

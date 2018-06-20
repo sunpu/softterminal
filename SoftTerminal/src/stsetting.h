@@ -30,8 +30,9 @@ namespace tahiti
 		public Q_SLOTS:
 		void on_pbConfirm_clicked();
 		void on_pbClose_clicked();
-		void on_pbConfirmCamera_clicked();
-		void comboBoxValueChanged();
+		void on_pbConfirmDevice_clicked();
+		void cameraValueChanged();
+		void micValueChanged();
 	protected:
 		virtual void mouseMoveEvent(QMouseEvent* event);
 		virtual void mousePressEvent(QMouseEvent* event);
@@ -46,6 +47,7 @@ namespace tahiti
 		QString m_cameraId;
 		int m_width;
 		int m_height;
+		QString m_micId;
 		QCamera* m_camera;
 		QCameraViewfinder* m_viewfinder;
 	};

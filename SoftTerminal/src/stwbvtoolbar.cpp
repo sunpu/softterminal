@@ -474,6 +474,7 @@ void STWBVToolbar::closeRoster()
 
 void STWBVToolbar::toolbarModeSlot(int mode)
 {
+	setVisible(false);
 	if (mode == ToolbarMode::Video_Teacher ||
 		mode == ToolbarMode::Video_Student ||
 		mode == ToolbarMode::WhiteBoard_Student)
@@ -512,6 +513,7 @@ void STWBVToolbar::toolbarModeSlot(int mode)
 			ui.line_2->setVisible(false);
 		}
 	}
+	setVisible(true);
 }
 
 void STWBVToolbar::paintEvent(QPaintEvent *e)

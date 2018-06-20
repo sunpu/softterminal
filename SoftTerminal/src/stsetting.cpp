@@ -11,52 +11,57 @@ STSetting::STSetting(QWidget * parent) : QDialog(parent)
 	ui.leServerIP->setText(server);
 
 	ui.cbxCamera->setItemDelegate(new NoFocusFrameDelegate(this));
+	ui.cbxMic->setItemDelegate(new NoFocusFrameDelegate(this));
 
-	/*QList<QAudioDeviceInfo> audioInputs = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
-	QList<QAudioDeviceInfo>::Iterator it1;
+	QList<QAudioDeviceInfo> audioInputs = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
+	QList<QAudioDeviceInfo>::Iterator itAudio;
 	QString audioInputId;
-	for (it1 = audioInputs.begin(); it1 != audioInputs.end(); it1++)
-	{
-		audioInputId = it1->deviceName();
-	}
-	QList<QAudioDeviceInfo> audioOutputs = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
-	QList<QAudioDeviceInfo>::Iterator it2;
-	QString audioOutputId;
-	for (it2 = audioOutputs.begin(); it2 != audioOutputs.end(); it2++)
-	{
-		audioOutputId = it2->deviceName();
-	}*/
-	QList<QCameraInfo> cameras = QCameraInfo::availableCameras();
-	QList<QCameraInfo>::Iterator it;
-	QString cameraId;
-	QString cameraDes;
 	QVariant value;
 	value.setValue(QString(""));
-	ui.cbxCamera->addItem(QStringLiteral("禁用"), value);
-	for (it = cameras.begin(); it != cameras.end(); it++)
+	ui.cbxMic->addItem(QStringLiteral("禁用"), value);
+	for (itAudio = audioInputs.begin(); itAudio != audioInputs.end(); itAudio++)
 	{
-		cameraId = it->deviceName();
-		cameraDes = it->description();
+		audioInputId = itAudio->deviceName();
+		value.setValue(audioInputId);
+		ui.cbxMic->addItem(audioInputId, value);
+	}
+
+	QList<QCameraInfo> cameras = QCameraInfo::availableCameras();
+	QList<QCameraInfo>::Iterator itCamera;
+	QString cameraId;
+	QString cameraDes;
+	value.setValue(QString(""));
+	ui.cbxCamera->addItem(QStringLiteral("禁用"), value);
+	for (itCamera = cameras.begin(); itCamera != cameras.end(); itCamera++)
+	{
+		cameraId = itCamera->deviceName();
+		cameraDes = itCamera->description();
 		value.setValue(cameraId);
 		ui.cbxCamera->addItem(cameraDes, value);
 	}
 
-	connect(ui.cbxCamera, SIGNAL(currentIndexChanged(int)), this, SLOT(comboBoxValueChanged()));
+	connect(ui.cbxCamera, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraValueChanged()));
+	connect(ui.cbxMic, SIGNAL(currentIndexChanged(int)), this, SLOT(micValueChanged()));
 	m_camera = NULL;
+
+	int idx;
 
 	m_cameraId = STConfig::getConfig("/camera/id");
 	m_width = STConfig::getConfig("/camera/width").toInt();
 	m_height = STConfig::getConfig("/camera/height").toInt();
 	if (m_cameraId.size() == 0)
 	{
-		comboBoxValueChanged();
+		cameraValueChanged();
 	}
 	else
 	{
-		int idx = ui.cbxCamera->findData(m_cameraId);
+		idx = ui.cbxCamera->findData(m_cameraId);
 		if (idx == -1) idx = 0;
 		ui.cbxCamera->setCurrentIndex(idx);
 	}
+
+	m_micId = STConfig::getConfig("/mic/id");
+	ui.cbxMic->setCurrentText(m_micId);
 }
 
 STSetting::~STSetting()
@@ -88,7 +93,7 @@ bool STSetting::compareResolutionData(const QSize &size1, const QSize &size2)
 	return false;
 }
 
-void STSetting::comboBoxValueChanged()
+void STSetting::cameraValueChanged()
 {
 	if (m_camera != NULL)
 	{
@@ -130,11 +135,17 @@ void STSetting::comboBoxValueChanged()
 	m_camera->start();
 }
 
-void STSetting::on_pbConfirmCamera_clicked()
+void STSetting::micValueChanged()
+{
+	m_micId = ui.cbxMic->currentData().value<QString>();
+}
+
+void STSetting::on_pbConfirmDevice_clicked()
 {
 	STConfig::setConfig("/camera/id", m_cameraId);
 	STConfig::setConfig("/camera/width", QString::number(m_width));
 	STConfig::setConfig("/camera/height", QString::number(m_height));
+	STConfig::setConfig("/mic/id", m_micId);
 	on_pbClose_clicked();
 }
 
